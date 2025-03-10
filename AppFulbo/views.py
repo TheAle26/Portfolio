@@ -575,9 +575,10 @@ def puntuar_jugadores_partido(request, partido_id, puntuacion_pendiente_id):
                 if jugador.usuario and jugador.usuario != request.user:  # Verifica que tenga usuario y no sea el actual
                     puntaje = request.POST.get(f'puntaje_{jugador.id}')
                     if puntaje:  # Verifica que se haya ingresado un puntaje
-                        puntaje_partido.suma_puntajes = puntaje_partido.suma_puntajes +float(puntaje)  # Convierte a float
-                        puntaje_partido.cant_puntajes = puntaje_partido.cant_puntajes + 1
+                        puntaje_partido.agregar_puntaje(float(puntaje))
                         puntaje_partido.save()
+                        jugador.actualizar_puntaje()
+                        jugador.save()
 
             # Borra la puntuación pendiente solo si coincide con el partido actual
             puntuacion_pendiente.delete()

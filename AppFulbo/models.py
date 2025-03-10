@@ -39,22 +39,24 @@ class Jugador(models.Model):
         help_text="Seleccione un número entre 1 y 99."
     )
     activo = models.BooleanField(default=True, help_text="Indica si el jugador está activo en la liga.")
-
+    puntaje = models.FloatField(null=True)  # Puntaje del jugador en este partido
+    
     def __str__(self):
         return f"{self.apodo} en liga {self.liga}"
     
-    def puntaje(self):
+    def actualizar_puntaje(self):
         i = 0
         puntos = 0
         puntajes = self.puntajes_partidos.all()
         for puntaje in puntajes:
             if puntaje.puntaje != 0:
                 i=i+1
-                puntos = puntos + puntaje.puntaje()
+                puntos = puntos + puntaje.puntaje
         try:
             promedio = puntos/i
         except:
             promedio = 0 
+        self.puntaje = promedio
         return promedio
 
     class Meta:
@@ -77,15 +79,17 @@ class Partido(models.Model):
 class PuntajePartido(models.Model):
     jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name="puntajes_partidos")
     partido = models.ForeignKey(Partido, on_delete=models.CASCADE, related_name="puntajes_partidos")
-    suma_puntajes = models.FloatField(null=True)  # Puntaje del jugador en este partido
+    puntaje = models.FloatField(null=True)  # Puntaje del jugador en este partido
     cant_puntajes =  models.FloatField(default=0)
+    ## se podria definir un campo que sea puntaje  y que se llame al metodo al agregar un puntaje.
     
-    def puntaje(self):
-        if self.cant_puntajes !=0:
-            puntaje= self.suma_puntajes/self.cant_puntajes
-        else:
-            puntaje = 0
-        return puntaje
+    def agregar_puntaje(self,puntos):
+        
+        self.puntaje = (self.puntaje*self.cant_puntajes +puntos)*(self.cant_puntajes +1)
+        self.cant_puntajes= self.cant_puntajes + 1
+        
+        return None
+        
     
     def __str__(self):
         return f"{self.jugador} - {self.partido}: {self.puntaje}"

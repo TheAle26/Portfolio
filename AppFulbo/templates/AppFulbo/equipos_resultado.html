@@ -1,0 +1,23 @@
+{% extends 'AppFulbo/base.html' %}
+{% block content %}
+<h2>Equipos Más Parejos</h2>
+
+<h3>Equipo 1</h3>
+<ul>
+    {% for jugador in equipo1 %}
+        <li>{{ jugador.apodo }} (Puntaje: {{ jugador.puntaje|floatformat:2 }})</li>
+    {% endfor %}
+</ul>
+
+<h3>Equipo 2</h3>
+<ul>
+    {% for jugador in equipo2 %}
+        <li>{{ jugador.apodo }} (Puntaje: {{ jugador.puntaje|floatformat:2 }})</li>
+    {% endfor %}
+</ul>
+
+<p>Diferencia de Puntajes: {{ diferencia|floatformat:2 }}</p>
+
+<a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn btn-primary">🔄 Volver a Crear Equipos</a>
+
+{% endblock %}

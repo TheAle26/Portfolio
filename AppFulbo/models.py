@@ -27,7 +27,7 @@ class Jugador(models.Model):
         ('3', 'Mediocampista'),
         ('4', 'Delantero'),
     ]
-    usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE,related_name="user")
+    usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE,related_name="jugadores")
     apodo = models.CharField(max_length=15)
     posicion = models.CharField(max_length=1, choices=OPCIONES, null=True, blank=True)
     liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name="jugadores")
@@ -85,7 +85,7 @@ class PuntajePartido(models.Model):
     
     def agregar_puntaje(self,puntos):
         
-        self.puntaje = (self.puntaje*self.cant_puntajes +puntos)*(self.cant_puntajes +1)
+        self.puntaje = (self.puntaje*self.cant_puntajes +puntos)/(self.cant_puntajes +1)
         self.cant_puntajes= self.cant_puntajes + 1
         
         return None
@@ -101,42 +101,42 @@ class PuntuacionPendiente(models.Model):
     liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name="puntuaciones_pendientes")
     
     
-class Conversacion(models.Model):
-    usuario1 = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='conversaciones_iniciadas',
-        on_delete=models.CASCADE
-    )
-    usuario2 = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='conversaciones_recibidas',
-        on_delete=models.CASCADE
-    )
-    fecha_actualizacion = models.DateTimeField(auto_now=True)
+# class Conversacion(models.Model):
+#     usuario1 = models.ForeignKey(
+#         settings.AUTH_USER_MODEL,
+#         related_name='conversaciones_iniciadas',
+#         on_delete=models.CASCADE
+#     )
+#     usuario2 = models.ForeignKey(
+#         settings.AUTH_USER_MODEL,
+#         related_name='conversaciones_recibidas',
+#         on_delete=models.CASCADE
+#     )
+#     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"Conversación: {self.usuario1.username} - {self.usuario2.username}"
+#     def __str__(self):
+#         return f"Conversación: {self.usuario1.username} - {self.usuario2.username}"
 
-    class Meta:
-        unique_together = ('usuario1', 'usuario2')
+#     class Meta:
+#         unique_together = ('usuario1', 'usuario2')
 
-class Mensaje(models.Model):
-    conversacion = models.ForeignKey(
-        Conversacion,
-        related_name='mensajes',
-        on_delete=models.CASCADE
-    )
-    remitente = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='mensajes_enviados',
-        on_delete=models.CASCADE
-    )
-    contenido = models.TextField()
-    fecha_envio = models.DateTimeField(auto_now_add=True)
-    leido = models.BooleanField(default=False)
+# class Mensaje(models.Model):
+#     conversacion = models.ForeignKey(
+#         Conversacion,
+#         related_name='mensajes',
+#         on_delete=models.CASCADE
+#     )
+#     remitente = models.ForeignKey(
+#         settings.AUTH_USER_MODEL,
+#         related_name='mensajes_enviados',
+#         on_delete=models.CASCADE
+#     )
+#     contenido = models.TextField()
+#     fecha_envio = models.DateTimeField(auto_now_add=True)
+#     leido = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"De {self.remitente.username} - {self.fecha_envio:%d/%m/%Y %H:%M}"
+#     def __str__(self):
+#         return f"De {self.remitente.username} - {self.fecha_envio:%d/%m/%Y %H:%M}"
 
     
 class Notificacion(models.Model):

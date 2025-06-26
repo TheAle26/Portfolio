@@ -27,7 +27,7 @@
               <div class="card-body">
                 <h5 class="card-title">
                   {{ mi_jugador.apodo }}
-                  <span class="badge bg-warning text-dark ms-2">Puntaje: {{ mi_jugador.puntaje }}</span>
+                  <span class="badge bg-warning text-dark ms-2">Puntaje: {{ mi_jugador.puntaje|floatformat:2 }}</span>
                 </h5>
                 <p class="card-text">
                   Posición: {{ mi_jugador.get_posicion_display }}
@@ -50,7 +50,9 @@
             <i class="fa-solid fa-pencil"></i>Editar Liga
         </a>
     {% endif %}
-    
+    <a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn-magic">
+        ✨ Formar Equipos ✨
+    </a>
     <!-- Sección de Jugadores de la Liga -->
     <div class="row">
         <!-- Columna para Jugadores -->

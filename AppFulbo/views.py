@@ -5,12 +5,12 @@ import AppFulbo.forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login, authenticate, logout,get_user_model
 from django.contrib.auth.decorators import login_required
-from .forms import JugadorForm,LigaForm,MiJugadorForm,PartidoForm,MensajeForm
-from .models import Liga, Jugador,PuntajePartido,Partido,Mensaje, Notificacion,Conversacion, SolicitudUnionLiga, PuntuacionPendiente
+from .forms import JugadorForm,LigaForm,MiJugadorForm,PartidoForm,SimularPartidoForm #,MensajeForm
+from .models import Liga, Jugador,PuntajePartido,Partido, Notificacion, SolicitudUnionLiga, PuntuacionPendiente#,Mensaje,Conversacion
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.utils import timezone
-
+import itertools
 
 
 # Create your views here.
@@ -377,24 +377,24 @@ def editar_liga(request, liga_id):
     }
     return render(request, 'AppFulbo/editar_liga.html', context)
 
-def mensaje_automatico_solicitud_liga(request, user, solicitud,mensaje):
-    destinatario = solicitud.usuario
-    conversacion = Conversacion.objects.filter(
-        Q(usuario1=user, usuario2=destinatario) |
-        Q(usuario1=destinatario, usuario2=user)
-    ).first()
+# def mensaje_automatico_solicitud_liga(request, user, solicitud,mensaje):
+#     destinatario = solicitud.usuario
+#     conversacion = Conversacion.objects.filter(
+#         Q(usuario1=user, usuario2=destinatario) |
+#         Q(usuario1=destinatario, usuario2=user)
+#     ).first()
 
-    if not conversacion:
-        if user.id < destinatario.id:
-            conversacion = Conversacion.objects.create(usuario1=user, usuario2=destinatario)
-        else:
-            conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=user)
+#     if not conversacion:
+#         if user.id < destinatario.id:
+#             conversacion = Conversacion.objects.create(usuario1=user, usuario2=destinatario)
+#         else:
+#             conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=user)
 
-    Mensaje.objects.create(
-        conversacion=conversacion,
-        remitente=user,
-        contenido=mensaje
-    )
+#     Mensaje.objects.create(
+#         conversacion=conversacion,
+#         remitente=user,
+#         contenido=mensaje
+#     )
 
 @login_required
 def asociar_jugador(request, solicitud_id):
@@ -498,6 +498,108 @@ def editar_jugador(request, jugador_id):
     return render(request, 'AppFulbo/editar_jugador.html', context)
 
 
+
+import itertools
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Liga, Jugador # Asegúrate de que tus modelos estén en este archivo o importalos correctamente
+# Asume que SimularPartidoForm ya está definido en forms.py y se importa aquí
+# from .forms import SimularPartidoForm
+
+@login_required
+def encontrar_equipos_mas_parejos(request, liga_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    
+    if request.method == 'POST':
+        jugadores_seleccionados_ids = request.POST.getlist('jugadores') # IDs de los jugadores seleccionados
+        
+        # Filtrar solo jugadores activos y con puntaje no nulo para evitar errores
+        jugadores = list(Jugador.objects.filter(
+            id__in=jugadores_seleccionados_ids,
+            liga=liga,
+            activo=True,
+            puntaje__isnull=False # Asegúrate de que el puntaje no sea Nulo
+        ).order_by('-puntaje')) # Opcional: ordenar para facilitar la depuración, no es estrictamente necesario para el algoritmo de combinaciones.
+
+        if not jugadores:
+            # Manejar caso donde no hay jugadores válidos seleccionados
+            context = {
+                'liga': liga,
+                'error_message': "No se seleccionaron jugadores válidos o con puntaje para armar los equipos.",
+            }
+            return render(request, 'AppFulbo/crear_equipos.html', context)
+        
+        num_jugadores = len(jugadores)
+        
+        # Si el número de jugadores es impar, un equipo tendrá un jugador más.
+        # Definimos el tamaño del primer equipo (aproximadamente la mitad)
+        tamano_equipo1 = num_jugadores // 2
+        
+        mejor_equipo1 = []
+        mejor_equipo2 = []
+        min_diferencia_puntaje = float('inf')
+
+        # Si hay menos de 2 jugadores, no se pueden formar equipos
+        if num_jugadores < 2:
+            context = {
+                'liga': liga,
+                'error_message': "Se necesitan al menos 2 jugadores para formar equipos.",
+            }
+            return render(request, 'AppFulbo/crear_equipos.html', context)
+            
+        # Itera sobre todas las combinaciones posibles para el Equipo 1
+        # El segundo equipo será el complemento del primero
+        # Consideramos combinaciones que pueden variar ligeramente si el número de jugadores es impar
+        for combo in itertools.combinations(jugadores, tamano_equipo1):
+            equipo1_lista = list(combo)
+            equipo2_lista = [j for j in jugadores if j not in equipo1_lista]
+
+            # Si el número total de jugadores es impar, ajustamos el tamaño del equipo 1
+            # para que la división sea lo más pareja posible
+            if num_jugadores % 2 != 0:
+                # Nos aseguramos de que el equipo 2 tenga un jugador más si el equipo 1 tiene menos de la mitad
+                # o el equipo 1 tenga uno más si tamano_equipo1 es la mitad superior
+                # La iteración de itertools ya maneja esto implícitamente al tomar tamano_equipo1
+                pass # No se necesita ajuste explícito aquí si itertools.combinations se usa correctamente.
+            
+            # Calcular puntajes totales
+            suma_equipo1 = sum(j.puntaje for j in equipo1_lista)
+            suma_equipo2 = sum(j.puntaje for j in equipo2_lista)
+            
+            diferencia_actual = abs(suma_equipo1 - suma_equipo2)
+            
+            if diferencia_actual < min_diferencia_puntaje:
+                min_diferencia_puntaje = diferencia_actual
+                mejor_equipo1 = equipo1_lista
+                mejor_equipo2 = equipo2_lista
+
+        context = {
+            'liga': liga,
+            'equipo1': mejor_equipo1,
+            'equipo2': mejor_equipo2,
+            'suma_equipo1': sum(j.puntaje for j in mejor_equipo1),
+            'suma_equipo2': sum(j.puntaje for j in mejor_equipo2),
+            'diferencia': min_diferencia_puntaje,
+        }
+        return render(request, 'AppFulbo/equipos_resultado.html', context)
+
+    else:
+        # Aquí puedes obtener todos los jugadores de la liga o solo los activos
+        # para mostrarlos en el formulario de selección.
+        # Es bueno pre-seleccionar a los activos si quieres que el usuario parta de ahí.
+        
+        # Asegúrate de que SimularPartidoForm esté configurado para mostrar los jugadores disponibles.
+        form = SimularPartidoForm(league=liga) 
+        
+        context = {
+            'liga': liga,
+            'form': form,
+            'jugadores_disponibles': liga.jugadores.filter(activo=True, puntaje__isnull=False).order_by('apodo'),
+        }
+        return render(request, 'AppFulbo/crear_equipos.html', context)
+
+
+    
 @login_required
 def crear_partido(request, liga_id):
     # Obtenemos la liga a la que se creará el partido
@@ -530,29 +632,6 @@ def crear_partido(request, liga_id):
     
     return render(request, 'registro/crear_partido.html', {'form': form, 'liga': league})
 
-# @login_required
-# def puntuar_jugadores_partido(request, partido_id):
-#     partido = get_object_or_404(Partido, id=partido_id)
-
-#     if request.method == "POST":
-#         puntajes_partidos = partido.puntajes_partidos.all()  # Suponiendo que el modelo `Partido` tiene `jugadores`
-
-#         jugadores = []
-#         for puntaje_partido in puntajes_partidos:
-#             jugadores.append(puntaje_partido.jugador)
-            
-#         for jugador in jugadores:
-#             puntaje = request.POST.get(f'puntaje_{jugador.id}')  # Captura el puntaje ingresado
-#             if puntaje:  # Verifica que se haya ingresado un puntaje
-#                 pass
-#         del jugadores
-#         return redirect('detalle_partido', partido_id=partido.id)  # Redirige a la vista del partido
-
-#     context = {
-#         'partido': partido,
-#         'jugadores': jugadores
-#     }
-#     return render(request, 'AppFulbo/puntuar_jugadores.html', context)
 
 
 @login_required
@@ -572,7 +651,7 @@ def puntuar_jugadores_partido(request, partido_id, puntuacion_pendiente_id):
         if request.method == "POST":
             for puntaje_partido in puntajes_partidos:
                 jugador = puntaje_partido.jugador
-                if jugador.usuario and jugador.usuario != request.user:  # Verifica que tenga usuario y no sea el actual
+                if jugador.usuario != request.user:  # Verifica que tenga usuario y no sea el actual
                     puntaje = request.POST.get(f'puntaje_{jugador.id}')
                     if puntaje:  # Verifica que se haya ingresado un puntaje
                         puntaje_partido.agregar_puntaje(float(puntaje))
@@ -611,79 +690,79 @@ def ver_partido(request, partido_id):
     context = {
         'partido': partido,
         'puntajes': puntajes,
-        'puntuacion_pendiente': puntuacion_pendiente,  # Ahora es un objeto, no un QuerySet
+        'puntuacion_pendiente': puntuacion_pendiente,  # ahora es un objeto, no un QuerySet
     }
     return render(request, 'AppFulbo/ver_partido.html', context)
 
 
-@login_required
-def inbox(request):
-    conversaciones = Conversacion.objects.filter(
-        Q(usuario1=request.user) | Q(usuario2=request.user)
-    ).order_by('-fecha_actualizacion')
-    return render(request, 'mensajes/inbox.html', {'conversaciones': conversaciones})
+# @login_required
+# def inbox(request):
+#     conversaciones = Conversacion.objects.filter(
+#         Q(usuario1=request.user) | Q(usuario2=request.user)
+#     ).order_by('-fecha_actualizacion')
+#     return render(request, 'mensajes/inbox.html', {'conversaciones': conversaciones})
 
-@login_required
-def conversacion_detail(request, conversacion_id):
-    conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-    # Verificar que el usuario sea participante de la conversación
-    if request.user not in [conversacion.usuario1, conversacion.usuario2]:
-        return HttpResponseForbidden("No tenés acceso a esta conversación.")
-    mensajes = conversacion.mensajes.all().order_by('fecha_envio')
+# @login_required
+# def conversacion_detail(request, conversacion_id):
+#     conversacion = get_object_or_404(Conversacion, id=conversacion_id)
+#     # Verificar que el usuario sea participante de la conversación
+#     if request.user not in [conversacion.usuario1, conversacion.usuario2]:
+#         return HttpResponseForbidden("No tenés acceso a esta conversación.")
+#     mensajes = conversacion.mensajes.all().order_by('fecha_envio')
 
-    if request.method == "POST":
-        contenido = request.POST.get('contenido')
-        if contenido:
-            Mensaje.objects.create(
-                conversacion=conversacion,
-                remitente=request.user,
-                contenido=contenido
-            )
-            return redirect('conversacion_detail', conversacion_id=conversacion.id)
-    return render(request, 'mensajes/conversacion_detail.html', {
-        'conversacion': conversacion,
-        'mensajes': mensajes
-    })
+#     if request.method == "POST":
+#         contenido = request.POST.get('contenido')
+#         if contenido:
+#             Mensaje.objects.create(
+#                 conversacion=conversacion,
+#                 remitente=request.user,
+#                 contenido=contenido
+#             )
+#             return redirect('conversacion_detail', conversacion_id=conversacion.id)
+#     return render(request, 'mensajes/conversacion_detail.html', {
+#         'conversacion': conversacion,
+#         'mensajes': mensajes
+#     })
     
 
 
-def obtener_mensajes(request, conversacion_id):
-    conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-    mensajes = conversacion.mensajes.all().order_by('fecha_envio')
+# def obtener_mensajes(request, conversacion_id):
+#     conversacion = get_object_or_404(Conversacion, id=conversacion_id)
+#     mensajes = conversacion.mensajes.all().order_by('fecha_envio')
     
-    mensajes_data = []
-    for mensaje in mensajes:
-        mensajes_data.append({
-            'id': mensaje.id,
-            'remitente': mensaje.remitente.username,
-            'contenido': mensaje.contenido,
-            'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
-        })
-    return JsonResponse({'mensajes': mensajes_data})
+#     mensajes_data = []
+#     for mensaje in mensajes:
+#         mensajes_data.append({
+#             'id': mensaje.id,
+#             'remitente': mensaje.remitente.username,
+#             'contenido': mensaje.contenido,
+#             'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
+#         })
+#     return JsonResponse({'mensajes': mensajes_data})
 
 
-User = get_user_model()
-@login_required
-def nuevo_chat(request):
-    # Listamos usuarios que no sean el actual (para iniciar un chat)
-    usuarios = User.objects.exclude(id=request.user.id)
-    if request.method == "POST":
-        destinatario_id = request.POST.get('destinatario')
-        if destinatario_id:
-            destinatario = get_object_or_404(User, id=destinatario_id)
-            # Buscar conversación existente sin importar el orden.
-            conversacion = Conversacion.objects.filter(
-                Q(usuario1=request.user, usuario2=destinatario) |
-                Q(usuario1=destinatario, usuario2=request.user)
-            ).first()
-            if not conversacion:
-                # Para evitar duplicados, definí un orden, por ejemplo:
-                if request.user.id < destinatario.id:
-                    conversacion = Conversacion.objects.create(usuario1=request.user, usuario2=destinatario)
-                else:
-                    conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=request.user)
-            return redirect('conversacion_detail', conversacion_id=conversacion.id)
-    return render(request, 'mensajes/nuevo_chat.html', {'usuarios': usuarios})
+# User = get_user_model()
+# @login_required
+# def nuevo_chat(request):
+#     # Listamos usuarios que no sean el actual (para iniciar un chat)
+#     usuarios = User.objects.exclude(id=request.user.id)
+#     if request.method == "POST":
+#         destinatario_id = request.POST.get('destinatario')
+#         if destinatario_id:
+#             destinatario = get_object_or_404(User, id=destinatario_id)
+#             # Buscar conversación existente sin importar el orden.
+#             conversacion = Conversacion.objects.filter(
+#                 Q(usuario1=request.user, usuario2=destinatario) |
+#                 Q(usuario1=destinatario, usuario2=request.user)
+#             ).first()
+#             if not conversacion:
+#                 # Para evitar duplicados, definí un orden, por ejemplo:
+#                 if request.user.id < destinatario.id:
+#                     conversacion = Conversacion.objects.create(usuario1=request.user, usuario2=destinatario)
+#                 else:
+#                     conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=request.user)
+#             return redirect('conversacion_detail', conversacion_id=conversacion.id)
+#     return render(request, 'mensajes/nuevo_chat.html', {'usuarios': usuarios})
 
 @login_required
 def marcar_todas_notificaciones_ajax(request):
@@ -693,31 +772,38 @@ def marcar_todas_notificaciones_ajax(request):
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required
-def enviar_mensaje_ajax(request, conversacion_id):
-    if request.method == 'POST':
-        conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-        contenido = request.POST.get('mensaje', '').strip()
-        if not contenido:
-            return JsonResponse({'error': 'El mensaje no puede estar vacío.'}, status=400)
+# @login_required
+# def enviar_mensaje_ajax(request, conversacion_id):
+#     if request.method == 'POST':
+#         conversacion = get_object_or_404(Conversacion, id=conversacion_id)
+#         contenido = request.POST.get('mensaje', '').strip()
+#         if not contenido:
+#             return JsonResponse({'error': 'El mensaje no puede estar vacío.'}, status=400)
         
-        mensaje = Mensaje.objects.create(
-            conversacion=conversacion,
-            remitente=request.user,
-            contenido=contenido,
-            fecha_envio=timezone.now()
-        )
+#         mensaje = Mensaje.objects.create(
+#             conversacion=conversacion,
+#             remitente=request.user,
+#             contenido=contenido,
+#             fecha_envio=timezone.now()
+#         )
         
-        # Actualizamos la fecha de actualización de la conversación
-        conversacion.fecha_actualizacion = timezone.now()
-        conversacion.save()
+#         # Actualizamos la fecha de actualización de la conversación
+#         conversacion.fecha_actualizacion = timezone.now()
+#         conversacion.save()
         
-        return JsonResponse({
-            'success': True,
-            'mensaje_id': mensaje.id,
-            'remitente': mensaje.remitente.username,
-            'contenido': mensaje.contenido,
-            'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
-        })
-    else:
-        return JsonResponse({'error': 'Método no permitido.'}, status=405)
+#         return JsonResponse({
+#             'success': True,
+#             'mensaje_id': mensaje.id,
+#             'remitente': mensaje.remitente.username,
+#             'contenido': mensaje.contenido,
+#             'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
+#         })
+#     else:
+#         return JsonResponse({'error': 'Método no permitido.'}, status=405)
+    
+
+
+
+
+
+

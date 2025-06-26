@@ -189,12 +189,28 @@ class PartidoForm(forms.ModelForm):
         if league:
             # El queryset del campo 'jugadores' se limita a los jugadores de esa liga.
             self.fields['jugadores'].queryset = league.jugadores.all()
+            
+class SimularPartidoForm(forms.Form):
+    # Campo adicional para seleccionar los jugadores de la liga que participaron.
+    jugadores = forms.ModelMultipleChoiceField(
+        queryset=None,  # Lo definiremos en __init__
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Jugadores que participaron"
+    )
+    def __init__(self, *args, **kwargs):
+        # Esperamos recibir la instancia de la liga (league) para filtrar los jugadores.
+        league = kwargs.pop('league', None)
+        super().__init__(*args, **kwargs)
+        if league:
+            # El queryset del campo 'jugadores' se limita a los jugadores de esa liga.
+            self.fields['jugadores'].queryset = league.jugadores.all()
 
-class MensajeForm(forms.ModelForm):
-    class Meta:
-        model = Mensaje
-        fields = ['remitente', 'contenido']
-        widgets = {
-            'remitente': forms.Select(attrs={'class': 'form-control'}),
-            'contenido': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-        }
+# class MensajeForm(forms.ModelForm):
+#     class Meta:
+#         model = Mensaje
+#         fields = ['remitente', 'contenido']
+#         widgets = {
+#             'remitente': forms.Select(attrs={'class': 'form-control'}),
+#             'contenido': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+#         }

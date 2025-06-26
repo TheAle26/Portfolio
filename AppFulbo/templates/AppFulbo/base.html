@@ -67,9 +67,9 @@
                     </ul>
                 </li>
                   
-                <li class="nav-item mr-3">
+                {% comment %} <li class="nav-item mr-3">
                     <a class="nav-link" href="{% url 'inbox' %}"><i class="fa-solid fa-envelope"></i> </a>
-                </li>
+                </li> {% endcomment %}
                 <li class="nav-item mr-3">
                     <a class="nav-link" href="{% url 'mi_perfil' %}">Hola, {{ user.username }}</a>
                 </li>

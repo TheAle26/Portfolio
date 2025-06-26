@@ -11400,3 +11400,31 @@ footer.footer {
   margin-right: 10px; /* Puedes ajustar este valor según tus necesidades */
 }
 
+.btn-magic {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, #ff00ff, #ff6600, #6600ff, #00ffff);
+  background-size: 400% 400%;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease-in-out;
+  animation: magicGlow 5s infinite alternate;
+  box-shadow: 0 4px 15px rgba(255, 0, 255, 0.5);
+}
+
+.btn-magic:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(255, 165, 0, 0.8);
+}
+
+@keyframes magicGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

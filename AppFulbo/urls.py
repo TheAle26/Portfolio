@@ -26,14 +26,15 @@ urlpatterns = [
     path('ligas/<int:liga_id>/gestionar_solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
     path('partido/<int:partido_id>/', views.ver_partido, name='ver_partido'),
     path('puntuar_jugadores/<int:partido_id>/<int:puntuacion_pendiente_id>/', views.puntuar_jugadores_partido, name='puntuar_jugadores_partido'),
+    path('ligas/<int:liga_id>/crear_equipos/', views.encontrar_equipos_mas_parejos, name='encontrar_equipos_mas_parejos'),
 
 
-    path('mensajes/inbox/', views.inbox, name='inbox'),
-    path('mensajes/conversacion/<int:conversacion_id>/', views.conversacion_detail, name='conversacion_detail'),
-    path('mensajes/nuevo/', views.nuevo_chat, name='nuevo_chat'),
+    #path('mensajes/inbox/', views.inbox, name='inbox'),
+    #path('mensajes/conversacion/<int:conversacion_id>/', views.conversacion_detail, name='conversacion_detail'),
+    #path('mensajes/nuevo/', views.nuevo_chat, name='nuevo_chat'),
     
-    path('mensajes/enviar_ajax/<int:conversacion_id>/', views.enviar_mensaje_ajax, name='enviar_mensaje_ajax'),
-    path('mensajes/obtener/<int:conversacion_id>/', views.obtener_mensajes, name='obtener_mensajes'),
+    #path('mensajes/enviar_ajax/<int:conversacion_id>/', views.enviar_mensaje_ajax, name='enviar_mensaje_ajax'),
+    #path('mensajes/obtener/<int:conversacion_id>/', views.obtener_mensajes, name='obtener_mensajes'),
     
     path('notificaciones/marcar_todas_ajax/', views.marcar_todas_notificaciones_ajax, name='marcar_todas_notificaciones_ajax'),
 ]

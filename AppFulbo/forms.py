@@ -77,8 +77,6 @@ class UserEditForm(forms.ModelForm):
             user.save()
         return user
 
-
-
 class JugadorForm(forms.ModelForm):
     class Meta:
         model = Jugador
@@ -116,6 +114,64 @@ class JugadorForm(forms.ModelForm):
             },
         }
 
+class AgregarOAsociarJugadorForm(forms.Form):
+    username_usuario = forms.CharField(
+        label="Nombre de Usuario",
+        help_text="Introduce el nombre de usuario de la cuenta a asociar.",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
+    )
+
+    # Estos campos no son requeridos porque pueden venir de un jugador existente
+    apodo = forms.CharField(max_length=15, required=False, label="Apodo del Jugador", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    posicion = forms.ChoiceField(choices=Jugador.OPCIONES, required=False, label="Posición", widget=forms.Select(attrs={'class': 'form-select'}))
+    numero = forms.IntegerField(required=False, label="Número de Camiseta", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+
+    def __init__(self, *args, **kwargs):
+        self.liga = kwargs.pop('liga', None)
+        self.jugador = kwargs.pop('jugador', None) # Recibimos el jugador si existe
+        super().__init__(*args, **kwargs)
+
+        # Si estamos asociando, no necesitamos los campos del jugador
+        if self.jugador:
+            del self.fields['apodo']
+            del self.fields['posicion']
+            del self.fields['numero']
+
+    def clean_username_usuario(self):
+        username = self.cleaned_data.get('username_usuario')
+        if not User.objects.filter(username=username).exists():
+            raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
+        
+        user = User.objects.get(username=username)
+
+        # Si estamos ASOCIANDO, el jugador ya existe. Verificamos que no tenga usuario.
+        if self.jugador and self.jugador.usuario is not None:
+             raise forms.ValidationError(f"Este perfil de jugador ya está asociado al usuario '{self.jugador.usuario.username}'.")
+
+        # Si estamos CREANDO, verificamos que el usuario no tenga ya un perfil en la liga
+        if not self.jugador and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
+            raise forms.ValidationError("Este usuario ya tiene un perfil de jugador en esta liga.")
+            
+        return username
+
+    def clean_apodo(self):
+        # Esta validación solo corre si estamos CREANDO un jugador
+        if not self.jugador:
+            apodo = self.cleaned_data.get('apodo')
+            if not apodo: # El campo es requerido si no hay jugador
+                raise forms.ValidationError("El apodo es requerido para crear un nuevo jugador.")
+            if Jugador.objects.filter(liga=self.liga, apodo=apodo).exists():
+                raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
+            return apodo
+    help_texts = {
+            'apodo': 'Ingrese un apodo único en la liga.'
+        }
+    error_messages = {
+            'apodo': {
+                'unique': "Ya existe este apodo en esta liga.",
+            },
+        }
+
 
 class LigaForm(forms.ModelForm):
     class Meta:
@@ -143,21 +199,21 @@ class LigaForm(forms.ModelForm):
 
         
 
-class MiJugadorForm(JugadorForm):
-    class Meta(JugadorForm.Meta):
-        # Por ejemplo, podrías agregar o modificar campos, si fuera necesario.
-        pass
+# class MiJugadorForm(JugadorForm):
+#     class Meta(JugadorForm.Meta):
+#         # Por ejemplo, podrías agregar o modificar campos, si fuera necesario.
+#         pass
 
 
-    def __init__(self, *args, **kwargs):
-        # Se espera recibir el usuario logueado para filtrar las ligas
-        user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        if user:
-            # Obtener los IDs de las ligas en las que el usuario ya tiene un jugador.
-            user_league_ids = Jugador.objects.filter(usuario=user).values_list('liga', flat=True)
-           # Filtrar el queryset del campo liga para excluir esas ligas.
-            self.fields['liga'].queryset = Liga.objects.exclude(id__in=user_league_ids)
+#     def __init__(self, *args, **kwargs):
+#         # Se espera recibir el usuario logueado para filtrar las ligas
+#         user = kwargs.pop('user', None)
+#         super().__init__(*args, **kwargs)
+#         if user:
+#             # Obtener los IDs de las ligas en las que el usuario ya tiene un jugador.
+#             user_league_ids = Jugador.objects.filter(usuario=user).values_list('liga', flat=True)
+#            # Filtrar el queryset del campo liga para excluir esas ligas.
+#             self.fields['liga'].queryset = Liga.objects.exclude(id__in=user_league_ids)
 
 
 
@@ -190,6 +246,7 @@ class PartidoForm(forms.ModelForm):
             # El queryset del campo 'jugadores' se limita a los jugadores de esa liga.
             self.fields['jugadores'].queryset = league.jugadores.all()
             
+
 class SimularPartidoForm(forms.Form):
     # Campo adicional para seleccionar los jugadores de la liga que participaron.
     jugadores = forms.ModelMultipleChoiceField(

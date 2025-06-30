@@ -5,12 +5,17 @@ import AppFulbo.forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login, authenticate, logout,get_user_model
 from django.contrib.auth.decorators import login_required
-from .forms import JugadorForm,LigaForm,MiJugadorForm,PartidoForm,SimularPartidoForm #,MensajeForm
+from .forms import JugadorForm,LigaForm,PartidoForm,SimularPartidoForm,AgregarOAsociarJugadorForm #,MensajeForm
 from .models import Liga, Jugador,PuntajePartido,Partido, Notificacion, SolicitudUnionLiga, PuntuacionPendiente#,Mensaje,Conversacion
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.utils import timezone
 import itertools
+from django.contrib.auth.models import User
+import itertools
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Liga, Jugador
 
 
 # Create your views here.
@@ -112,68 +117,68 @@ def mis_ligas(request):
 
 
 
-@login_required
-def buscar_ligas(request):
-    if request.method == 'POST':
-        liga_id = request.POST.get('liga_id')
-        #ligas = Liga.objects.all()
-        #liga_elegida = ligas.get(id=liga_id)
-        liga_elegida = get_object_or_404(Liga, id=liga_id)
-        #aca creo la solicitud
-        mi_jugador = liga_elegida.jugadores.filter(usuario=request.user).first()
-        if mi_jugador:
-            messages.success(request, f"Ya estas en esta liga.")
-        else:
+# @login_required
+# def buscar_ligas(request):
+#     if request.method == 'POST':
+#         liga_id = request.POST.get('liga_id')
+#         #ligas = Liga.objects.all()
+#         #liga_elegida = ligas.get(id=liga_id)
+#         liga_elegida = get_object_or_404(Liga, id=liga_id)
+#         #aca creo la solicitud
+#         mi_jugador = liga_elegida.jugadores.filter(usuario=request.user).first()
+#         if mi_jugador:
+#             messages.success(request, f"Ya estas en esta liga.")
+#         else:
             
-            if not SolicitudUnionLiga.objects.filter(usuario=request.user, liga=liga_elegida).exists():
-                SolicitudUnionLiga.objects.create(usuario=request.user, liga=liga_elegida)
-                messages.success(request, "Solicitud enviada.")
-            else:
-                messages.info(request, "Ya has solicitado unirte a esta liga.")
-        return redirect('ver_liga', liga_id=liga_elegida.id)
-    else:
-        query = request.GET.get('q', '')
-        if query:
-            ligas = Liga.objects.filter(nombre_liga__icontains=query)
-        else:
-            ligas = Liga.objects.all()
+#             if not SolicitudUnionLiga.objects.filter(usuario=request.user, liga=liga_elegida).exists():
+#                 SolicitudUnionLiga.objects.create(usuario=request.user, liga=liga_elegida)
+#                 messages.success(request, "Solicitud enviada.")
+#             else:
+#                 messages.info(request, "Ya has solicitado unirte a esta liga.")
+#         return redirect('ver_liga', liga_id=liga_elegida.id)
+#     else:
+#         query = request.GET.get('q', '')
+#         if query:
+#             ligas = Liga.objects.filter(nombre_liga__icontains=query)
+#         else:
+#             ligas = Liga.objects.all()
         
-        context = {
-            'ligas': ligas,
-            'query': query,
-        }
-        return render(request, 'AppFulbo/buscar_ligas.html', context)
+#         context = {
+#             'ligas': ligas,
+#             'query': query,
+#         }
+#         return render(request, 'AppFulbo/buscar_ligas.html', context)
             
     
-@login_required
-def elegir_o_crear_jugador(request, liga_id):
-    liga = get_object_or_404(Liga, id=liga_id)
+# @login_required
+# def elegir_o_crear_jugador(request, liga_id):
+#     liga = get_object_or_404(Liga, id=liga_id)
     
-    # Verificar si el usuario ya tiene un jugador en esta liga
-    if Jugador.objects.filter(usuario=request.user, liga=liga).exists():
-        messages.info(request, f"Ya te has unido a la liga {liga.nombre}.")
-        return redirect('AppFulbo/mis_ligas')
+#     # Verificar si el usuario ya tiene un jugador en esta liga
+#     if Jugador.objects.filter(usuario=request.user, liga=liga).exists():
+#         messages.info(request, f"Ya te has unido a la liga {liga.nombre}.")
+#         return redirect('AppFulbo/mis_ligas')
     
-    if request.method == "POST":
-        # Si el usuario eligió un jugador existente
-        if 'jugador_id' in request.POST:
-            jugador_id = request.POST.get('jugador_id')
-            jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga, usuario__isnull=True)
-            jugador.usuario = request.user
-            jugador.save()
-            messages.success(request, f"Te has unido a la liga {liga.nombre} asignándote el jugador {jugador.nombre}.")
-            return redirect('mis_ligas')
-        # Si el usuario decide crear un nuevo jugador
-        elif 'crear_nuevo' in request.POST:
-            return redirect('AppFulbo/crear_jugador', liga_id=liga.id)
+#     if request.method == "POST":
+#         # Si el usuario eligió un jugador existente
+#         if 'jugador_id' in request.POST:
+#             jugador_id = request.POST.get('jugador_id')
+#             jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga, usuario__isnull=True)
+#             jugador.usuario = request.user
+#             jugador.save()
+#             messages.success(request, f"Te has unido a la liga {liga.nombre} asignándote el jugador {jugador.nombre}.")
+#             return redirect('mis_ligas')
+#         # Si el usuario decide crear un nuevo jugador
+#         elif 'crear_nuevo' in request.POST:
+#             return redirect('AppFulbo/crear_jugador', liga_id=liga.id)
     
-    # Si es una solicitud GET, mostrar la lista de jugadores pre-creados disponibles
-    jugadores_disponibles = Jugador.objects.filter(liga=liga, usuario__isnull=True)
-    context = {
-        "liga": liga,
-        "jugadores_disponibles": jugadores_disponibles,
-    }
-    return render(request, "AppFulbo/elegir_jugador.html", context)
+#     # Si es una solicitud GET, mostrar la lista de jugadores pre-creados disponibles
+#     jugadores_disponibles = Jugador.objects.filter(liga=liga, usuario__isnull=True)
+#     context = {
+#         "liga": liga,
+#         "jugadores_disponibles": jugadores_disponibles,
+#     }
+#     return render(request, "AppFulbo/elegir_jugador.html", context)
 
 
 
@@ -230,8 +235,7 @@ def crear_liga(request):
 def ver_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     mi_jugador = None
-    solicitudes = liga.solicitudes_union.all()
-    partidos = liga.partidos.all()
+    partidos = liga.partidos.all().order_by('-fecha_partido')
 
     if request.user.is_authenticated:
         mi_jugador = liga.jugadores.filter(usuario=request.user).first()
@@ -242,9 +246,9 @@ def ver_liga(request, liga_id):
     context = {
         'liga': liga,
         'mi_jugador': mi_jugador,
-        'solicitudes': solicitudes,
         'partidos': partidos,
-        'puntuaciones_pendientes': puntuaciones_pendientes
+        'puntuaciones_pendientes': puntuaciones_pendientes,
+        'zero':0
     }
     return render(request, 'AppFulbo/ver_liga.html', context)
 
@@ -260,7 +264,10 @@ def editar_liga(request, liga_id):
     if request.method == "POST":
         action = request.POST.get('action')
         # Acciones posibles:
-        if action == "editar_liga":
+        if action == "asociar_jugador":
+            jugador_id = request.POST.get('jugador_id')
+            return redirect('agregar_jugador_a_liga', liga_id=liga.id,jugador_id=jugador_id)
+        elif action == "editar_liga":
             form = LigaForm(request.POST, instance=liga)
             if form.is_valid():
                 form.save()
@@ -377,6 +384,65 @@ def editar_liga(request, liga_id):
     }
     return render(request, 'AppFulbo/editar_liga.html', context)
 
+
+    
+# Vista para verificar si el usuario existe (para AJAX)
+
+# Vista para verificar si el usuario existe (cambiado para usar username)
+def verificar_usuario_ajax(request):
+    username = request.GET.get('username', None)
+    data = {'existe': False}
+    if username:
+        if User.objects.filter(username=username).exists():
+            data['existe'] = True
+    return JsonResponse(data)
+
+
+@login_required
+def agregar_o_asociar_jugador(request, liga_id, jugador_id=None):
+    liga = get_object_or_404(Liga, id=liga_id)
+    jugador = None
+    if jugador_id:
+        jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
+
+    # ---- Verificación de Permisos ----
+    # (Tu lógica de permisos aquí, si la tienes)
+
+    if request.method == 'POST':
+        form = AgregarOAsociarJugadorForm(request.POST, liga=liga, jugador=jugador)
+        if form.is_valid():
+            username = form.cleaned_data['username_usuario']
+            usuario_a_asociar = User.objects.get(username=username)
+
+            if jugador:  # --- Caso: ASOCIAR a jugador existente ---
+                jugador.usuario = usuario_a_asociar
+                jugador.save()
+                messages.success(request, f"¡El jugador '{jugador.apodo}' ha sido asociado al usuario '{usuario_a_asociar.username}'!")
+            
+            else:  # --- Caso: CREAR nuevo jugador ---
+                Jugador.objects.create(
+                    usuario=usuario_a_asociar,
+                    liga=liga,
+                    apodo=form.cleaned_data['apodo'],
+                    posicion=form.cleaned_data['posicion'],
+                    numero=form.cleaned_data['numero'],
+                    activo=True
+                )
+                messages.success(request, f"El jugador ha sido creado y asociado a '{usuario_a_asociar.username}'!")
+
+            return redirect('ver_liga', liga_id=liga_id) # Asegúrate que 'ver_liga' es el name de tu URL de detalle
+
+    else:
+        form = AgregarOAsociarJugadorForm(liga=liga, jugador=jugador)
+
+    context = {
+        'form': form,
+        'liga': liga,
+        'jugador': jugador
+    }
+    return render(request, 'AppFulbo/agregar_jugador_form.html', context)
+    
+
 # def mensaje_automatico_solicitud_liga(request, user, solicitud,mensaje):
 #     destinatario = solicitud.usuario
 #     conversacion = Conversacion.objects.filter(
@@ -396,64 +462,64 @@ def editar_liga(request, liga_id):
 #         contenido=mensaje
 #     )
 
-@login_required
-def asociar_jugador(request, solicitud_id):
-    solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id)
-    liga = solicitud.liga
+# @login_required
+# def asociar_jugador(request, solicitud_id):
+#     solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id)
+#     liga = solicitud.liga
 
-    if request.user in liga.presidentes.all():
-        jugadores = liga.jugadores.filter(usuario__isnull=True)
-        if request.method == "POST":
-            action = request.POST.get('action')
-            if action == "asociar_a_jugador":
-                jugador_id = request.POST.get('jugador_id')
-                jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
-                jugador.usuario = solicitud.usuario
-                jugador.save()
-                solicitud.delete()
-                mensaje = f"Te acepte en la liga {liga}."
-                mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
-                messages.success(request, "Has sido asociado a la liga y al jugador seleccionado.")
-                return redirect('ver_liga', liga_id=liga.id)
-            else:
-                messages.error(request, "Opción no válida.")
-                return redirect('asociar_jugador', solicitud_id=solicitud.id)
-        else:
+#     if request.user in liga.presidentes.all():
+#         jugadores = liga.jugadores.filter(usuario__isnull=True)
+#         if request.method == "POST":
+#             action = request.POST.get('action')
+#             if action == "asociar_a_jugador":
+#                 jugador_id = request.POST.get('jugador_id')
+#                 jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
+#                 jugador.usuario = solicitud.usuario
+#                 jugador.save()
+#                 solicitud.delete()
+#                 mensaje = f"Te acepte en la liga {liga}."
+#                 mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
+#                 messages.success(request, "Has sido asociado a la liga y al jugador seleccionado.")
+#                 return redirect('ver_liga', liga_id=liga.id)
+#             else:
+#                 messages.error(request, "Opción no válida.")
+#                 return redirect('asociar_jugador', solicitud_id=solicitud.id)
+#         else:
 
-            context = {
-                'solicitud': solicitud,
-                'liga': liga,
-                'jugadores': jugadores
-            }
-            return render(request, 'AppFulbo/agregar_a_liga.html', context)
+#             context = {
+#                 'solicitud': solicitud,
+#                 'liga': liga,
+#                 'jugadores': jugadores
+#             }
+#             return render(request, 'AppFulbo/agregar_a_liga.html', context)
     
 
 
-@login_required
-def gestionar_solicitudes(request, liga_id):
-    liga = get_object_or_404(Liga, id=liga_id)
-    if request.user in liga.presidentes.all():
-        if request.method == "POST":
-            action = request.POST.get('action')
-            solicitud_id = request.POST.get('solicitud_id')
-            solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id, liga=liga)
+# @login_required
+# def gestionar_solicitudes(request, liga_id):
+#     liga = get_object_or_404(Liga, id=liga_id)
+#     if request.user in liga.presidentes.all():
+#         if request.method == "POST":
+#             action = request.POST.get('action')
+#             solicitud_id = request.POST.get('solicitud_id')
+#             solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id, liga=liga)
             
-            if action == "aceptar":
-                return redirect('asociar_jugador', solicitud_id=solicitud.id)
+#             if action == "aceptar":
+#                 return redirect('asociar_jugador', solicitud_id=solicitud.id)
             
-            elif action == "rechazar":
-                mensaje = f"He rechazado tu solicitud a la la liga {liga}."
-                mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
-                solicitud.delete()  # Se rechaza la solicitud eliminándola
-                messages.success(request, "Solicitud rechazada.")
-            else:
-                messages.error(request, "Opción no válida.")
+#             elif action == "rechazar":
+#                 mensaje = f"He rechazado tu solicitud a la la liga {liga}."
+#                 mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
+#                 solicitud.delete()  # Se rechaza la solicitud eliminándola
+#                 messages.success(request, "Solicitud rechazada.")
+#             else:
+#                 messages.error(request, "Opción no válida.")
             
-            return redirect('gestionar_solicitudes', liga_id=liga.id)
+#             return redirect('gestionar_solicitudes', liga_id=liga.id)
         
-        else:
-            solicitudes = liga.solicitudes_union.all()
-            return render(request, 'AppFulbo/gestionar_solicitudes.html', {'solicitudes': solicitudes, 'liga': liga})
+#         else:
+#             solicitudes = liga.solicitudes_union.all()
+#             return render(request, 'AppFulbo/gestionar_solicitudes.html', {'solicitudes': solicitudes, 'liga': liga})
 
         
 @login_required
@@ -499,12 +565,7 @@ def editar_jugador(request, jugador_id):
 
 
 
-import itertools
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Liga, Jugador # Asegúrate de que tus modelos estén en este archivo o importalos correctamente
-# Asume que SimularPartidoForm ya está definido en forms.py y se importa aquí
-# from .forms import SimularPartidoForm
+
 
 @login_required
 def encontrar_equipos_mas_parejos(request, liga_id):

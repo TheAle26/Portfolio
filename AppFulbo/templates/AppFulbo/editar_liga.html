@@ -12,7 +12,7 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Editar Liga: <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td></h2>
-    
+    <td><a href="{% url 'ver_liga' liga.id %}"> <button type="submit" class="btn btn-primary">Volver</button></a></td>
     <!-- Formulario para editar datos de la liga (nombre, descripción) -->
     <form method="post">
         {% csrf_token %}
@@ -81,9 +81,9 @@
     const jugadores = [
         {% for jugador in jugadores %}
         {% if jugador.usuario %}
-        {% if jugador.usuario not in presidentes %}
+        
         { username: "{{ jugador.usuario.username }}", apodo: "{{ jugador.apodo }}" },
-        {% endif %}
+        
         {% endif %}
         {% endfor %}
     ];
@@ -125,39 +125,52 @@
     </h3>
     <div class="row">
         {% for jugador in jugadores %}
-        <div class="col-md-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ jugador.numero }} {{ jugador.apodo }}</h5>
-                    <p class="card-text">
-                        Posición: {{ jugador.get_posicion_display }}
-                    </p>
-                    <p class="card-text">
-                        Usuario: {{ jugador.usuario }}
-                    </p>
-                    <div class="btn-group">
-                        <!-- Botón editar jugador -->
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="edit_player">
-                            <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                            <button type="submit" class="btn btn-warning btn-sm">Editar</button>
-                        </form>
-                        <!-- Botón eliminar jugador -->
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            {% if jugador.usuario == request.user %}
-                            <input type="hidden" name="action" value="abandonar_liga">
-                            <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿¿Está seguro de salir de la liga?')">Abandonar Liga</button>
-                            {% else %}
-                            <input type="hidden" name="action" value="delete_player">
-                            <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿¿Está seguro de eliminar este jugadorliga?')">Eliminar</button>
-                            {% endif %}
-                        </form>
-                    </div>
-                </div>
+           <div class="card-body">
+            <h5 class="card-title">{{ jugador.numero }} {{ jugador.apodo }}</h5>
+            <p class="card-text">
+                Posición: {{ jugador.get_posicion_display }}
+            </p>
+            <p class="card-text">
+                {# Mostramos el nombre de usuario si existe, si no, un mensaje amigable #}
+                Usuario: 
+                {% if jugador.usuario %}
+                    {{ jugador.usuario.username }}
+                {% else %}
+                    <span class="badge bg-secondary">Ninguno</span>
+                {% endif %}
+            </p>
+            <div class="btn-group">
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_player">
+                    <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
+                    <button type="submit" class="btn btn-warning btn-sm">Editar</button>
+                </form>
+                
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    {% if jugador.usuario == request.user %}
+                        <input type="hidden" name="action" value="abandonar_liga">
+                        <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de salir de la liga?')">Abandonar Liga</button>
+                    {% else %}
+                        <input type="hidden" name="action" value="delete_player">
+                        <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar este jugador?')">Eliminar</button>
+                    {% endif %}
+                </form>
+
+                {# --- INICIO DEL BLOQUE CORREGIDO --- #}
+
+                {# Solo mostramos este botón si el jugador NO tiene un usuario asociado #}
+                {% if not jugador.usuario %}
+                    {# YA NO ES UN FORMULARIO, es un enlace <a> con estilo de botón #}
+                    <a href="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}" class="btn btn-info btn-sm">
+                        Asociar Usuario
+                    </a>
+                {% endif %}
+
+                {# --- FIN DEL BLOQUE CORREGIDO --- #}
             </div>
         </div>
         {% empty %}

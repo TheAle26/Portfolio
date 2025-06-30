@@ -7,8 +7,9 @@
     <p><strong>Fecha:</strong> {{ partido.fecha_partido|date:"d/m/Y" }}</p>
     <p><strong>Cancha:</strong> {{ partido.cancha }}</p>
     {% if puntuacion_pendiente %}
-    <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion_pendiente.id %}" class="btn btn-secondary">
-        Puntuación Pendiente
+    <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion_pendiente.id %}" class="btn btn-sm btn-outline-primary mb-2 justify-content-center">
+    <i class="fas fa-clipboard-list me-2"></i> {# Ícono de Font Awesome para lista/tarea #}
+    Puntuación Pendiente
     </a>
     {% endif %}
     <h3>Jugadores y Puntajes</h3>

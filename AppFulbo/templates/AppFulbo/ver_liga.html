@@ -2,99 +2,133 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1><strong> {{ liga }}:</strong></h1>
-    {%if liga.descripcion%}
-    <h3>{{ liga.descripcion }}</h3>
-    {%endif%}
-    <h5>Presidentes de la Liga</h5>
-<ul>
-    {% for presidente in liga.presidentes.all %}
-        {% if presidente == liga.super_presidente %}
-            <li style="color: gold;">{{ presidente.username }}</li>
-        {% else %}
-        <li>{{ presidente.username }}</li>
-        {% endif %}
-    {% endfor %}
 
-</ul>
-{% if mi_jugador.puntuacion_pendiente.all %}
-    <a href="{% url 'puntuar_jugadores_partido' partido.id %}" class="btn btn-secondary">Puntuación Pendiente</a>
-{% endif %}
-    <div class="row">
-        {% if mi_jugador %}
-        <div class="col-md-3 mb-3">
-            <div class="card" style="border: 3px solid gold;">
-              <div class="card-body">
-                <h5 class="card-title">
-                  {{ mi_jugador.apodo }}
-                  <span class="badge bg-warning text-dark ms-2">Puntaje: {{ mi_jugador.puntaje|floatformat:2 }}</span>
-                </h5>
-                <p class="card-text">
-                  Posición: {{ mi_jugador.get_posicion_display }}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-        {% else %}
-        <p>No tienes jugador asociado a esta liga.</p>
-        {% endif %}
-    </div>
-    {% if request.user in liga.presidentes.all %}
-        {% if solicitudes  %}
-            <a class="btn btn-success" href="{% url 'gestionar_solicitudes' liga.id %}">
-                <i class="fa-solid fa-user-cog"></i>Gestionar solicitudes de union
-            </a>
-        {% endif %}
-        <a class="btn btn-success" href="{% url 'editar_liga' liga.id %}">
-            <i class="fa-solid fa-pencil"></i>Editar Liga
-        </a>
-    {% endif %}
-    <a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn-magic">
-        ✨ Formar Equipos ✨
-    </a>
-    <!-- Sección de Jugadores de la Liga -->
-    <div class="row">
-        <!-- Columna para Jugadores -->
-        <div class="col-md-6">
-            <h3>Jugadores de la Liga</h3>
-            <br></br>
-            <div class="row">
-                {% for jugador in liga.jugadores.all %}
-                {% if jugador.activo %}
-
-                    <div class="col-md-6 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ jugador.numero }} {{ jugador.apodo }}
-                                   
-                                </h5>
-                                <p class="card-text">
-                                    Posición: {{ jugador.get_posicion_display }}
-                                </p>
-                                <p class="card-text">
-                                    
-                                    Puntaje: {{ jugador.puntaje|floatformat:2 }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-                {% empty %}
-                    <p>No hay jugadores asociados a esta liga.</p>
-                
+    <div class="row mb-4">
+        
+        <div class="col-lg-9 col-md-8">
+            <h1><strong>{{ liga }}:</strong></h1>
+            {% if liga.descripcion %}
+                <h3>{{ liga.descripcion }}</h3>
+            {% endif %}
+            <h5>Presidentes de la Liga</h5>
+            <ul class="list-unstyled">
+                {% for presidente in liga.presidentes.all %}
+                    {% if presidente == liga.super_presidente %}
+                        <li style="color: gold;">{{ presidente.username }}</li>
+                    {% else %}
+                        <li>{{ presidente.username }}</li>
+                    {% endif %}
                 {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-lg-3 col-md-4 mt-3 mt-md-0">
+            {% if mi_jugador %}
+                Mi Jugador
+                <div class="card" style="border: 3px solid gold;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ mi_jugador.apodo }}
+                            <span class="badge bg-warning text-dark ms-2">Puntaje: {{ mi_jugador.puntaje|floatformat:2 }}</span>
+                        </h5>
+                        <p class="card-text">
+                            Posición: {{ mi_jugador.get_posicion_display }}
+                        </p>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted">No tienes un perfil de jugador en esta liga.</p>
+            {% endif %}
+        </div>
+    </div>
+    <hr>
+
+
+    <div class="row mb-3">
+        <div class="col-12">
+            {# Bloque 3: Botones de Gestión #}
+            {% if request.user in liga.presidentes.all %}
+                <a class="btn btn-success me-2 mb-2" href="{% url 'editar_liga' liga.id %}">
+                    <i class="fa-solid fa-pencil"></i> Editar Liga
+                </a>
+            {% endif %}
+            <a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn-magic mb-2">
+                ✨ Formar Equipos ✨
+            </a>
+            
+            {# Agrego aquí el botón de puntuación pendiente que tenías suelto #}
+            {% if mi_jugador.puntuacion_pendiente.all %}
+                <a href="{% url 'puntuar_jugadores_partido' partido.id mi_jugador.puntuacion_pendiente.first.id %}" class="btn btn-secondary mb-2">Puntuación Pendiente</a>
+            {% endif %}
+        </div>
+    </div>
+    <hr>
+
+
+    <div class="row">
+        
+        <div class="col-lg-6 mb-4">
+            <h3 class="d-flex justify-content-between align-items-center">Jugadores de la Liga
+                <button class="btn btn-sm btn-outline-primary mb-2" id="toggleJugadoresBtn">
+                    Mostrar Jugadores
+                </button>
+            </h3>
+            
+            {% if user.is_authenticated and user == liga.super_presidente or user in liga.presidentes.all %}
+                <div class="my-2">
+                    <a href="{% url 'agregar_jugador_a_liga' liga.id %}" class="btn btn-success">
+                        <i class="fa-solid fa-user-plus"></i> Agregar Jugador y Usuario
+                    </a>
+                </div>
+            {% endif %}
+
+
+
+            <div id="jugadoresContainer" style="display: none;">
+                <input type="text" id="buscarJugadorInput" class="form-control mb-3" placeholder="Buscar por apodo o posición...">
+                <div class="row" id="listaJugadores">
+                    {% for jugador in liga.jugadores.all %}
+                        {% if jugador.activo %}
+                            <div class="col-md-6 jugador-card mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ jugador.numero }} {{ jugador.apodo }}</h5>
+                                        <p class="card-text">Posición: {{ jugador.get_posicion_display }}</p>
+                                        <p class="card-text">Puntaje: {{ jugador.puntaje|floatformat:2 }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <p>No hay jugadores activos asociados a esta liga.</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        
-        <!-- Columna para Partidos -->
-        <div class="col-md-6">
-            <h3>Partidos de la Liga</h3>
 
-            <br></br>
-            <div class="row">
+        <div class="col-lg-6 mb-4">
+            <h3 class="d-flex justify-content-between align-items-center">
+                Partidos de la Liga
+                <button class="btn btn-sm btn-outline-primary mb-2" id="togglePartidosBtn">Mostrar Partidos/Ocultar Partidos</button>
+            </h3>
+
+             {% if user.is_authenticated and user == liga.super_presidente or user in liga.presidentes.all %}
+                <div class="my-2">
+                    <a href="{% url 'crear_partido' liga.id %}" class="btn btn-success">
+                        <i class="fa-solid fa-user-plus"></i> Agregar Partido
+                    </a>
+                </div>
+            {% endif %}
+            {% if puntuaciones_pendientes %}
+                <div class="alert alert-info mt-3" role="alert">
+                    <h5 class="alert-heading">¡Tienes puntuaciones pendientes!</h5>
+                </div>
+            {% endif %}
+
+            <div class="row" id="contenedorPartidos">
+                <input id="buscarPartidoInput" type="text" class="form-control my-2" placeholder="Buscar por cancha o fecha...">
                 {% for partido in partidos %}
-                    <div class="col-md-12 mb-3">
+                    <div class="col-md-12 mb-3 partido-item">
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">
@@ -102,19 +136,17 @@
                                 </h5>
                                 {% for puntuacion in puntuaciones_pendientes %}
                                     {% if puntuacion.partido == partido and puntuacion.jugador == mi_jugador %}
-                                    <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}" class="btn btn-secondary">Puntuación Pendiente</a>
-                                    {% endif %}                                
+                                        <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}" class="btn btn-secondary btn-sm mt-2">Puntuación Pendiente</a>
+                                    {% endif %}
                                 {% endfor %}
-                                <p>
-                                    <strong>Jugadores:</strong>
+                                <p class="mt-2"><strong>Jugadores:</strong>
                                     {% for puntaje in partido.puntajes_partidos.all %}
-                                        <span class="badge bg">{{ puntaje.jugador.apodo }}</span>
+                                        <span class="badge bg-secondary me-1">{{ puntaje.jugador.apodo }}</span>
                                     {% empty %}
                                         <small>No hay jugadores registrados.</small>
                                     {% endfor %}
                                 </p>
-                                <!-- Botón para ver los detalles del partido -->
-                                <a href="{% url 'ver_partido' partido.id %}" class="btn btn-primary">Ver Detalles</a>
+                                <a href="{% url 'ver_partido' partido.id %}" class="btn btn-sm btn-primary">Ver Detalles</a>
                             </div>
                         </div>
                     </div>
@@ -122,15 +154,68 @@
                     <p>No hay partidos registrados en esta liga.</p>
                 {% endfor %}
             </div>
-            
         </div>
     </div>
+
 </div>
 
+{# Tus scripts JavaScript pueden quedar exactamente como están #}
 
-{% for puntuacion in puntuaciones_pendientes %}
-<p>AAA {{puntuacion}}.</p>
-{% endfor %}
 
+<script>
+// Scripts JavaScript existentes (sin cambios funcionales significativos)
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('toggleJugadoresBtn');
+    const container = document.getElementById('jugadoresContainer');
+    const buscador = document.getElementById('buscarJugadorInput');
+    const jugadores = document.querySelectorAll('.jugador-card');
+
+    toggleBtn.addEventListener('click', () => {
+        const visible = container.style.display === 'block';
+        container.style.display = visible ? 'none' : 'block';
+        toggleBtn.textContent = visible ? 'Mostrar Jugadores' : 'Ocultar Jugadores';
+    });
+
+    buscador.addEventListener('input', () => {
+        const filtro = buscador.value.toLowerCase();
+        jugadores.forEach(card => {
+            const contenido = card.innerText.toLowerCase();
+            card.style.display = contenido.includes(filtro) ? '' : 'none';
+        });
+    });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('buscarPartidoInput');
+    const contenedor = document.getElementById('contenedorPartidos');
+    const partidos = contenedor.querySelectorAll('.partido-item');
+    const toggleBtn = document.getElementById('togglePartidosBtn');
+
+    // Mostrar/Ocultar sección
+    toggleBtn.addEventListener('click', function () {
+        if (contenedor.style.display === 'none') {
+            contenedor.style.display = 'flex'; // Usar 'flex' si quieres que los items se comporten como flex
+            toggleBtn.textContent = 'Ocultar';
+        } else {
+            contenedor.style.display = 'none';
+            toggleBtn.textContent = 'Mostrar';
+        }
+    });
+
+    // Filtro por texto (cancha o fecha)
+    input.addEventListener('keyup', function () {
+        const filtro = input.value.toLowerCase();
+        partidos.forEach(p => {
+            const texto = p.textContent.toLowerCase();
+            p.style.display = texto.includes(filtro) ? '' : 'none';
+        });
+    });
+
+    // Oculta por defecto si querés
+    contenedor.style.display = 'none';
+    toggleBtn.textContent = 'Mostrar';
+});
+</script>
 
 {% endblock %}

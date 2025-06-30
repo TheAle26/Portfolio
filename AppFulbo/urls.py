@@ -10,7 +10,7 @@ urlpatterns = [
     path('edit_Profile/', views.edit_profile, name='edit_Profile'),
     path('mi_perfil/', views.mi_perfil, name='mi_perfil'),
     
-    path('ligas/buscar_ligas/', views.buscar_ligas, name='buscar_ligas'),
+    # path('ligas/buscar_ligas/', views.buscar_ligas, name='buscar_ligas'),
     #path('ligas/unirse/<int:liga_id>/', views.solicitar_unirse, name='solicitar_unirse'),
     path('mis_ligas/',views.mis_ligas, name='mis_ligas'),
     path('jugador/crear/<int:liga_id>/', views.crear_jugador, name='crear_jugador'),
@@ -19,14 +19,21 @@ urlpatterns = [
     path('ligas/crear/', views.crear_liga, name='crear_liga'),
     path('ligas/<int:liga_id>/', views.ver_liga, name='ver_liga'),
     path('ligas/<int:liga_id>/editar_liga', views.editar_liga, name='editar_liga'),
-    path('solicitudes/<int:solicitud_id>/asociar/', views.asociar_jugador, name='asociar_jugador'),
+    # path('solicitudes/<int:solicitud_id>/asociar/', views.asociar_jugador, name='asociar_jugador'),
 
     path('mis_partidos/', views.partidos_jugados, name='mis_partidos'),
     path('ligas/<int:liga_id>/crear_partido/', views.crear_partido, name='crear_partido'),
-    path('ligas/<int:liga_id>/gestionar_solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
+    # path('ligas/<int:liga_id>/gestionar_solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
     path('partido/<int:partido_id>/', views.ver_partido, name='ver_partido'),
     path('puntuar_jugadores/<int:partido_id>/<int:puntuacion_pendiente_id>/', views.puntuar_jugadores_partido, name='puntuar_jugadores_partido'),
     path('ligas/<int:liga_id>/crear_equipos/', views.encontrar_equipos_mas_parejos, name='encontrar_equipos_mas_parejos'),
+    path('ajax/verificar-usuario/', views.verificar_usuario_ajax, name='verificar_usuario_ajax'),
+ # RUTA PARA CREAR un nuevo jugador en una liga
+    path('liga/<int:liga_id>/agregar_jugador/', views.agregar_o_asociar_jugador, name='agregar_jugador_a_liga'),
+    
+    # RUTA PARA ASOCIAR un usuario a un jugador ya existente en una liga
+    path('liga/<int:liga_id>/asociar_jugador/<int:jugador_id>/', views.agregar_o_asociar_jugador, name='asociar_usuario_a_jugador'),
+    
 
 
     #path('mensajes/inbox/', views.inbox, name='inbox'),

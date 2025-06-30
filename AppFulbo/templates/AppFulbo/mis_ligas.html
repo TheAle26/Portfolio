@@ -1,9 +1,75 @@
 {% extends 'AppFulbo/base.html' %}
 
 {% block content %}
+
 <div class="container mt-4">
     <h2>Mis Ligas</h2>
-    <a class="btn btn-primary" href="{% url 'buscar_ligas' %}">Unirse a ligas</a>
+
+    <a class="btn btn-primary ml-2" href="{% url 'crear_liga' %}">Crear Liga</a>
+
+    <div class="mt-4 mb-3">
+        <input type="text" id="buscarLigaInput" class="form-control" placeholder="Buscar liga por nombre...">
+    </div>
+
+    <table class="table table-striped" id="tablaLigas">
+        <thead>
+            <tr>
+                <th>Liga</th>
+                <th>Mi Jugador</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for liga in ligas %}
+            <tr>
+                <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td>
+                <td>
+                    {{ liga.mi_jugador.apodo }}
+                    {% if liga.mi_jugador.puntaje %}
+                        - Puntaje: {{ liga.mi_jugador.puntaje }}
+                    {% else %}
+                        - Puntaje: N/A
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No estás en ninguna liga.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('buscarLigaInput');
+    const tabla = document.getElementById('tablaLigas');
+    const filas = tabla.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    input.addEventListener('keyup', function() {
+        const filtro = input.value.toLowerCase();
+        Array.from(filas).forEach(fila => {
+            const nombreLiga = fila.cells[0]?.innerText.toLowerCase();
+            if (!nombreLiga || nombreLiga.includes(filtro)) {
+                fila.style.display = '';
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
+
+
+
+{% comment %} {% extends 'AppFulbo/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mis Ligas</h2>
+   
     <a class="btn btn-primary ml-2" href="{% url 'crear_liga' %}">Crear Liga</a>
 
     <br></br>
@@ -36,4 +102,4 @@
     </table>
 </div>
 {% endblock %}
-
+ {% endcomment %}

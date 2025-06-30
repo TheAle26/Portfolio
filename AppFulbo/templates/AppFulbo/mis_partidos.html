@@ -3,14 +3,19 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Mis Partidos Jugados</h2>
-    <table class="table table-striped">
+
+    <!-- 🔍 Barra de búsqueda -->
+    <div class="mb-3">
+        <input type="text" id="buscarPartidoInput" class="form-control" placeholder="Buscar por fecha, cancha o liga...">
+    </div>
+
+    <table class="table table-striped" id="tablaPartidos">
         <thead>
             <tr>
                 <th>Fecha</th>
                 <th>Cancha</th>
                 <th>Liga</th>
                 <th>Mi Puntaje</th>
-                {% comment %} <th>Jugadores</th> {% endcomment %}
             </tr>
         </thead>
         <tbody>
@@ -20,13 +25,6 @@
                 <td>{{ puntaje.partido.cancha }}</td>
                 <td>{{ puntaje.partido.liga }}</td>
                 <td>{{ puntaje.puntaje }}</td>
-                <td>
-                    {% comment %} <ul class="list-unstyled mb-0">
-                        {% for pp in puntaje.partido.puntajes_partidos.all %}
-                        <li>{{ pp.jugador.apodo }}</li>
-                        {% endfor %}
-                    </ul> {% endcomment %}
-                </td>
             </tr>
             {% empty %}
             <tr>
@@ -36,4 +34,62 @@
         </tbody>
     </table>
 </div>
+
+<!--Filtro en vivo -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('buscarPartidoInput');
+    const tabla = document.getElementById('tablaPartidos');
+    const filas = tabla.querySelectorAll('tbody tr');
+    let debounceTimer;
+
+    input.addEventListener('keyup', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const filtro = input.value.toLowerCase();
+            filas.forEach(fila => {
+                const textoFila = fila.innerText.toLowerCase();
+                fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+            });
+        }, 300); // espera 300 ms entre teclas para no sobrecargar
+    });
+});
+</script>
 {% endblock %}
+
+
+
+
+{% comment %} {% extends 'AppFulbo/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mis Partidos Jugados</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Cancha</th>
+                <th>Liga</th>
+                <th>Mi Puntaje</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for puntaje in puntajes %}
+            <tr>
+                <td>{{ puntaje.partido.fecha_partido }}</td>
+                <td>{{ puntaje.partido.cancha }}</td>
+                <td>{{ puntaje.partido.liga }}</td>
+                <td>{{ puntaje.puntaje }}</td>
+
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No has jugado ningún partido.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} {% endcomment %}

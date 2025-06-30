@@ -1,0 +1,94 @@
+{% extends 'AppFulbo/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    {% if jugador %}
+        <h2>Asociar Usuario al Jugador: {{ jugador.apodo }}</h2>
+        <p>Introduce el nombre de usuario de la plataforma para vincularlo a este perfil de jugador en la liga <strong>{{ liga.nombre_liga }}</strong>.</p>
+    {% else %}
+        <h2>Agregar Nuevo Jugador a la Liga: {{ liga.nombre_liga }}</h2>
+        <p>Completa el formulario para crear un nuevo perfil de jugador y asociarlo a una cuenta de usuario.</p>
+    {% endif %}
+
+    <hr>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            {{ form.username_usuario.label_tag }}
+            {{ form.username_usuario }}
+            <div id="user-check-result" class="form-text mt-1"></div>
+            {% if form.username_usuario.errors %}
+                <div class="alert alert-danger mt-2">
+                    {{ form.username_usuario.errors.as_text }}
+                </div>
+            {% endif %}
+            {% if form.non_field_errors %}
+                 <div class="alert alert-danger mt-2">
+                    {{ form.non_field_errors.as_text }}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if not jugador %}
+            <h4 class="mt-4">Datos del Perfil del Jugador</h4>
+            
+            <div class="mb-3">
+                {{ form.apodo.label_tag }}
+                {{ form.apodo }}
+                {% if form.apodo.errors %}
+                    <div class="alert alert-danger mt-2">
+                        {{ form.apodo.errors.as_text }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.posicion.label_tag }}
+                    {{ form.posicion }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.numero.label_tag }}
+                    {{ form.numero }}
+                </div>
+            </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">
+            {% if jugador %}Confirmar y Asociar Usuario{% else %}Confirmar y Agregar Jugador{% endif %}
+        </button>
+        <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary">Cancelar</a> </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userInput = document.getElementById('id_username_usuario');
+    const userCheckResult = document.getElementById('user-check-result');
+    let debounceTimer;
+
+    userInput.addEventListener('keyup', function() {
+        clearTimeout(debounceTimer);
+        const username = userInput.value;
+
+        debounceTimer = setTimeout(() => {
+            if (username.length > 2) {
+                fetch(`{% url 'verificar_usuario_ajax' %}?username=${username}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.existe) {
+                            userCheckResult.innerHTML = `<span class="text-success fw-bold">✓ Usuario encontrado</span>`;
+                        } else {
+                            userCheckResult.innerHTML = `<span class="text-danger fw-bold">✗ No se encuentra un usuario con ese nombre.</span>`;
+                        }
+                    });
+            } else {
+                userCheckResult.innerHTML = '';
+            }
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

@@ -16,24 +16,26 @@
 </head>
 <body>
     <!-- Barra de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{% url 'inicio' %}">FulboApp</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'buscar_ligas' %}">Buscar Ligas</a>
-                    </li>
-                    <a class="nav-link" href="{% url 'mis_ligas' %}">Mis Ligas</a>
-                </li>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'inicio' %}">FulboApp</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNavContent">
+        <ul class="navbar-nav w-100 justify-content-evenly">
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'mis_partidos' %}">Mis Partidos</a>
-                </li>
-                <!-- Agrega otros enlaces que necesites -->
-            </ul>
-            <ul class="navbar-nav">
-                {% if user.is_authenticated %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'mis_ligas' %}">Mis Ligas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'mis_partidos' %}">Mis Partidos</a>
+            </li>
+            
+            <li class="nav-item d-none d-lg-block"><span class="nav-link">|</span></li>
+
+            {% if user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a id="notificationDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-bell"></i>
@@ -45,7 +47,6 @@
                         {% with notifs=request.user.notificaciones.all|dictsortreversed:"fecha_creacion" %}
                             {% if notifs %}
                                 {% for notificacion in notifs %}
-                                    
                                     <li>
                                         <a class="dropdown-item" href="{{ notificacion.url|default:'#' }}">
                                             {% if not notificacion.leido %}
@@ -54,7 +55,6 @@
                                             {% else %}
                                             <small class="text-muted">{{ notificacion.mensaje }}</small>
                                             {% endif %}
-                                            
                                             <br>
                                             <small class="text-muted">{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}</small>
                                         </a>
@@ -66,11 +66,8 @@
                         {% endwith %}
                     </ul>
                 </li>
-                  
-                {% comment %} <li class="nav-item mr-3">
-                    <a class="nav-link" href="{% url 'inbox' %}"><i class="fa-solid fa-envelope"></i> </a>
-                </li> {% endcomment %}
-                <li class="nav-item mr-3">
+                
+                <li class="nav-item">
                     <a class="nav-link" href="{% url 'mi_perfil' %}">Hola, {{ user.username }}</a>
                 </li>
                 <li class="nav-item">
@@ -79,14 +76,14 @@
                         <button type="submit" class="btn btn-logout">Cerrar sesión</button>
                     </form>
                 </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+            {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
     <!-- Bloque de mensajes -->
     <div class="container mt-2">
         {% if messages %}

@@ -1,15 +1,49 @@
 {% extends 'AppFulbo/base.html' %}
+{% load static %}
 
 {% block content %}
-  <!-- Información de la vista -->
-  <h1>Formulario - Editar Perfil</h1>
-  <h2>De {{ user.username }}</h2>
+<div class="container mt-4 contenedor-blanco p-4 rounded shadow">
+    <h2>Editar Perfil</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        
+        <div class="mb-3">
+            {{ form.first_name.label_tag }} {{ form.first_name }}
+        </div>
+        <div class="mb-3">
+            {{ form.last_name.label_tag }} {{ form.last_name }}
+        </div>
+        <div class="mb-3">
+            {{ form.email.label_tag }} {{ form.email }}
+        </div>
+        <div class="mb-3">
+            {{ form.fecha_nacimiento.label_tag }} {{ form.fecha_nacimiento }}
+        </div>
+        {% if user.profile.foto_perfil %}
+    <div class="mb-3">
+              <label>Foto actual:</label><br>
+              <img src="{{ user.profile.foto_perfil.url }}" class="img-thumbnail" style="max-width: 150px;"><br>
+              {{ form.eliminar_foto }} {{ form.eliminar_foto.label_tag }}
+          </div>
+          {% endif %}
 
-  <form action="" method="POST">
-      {% csrf_token %}
-      <table>
-          {{ form.as_table }}
-      </table>
-      <input type="submit" value="Enviar">
-  </form>  
+        <div class="mb-3">
+            {{ form.foto_perfil.label_tag }} {{ form.foto_perfil }}
+        </div>
+
+        
+        <hr>
+        <h4>Cambiar Contraseña (opcional)</h4>
+        <div class="mb-3">
+            {{ form.password1.label_tag }} {{ form.password1 }}
+        </div>
+        <div class="mb-3">
+            {{ form.password2.label_tag }} {{ form.password2 }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        <a href="{% url 'inicio' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
 {% endblock %}

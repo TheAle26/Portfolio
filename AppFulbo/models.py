@@ -3,6 +3,36 @@ from django.contrib.auth.models import User  # Modelo de usuario predeterminado 
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class Profile(models.Model):
+    # La relación uno-a-uno. Cada usuario tiene un solo perfil.
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    
+    # El campo para la foto.
+    # upload_to='fotos_perfil/': Las fotos se guardarán en la carpeta 'media/fotos_perfil/'
+    # default='default.jpg': Si no se sube foto, se usará esta imagen.
+    foto_perfil = models.ImageField(upload_to='fotos_perfil/', null=True, blank=True, default='fotos_perfil/default.jpg')
+    
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f'Perfil de {self.user.username}'
+
+# --- Señales para crear el perfil automáticamente ---
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Crea un perfil automáticamente cada vez que se crea un nuevo usuario."""
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Guarda el perfil automáticamente cada vez que se guarda el objeto User."""
+    instance.profile.save()
+
 NUMERO_CHOICES = [(i, str(i)) for i in range(1, 100)]
     
 class Liga(models.Model):
@@ -28,7 +58,7 @@ class Jugador(models.Model):
         ('4', 'Delantero'),
     ]
     usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE,related_name="jugadores")
-    apodo = models.CharField(max_length=15)
+    apodo = models.CharField(max_length=10)
     posicion = models.CharField(max_length=1, choices=OPCIONES, null=True, blank=True)
     liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name="jugadores")
     numero = models.IntegerField(

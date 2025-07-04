@@ -16,15 +16,26 @@
                 <th>Cancha</th>
                 <th>Liga</th>
                 <th>Mi Puntaje</th>
+                <th>Ir a Detalle</th>
             </tr>
         </thead>
         <tbody>
             {% for puntaje in puntajes %}
             <tr>
-                <td>{{ puntaje.partido.fecha_partido }}</td>
+                <td>{{ puntaje.partido.fecha_partido|date:"d/m/y" }}</td>
                 <td>{{ puntaje.partido.cancha }}</td>
-                <td>{{ puntaje.partido.liga }}</td>
+                <td>
+                    <a href="{% url 'ver_liga' puntaje.partido.liga.id %}" class="text-dark text-decoration-none">
+                        {{ puntaje.partido.liga }}
+                    </a>
+                </td>
                 <td>{{ puntaje.puntaje }}</td>
+                <td>
+                    <a href="{% url 'ver_partido' puntaje.partido.id %}" class="text-dark text-decoration-none">
+                        {{ puntaje.puntaje }}
+                    </a>
+                </td>
+
             </tr>
             {% empty %}
             <tr>

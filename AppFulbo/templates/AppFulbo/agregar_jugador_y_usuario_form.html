@@ -1,0 +1,85 @@
+{% extends 'AppFulbo/form_base.html' %}
+{% load crispy_forms_tags %}
+
+{% block card_header_bg %}primary{% endblock %}
+{% block form_title %}{{ titulo }}{% endblock %}
+
+{% block form_content %}
+    <form method="post" action="{% url 'agregar_jugador_y_usuario' liga.id %}">
+        {% csrf_token %}
+        
+
+        <div class="mb-3">
+            {{ form.username_usuario.label_tag }}
+            {{ form.username_usuario }}
+            <div id="username-feedback" class="mt-1"></div> 
+            {% if form.username_usuario.help_text %}
+                <div class="form-text text-muted">{{ form.username_usuario.help_text|safe }}</div>
+            {% endif %}
+            {% if form.username_usuario.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.username_usuario.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# campos se pueden renderizar con crispy #}
+        {{ form.apodo|crispy }}
+        {{ form.posicion|crispy }}
+        {{ form.numero|crispy }}
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-success d-inline-flex align-items-center">
+                <i class="fas fa-plus-circle me-2"></i> Crear y Asociar Jugador
+            </button>
+            <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+            </a>
+        </div>
+    </form>
+{% endblock form_content %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameInput = document.getElementById('id_username_usuario');
+        const feedbackDiv = document.getElementById('username-feedback');
+        let timeout = null;
+
+        if (usernameInput && feedbackDiv) {
+            usernameInput.addEventListener('keyup', function() {
+                clearTimeout(timeout); // Limpia el timeout anterior para evitar múltiples llamadas
+                const username = this.value;
+
+                if (username.length > 2) { // Empieza a buscar después de 2 caracteres
+                    timeout = setTimeout(function() {
+                        fetch(`/verificar_usuario/?username=${encodeURIComponent(username)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.existe) {
+                                    feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> El usuario ya existe.</span>';
+                                    usernameInput.classList.remove('is-valid');
+                                    usernameInput.classList.add('is-invalid');
+                                } else {
+                                    feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Usuario disponible.</span>';
+                                    usernameInput.classList.remove('is-invalid');
+                                    usernameInput.classList.add('is-valid');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error en la petición AJAX:', error);
+                                feedbackDiv.innerHTML = '<span class="text-warning">Error al verificar usuario.</span>';
+                                usernameInput.classList.remove('is-valid', 'is-invalid');
+                            });
+                    }, 500); // Espera 500ms después de la última tecla
+                } else {
+                    feedbackDiv.innerHTML = ''; // Limpia el mensaje si el nombre de usuario es muy corto
+                    usernameInput.classList.remove('is-valid', 'is-invalid');
+                }
+            });
+        }
+    });
+</script>
+{% endblock extra_js %}

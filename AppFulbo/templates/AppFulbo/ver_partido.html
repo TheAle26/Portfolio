@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Detalles del Partido</h2>
-    <p><strong>Liga:</strong> {{ partido.liga.nombre_liga }}</p>
+    <p><strong>Liga:</strong> <a href="{% url 'ver_liga' partido.liga.id %}">{{ partido.liga.nombre_liga }}</a></p>
     <p><strong>Fecha:</strong> {{ partido.fecha_partido|date:"d/m/Y" }}</p>
     <p><strong>Cancha:</strong> {{ partido.cancha }}</p>
     {% if puntuacion_pendiente %}

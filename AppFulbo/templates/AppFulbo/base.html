@@ -1,90 +1,113 @@
-
 {% load static %}
 <html lang="es">
 <head>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <meta charset="UTF-8">
     <title>Mi Proyecto Fulbo</title>
-    <!-- Agrega tu CSS o frameworks (por ejemplo, Bootstrap) -->
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" 
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Bootstrap JS (con Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+
+    <style>
+        .contenedor-blanco {
+            background-color: rgba(255, 255, 255, 0.85); /* Blanco con 85% de opacidad */
+            padding: 1.5rem; /* Usar p-4 */
+            border-radius: 0.25rem; /* Usar rounded */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Usar shadow */
+            
+            /* NUEVO: Las propiedades de ancho y margen se aplican con media query */
+            /* Por defecto, en móvil, será 100% de ancho del contenedor padre */
+            width: 100%; /* Asegura que ocupe todo el ancho disponible */
+            margin: 0 auto; /* Elimina el margen en móvil si está en un container */
+        }
+
+        /* Aplica max-width y margen solo en pantallas más grandes que 768px (md de Bootstrap) */
+        @media (min-width: 768px) {
+            .contenedor-blanco {
+                max-width: 1000px; /* Ancho máximo en escritorio */
+                margin: 20px auto; /* Centrado con margen en escritorio */
+            }
+        }
+
+        body {
+            background-image: url("{% static 'AppFulbo/assets/img/fondo.jpg' %}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
 </head>
 <body>
-    <!-- Barra de navegación -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="{% url 'inicio' %}">FulboApp</a>
-    
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    
-    <div class="collapse navbar-collapse" id="navbarNavContent">
-        <ul class="navbar-nav w-100 justify-content-evenly">
-
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'mis_ligas' %}">Mis Ligas</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'mis_partidos' %}">Mis Partidos</a>
-            </li>
-            
-            <li class="nav-item d-none d-lg-block"><span class="nav-link">|</span></li>
-
-            {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a id="notificationDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fa-solid fa-bell"></i>
-                        {% if notificaciones_no_leidas > 0 %}
-                            <span class="badge bg-danger">{{ notificaciones_no_leidas }}</span>
-                        {% endif %}
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 300px;">
-                        {% with notifs=request.user.notificaciones.all|dictsortreversed:"fecha_creacion" %}
-                            {% if notifs %}
-                                {% for notificacion in notifs %}
-                                    <li>
-                                        <a class="dropdown-item" href="{{ notificacion.url|default:'#' }}">
-                                            {% if not notificacion.leido %}
-                                            <i class="fa-solid fa-circle" style="color: blue; font-size: 0.8rem;"></i>
-                                            {{ notificacion.mensaje }}
-                                            {% else %}
-                                            <small class="text-muted">{{ notificacion.mensaje }}</small>
-                                            {% endif %}
-                                            <br>
-                                            <small class="text-muted">{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}</small>
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            {% else %}
-                                <li><span class="dropdown-item-text">No hay notificaciones.</span></li>
-                            {% endif %}
-                        {% endwith %}
-                    </ul>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{% url 'inicio' %}">FulboApp</a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNavContent">
+            <ul class="navbar-nav w-100 justify-content-evenly">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mis_ligas' %}">Mis Ligas</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'mis_partidos' %}">Mis Partidos</a>
                 </li>
                 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'mi_perfil' %}">Hola, {{ user.username }}</a>
-                </li>
-                <li class="nav-item">
-                    <form action="{% url 'logout' %}" method="post" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-logout">Cerrar sesión</button>
-                    </form>
-                </li>
-            {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a>
-                </li>
-            {% endif %}
-        </ul>
-    </div>
-</nav>
-    <!-- Bloque de mensajes -->
+                <li class="nav-item d-none d-lg-block"><span class="nav-link">|</span></li>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a id="notificationDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-bell"></i>
+                            {% if notificaciones_no_leidas > 0 %}
+                                <span class="badge bg-danger">{{ notificaciones_no_leidas }}</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 300px;">
+                            {% with notifs=request.user.notificaciones.all|dictsortreversed:"fecha_creacion" %}
+                                {% if notifs %}
+                                    {% for notificacion in notifs %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ notificacion.url|default:'#' }}">
+                                                {% if not notificacion.leido %}
+                                                <i class="fa-solid fa-circle" style="color: blue; font-size: 0.8rem;"></i>
+                                                {{ notificacion.mensaje }}
+                                                {% else %}
+                                                <small class="text-muted">{{ notificacion.mensaje }}</small>
+                                                {% endif %}
+                                                <br>
+                                                <small class="text-muted">{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li><span class="dropdown-item-text">No hay notificaciones.</span></li>
+                                {% endif %}
+                            {% endwith %}
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'mi_perfil' %}">Hola, {{ user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <form action="{% url 'logout' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-logout">Cerrar sesión</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
     <div class="container mt-2">
         {% if messages %}
             {% for message in messages %}
@@ -94,34 +117,45 @@
             {% endfor %}
         {% endif %}
     </div>
-    <!-- Contenido principal -->
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
+    {# Volvemos a tu estructura original, pero quitamos el `container` exterior #}
+    {# y dejamos que tu CSS y Bootstrap (el que ya tienes) hagan el trabajo #}
+    {# Aquí ya no necesitamos el container-fluid, row, col-12, col-md-8 #}
+    {# porque el CSS de .contenedor-blanco y sus media queries lo manejarán. #}
+    <div class="mt-4"> 
+        <div class="contenedor-blanco p-4 rounded shadow">
+            {% block content %}{% endblock %}
+        </div>
     </div>
-</body>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function(){
-        // Al hacer clic en el dropdown de notificaciones se marcan todas como leídas
-        $("#notificationDropdown").on("click", function(){
-            $.ajax({
-                url: "{% url 'marcar_todas_notificaciones_ajax' %}",
-                type: "POST",
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    if(response.success){
-                        // Opcional: remueve el badge o actualiza el contador
-                        $("#notificationDropdown .badge").remove();
+    
+    {# El script de Bootstrap 5.2.0 JS ya lo tienes bien, solo lo reubicamos al final del body #}
+    {# para mejor rendimiento. #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
+
+    {# Mantener tu script de jQuery y personalizado #}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#notificationDropdown").on("click", function(){
+                $.ajax({
+                    url: "{% url 'marcar_todas_notificaciones_ajax' %}",
+                    type: "POST",
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if(response.success){
+                            $("#notificationDropdown .badge").remove();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error al marcar notificaciones como leídas:", error);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error al marcar notificaciones como leídas:", error);
-                }
+                });
             });
         });
-    });
-</script>
-
+    </script>
+    {# Este bloque es para scripts adicionales de las plantillas hijas #}
+    {% block extra_js %} 
+    {% endblock extra_js %}
+</body>
 </html>

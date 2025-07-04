@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseBadRequest,HttpResponseForbidden,JsonResponse
 import datetime
-import AppFulbo.forms 
+import AppFulbo.forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login, authenticate, logout,get_user_model
 from django.contrib.auth.decorators import login_required
-from .forms import JugadorForm,LigaForm,PartidoForm,SimularPartidoForm,AgregarOAsociarJugadorForm #,MensajeForm
+from .forms import JugadorForm,LigaForm,PartidoForm,SimularPartidoForm,CrearYAsociarJugadorForm,AsociarUsuarioForm, JugadorForm  #,MensajeForm
 from .models import Liga, Jugador,PuntajePartido,Partido, Notificacion, SolicitudUnionLiga, PuntuacionPendiente#,Mensaje,Conversacion
 from django.contrib import messages
 from django.db.models import Sum, Q
@@ -13,33 +13,41 @@ from django.utils import timezone
 import itertools
 from django.contrib.auth.models import User
 import itertools
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from .models import Liga, Jugador
 
-
-# Create your views here.
 def inicio(request):
     return render(request,"AppFulbo/inicio.html") #como tercer argumento le tengo que pasar en forma de diccionario la info
 
 
-#login y logout
 def register(request):
     if request.method == 'POST':
-        formulario = AppFulbo.forms.UserRegisterForm(request.POST)
+        # 1. Usamos el formulario que acepta tanto datos como archivos (request.FILES)
+        form = AppFulbo.forms.UserRegisterForm(request.POST, request.FILES)
 
-        if formulario.is_valid():
-            user = formulario.save()
-            authenticated_user = authenticate(username=user.username, password=request.POST['password1'],)
+        if form.is_valid():
+            # 2. Guardamos el usuario. El perfil se crea automáticamente gracias a las señales.
+            user = form.save()
+
+            # 3. Guardamos los datos extra (foto y fecha) en el modelo Profile.
+            user.profile.fecha_nacimiento = form.cleaned_data.get('fecha_nacimiento')
+            if 'foto_perfil' in request.FILES:
+                user.profile.foto_perfil = request.FILES['foto_perfil']
+            user.profile.save()
+
+            # 4. AÑADIMOS TU LÓGICA DE AUTO-LOGIN
+            # Usamos la contraseña limpia del formulario para autenticar
+            password = form.cleaned_data.get('password2')
+            authenticated_user = authenticate(username=user.username, password=password)
 
             if authenticated_user is not None:
                 login(request, authenticated_user)
-                return redirect('inicio')  # Redirect to the appropriate URL after registration
+                messages.success(request, f'¡Bienvenido, {user.username}! Tu cuenta ha sido creada.')
+                # 5. Redirigimos a 'inicio', como querías.
+                return redirect('inicio')
     else:
-        formulario = AppFulbo.forms.UserRegisterForm()
+        form = AppFulbo.forms.UserRegisterForm()
 
-    return render(request, "registro/register.html", {"formulario": formulario})
-
+    return render(request, "registro/register.html", {"formulario": form})
 
 def login_request(request):
     if request.method == 'POST':
@@ -72,30 +80,21 @@ def custom_logout(request):
     return redirect('inicio')
 
 #editar usuario
+
 @login_required
 def edit_profile(request):
     usuario = request.user
+    perfil = usuario.profile
 
     if request.method == 'POST':
-        # Usamos el formulario con instance para actualizar el usuario
-        miFormulario = AppFulbo.forms.UserEditForm(request.POST, instance=usuario)
-        if miFormulario.is_valid():
-            # Guardamos los cambios en los datos básicos (email, first_name, last_name)
-            usuario = miFormulario.save(commit=False)
-
-            # Si el formulario incluye campos de contraseña y se rellenaron, actualizamos la contraseña
-            password1 = miFormulario.cleaned_data.get('password1')
-            password2 = miFormulario.cleaned_data.get('password2')
-            if password1 and password1 == password2:
-                usuario.set_password(password1)
-
-            usuario.save()
-
-            return redirect('inicio')
+        form = AppFulbo.forms.UserEditForm(request.POST, request.FILES, instance=usuario, profile_instance=perfil)
+        if form.is_valid():
+            form.save(user_instance=usuario, profile_instance=perfil)
+            return redirect('mi_perfil')
     else:
-        miFormulario = AppFulbo.forms.UserEditForm(instance=usuario)
+        form = AppFulbo.forms.UserEditForm(instance=usuario, profile_instance=perfil)
 
-    return render(request, 'registro/edit_profile.html', {'form': miFormulario})
+    return render(request, 'registro/edit_profile.html', {'form': form})
 
 
 @login_required
@@ -232,6 +231,7 @@ def crear_liga(request):
 
     return render(request, 'registro/crear_liga.html', context)
 
+@login_required
 def ver_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     mi_jugador = None
@@ -253,7 +253,7 @@ def ver_liga(request, liga_id):
     return render(request, 'AppFulbo/ver_liga.html', context)
 
 
-
+@login_required
 def editar_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     # Obtén las relaciones
@@ -393,179 +393,237 @@ def verificar_usuario_ajax(request):
     username = request.GET.get('username', None)
     data = {'existe': False}
     if username:
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username__iexact=username).exists():
+            # username
             data['existe'] = True
     return JsonResponse(data)
 
 
-@login_required
-def agregar_o_asociar_jugador(request, liga_id, jugador_id=None):
-    liga = get_object_or_404(Liga, id=liga_id)
-    jugador = None
-    if jugador_id:
-        jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
 
-    # ---- Verificación de Permisos ----
-    # (Tu lógica de permisos aquí, si la tienes)
+@login_required
+def gestionar_jugadores_liga(request, liga_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+
+    # Solo los presidentes de la liga pueden gestionar jugadores
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para gestionar jugadores en esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+
+    jugadores = Jugador.objects.filter(liga=liga).order_by('-activo', 'apodo')
+
+    context = {
+        'liga': liga,
+        'jugadores': jugadores,
+    }
+    return render(request, 'AppFulbo/gestionar_jugadores.html', context)
+
+@login_required
+def gestionar_jugadores_liga(request, liga_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+
+    # solo los presidentes de la liga pueden gestionar jugadores
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para gestionar jugadores en esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+
+    jugadores_activos = Jugador.objects.filter(liga=liga, activo=True).order_by('apodo')
+    jugadores_inactivos = Jugador.objects.filter(liga=liga, activo=False).order_by('apodo')
+    context = {
+        'liga': liga,
+        'jugadores_activos': jugadores_activos,
+        'jugadores_inactivos': jugadores_inactivos,
+    }
+    return render(request, 'AppFulbo/gestionar_jugadores.html', context)
+
+
+@login_required
+def agregar_jugador_y_usuario(request, liga_id): 
+    liga = get_object_or_404(Liga, id=liga_id)
+
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para agregar jugadores a esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
 
     if request.method == 'POST':
-        form = AgregarOAsociarJugadorForm(request.POST, liga=liga, jugador=jugador)
+        
+        form = CrearYAsociarJugadorForm(request.POST, liga=liga)
         if form.is_valid():
             username = form.cleaned_data['username_usuario']
+            apodo = form.cleaned_data['apodo']
+            posicion = form.cleaned_data['posicion']
+            numero = form.cleaned_data['numero']
+            
+            
             usuario_a_asociar = User.objects.get(username=username)
 
-            if jugador:  # --- Caso: ASOCIAR a jugador existente ---
-                jugador.usuario = usuario_a_asociar
-                jugador.save()
-                messages.success(request, f"¡El jugador '{jugador.apodo}' ha sido asociado al usuario '{usuario_a_asociar.username}'!")
-            
-            else:  # --- Caso: CREAR nuevo jugador ---
-                Jugador.objects.create(
-                    usuario=usuario_a_asociar,
-                    liga=liga,
-                    apodo=form.cleaned_data['apodo'],
-                    posicion=form.cleaned_data['posicion'],
-                    numero=form.cleaned_data['numero'],
-                    activo=True
-                )
-                messages.success(request, f"El jugador ha sido creado y asociado a '{usuario_a_asociar.username}'!")
-
-            return redirect('ver_liga', liga_id=liga_id) # Asegúrate que 'ver_liga' es el name de tu URL de detalle
-
+            Jugador.objects.create(
+                usuario=usuario_a_asociar,
+                liga=liga,
+                apodo=apodo,
+                posicion=posicion,
+                numero=numero,
+                activo=True
+            )
+            messages.success(request, f"El jugador '{apodo}' ha sido creado y asociado a '{usuario_a_asociar.username}'.")
+            return redirect('gestionar_jugadores_liga', liga_id=liga_id)
     else:
-        form = AgregarOAsociarJugadorForm(liga=liga, jugador=jugador)
+        form = CrearYAsociarJugadorForm(liga=liga)
 
     context = {
         'form': form,
         'liga': liga,
-        'jugador': jugador
+        'titulo': "Agregar Nuevo Jugador y Asociar Usuario"
     }
-    return render(request, 'AppFulbo/agregar_jugador_form.html', context)
-    
-
-# def mensaje_automatico_solicitud_liga(request, user, solicitud,mensaje):
-#     destinatario = solicitud.usuario
-#     conversacion = Conversacion.objects.filter(
-#         Q(usuario1=user, usuario2=destinatario) |
-#         Q(usuario1=destinatario, usuario2=user)
-#     ).first()
-
-#     if not conversacion:
-#         if user.id < destinatario.id:
-#             conversacion = Conversacion.objects.create(usuario1=user, usuario2=destinatario)
-#         else:
-#             conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=user)
-
-#     Mensaje.objects.create(
-#         conversacion=conversacion,
-#         remitente=user,
-#         contenido=mensaje
-#     )
-
-# @login_required
-# def asociar_jugador(request, solicitud_id):
-#     solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id)
-#     liga = solicitud.liga
-
-#     if request.user in liga.presidentes.all():
-#         jugadores = liga.jugadores.filter(usuario__isnull=True)
-#         if request.method == "POST":
-#             action = request.POST.get('action')
-#             if action == "asociar_a_jugador":
-#                 jugador_id = request.POST.get('jugador_id')
-#                 jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
-#                 jugador.usuario = solicitud.usuario
-#                 jugador.save()
-#                 solicitud.delete()
-#                 mensaje = f"Te acepte en la liga {liga}."
-#                 mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
-#                 messages.success(request, "Has sido asociado a la liga y al jugador seleccionado.")
-#                 return redirect('ver_liga', liga_id=liga.id)
-#             else:
-#                 messages.error(request, "Opción no válida.")
-#                 return redirect('asociar_jugador', solicitud_id=solicitud.id)
-#         else:
-
-#             context = {
-#                 'solicitud': solicitud,
-#                 'liga': liga,
-#                 'jugadores': jugadores
-#             }
-#             return render(request, 'AppFulbo/agregar_a_liga.html', context)
-    
+    return render(request, 'AppFulbo/agregar_jugador_y_usuario_form.html', context)
 
 
-# @login_required
-# def gestionar_solicitudes(request, liga_id):
-#     liga = get_object_or_404(Liga, id=liga_id)
-#     if request.user in liga.presidentes.all():
-#         if request.method == "POST":
-#             action = request.POST.get('action')
-#             solicitud_id = request.POST.get('solicitud_id')
-#             solicitud = get_object_or_404(SolicitudUnionLiga, id=solicitud_id, liga=liga)
-            
-#             if action == "aceptar":
-#                 return redirect('asociar_jugador', solicitud_id=solicitud.id)
-            
-#             elif action == "rechazar":
-#                 mensaje = f"He rechazado tu solicitud a la la liga {liga}."
-#                 mensaje_automatico_solicitud_liga(request, request.user, solicitud,mensaje)
-#                 solicitud.delete()  # Se rechaza la solicitud eliminándola
-#                 messages.success(request, "Solicitud rechazada.")
-#             else:
-#                 messages.error(request, "Opción no válida.")
-            
-#             return redirect('gestionar_solicitudes', liga_id=liga.id)
-        
-#         else:
-#             solicitudes = liga.solicitudes_union.all()
-#             return render(request, 'AppFulbo/gestionar_solicitudes.html', {'solicitudes': solicitudes, 'liga': liga})
-
-        
 @login_required
-def crear_jugador(request, liga_id):
-    league = get_object_or_404(Liga, id=liga_id)
-    if request.method == 'POST':
-        form = JugadorForm(request.POST, liga=league)
-        if form.is_valid():
-            nuevo_jugador = form.save(commit=False)
-            nuevo_jugador.liga = league  # Asigna la liga manualmente.
-            # Si fuera necesario asignar usuario, se podría hacer aquí, p.ej.:
-            # nuevo_jugador.usuario = request.user
-            nuevo_jugador.save()
-            messages.success(request, "Jugador creado exitosamente.")
-            return redirect('ver_liga', liga_id=league.id)
-    else:
-        form = JugadorForm(liga=league)
-    return render(request, 'registro/crear_jugador.html', {'form': form, 'liga': league})
+def crear_jugador_sin_usuario(request, liga_id):
+    liga = get_object_or_404(Liga, id=liga_id)
 
-
-def editar_jugador(request, jugador_id):
-    jugador = get_object_or_404(Jugador, id=jugador_id)
-    
-    # Verificar si el usuario es presidente de la liga a la que pertenece el jugador.
-    if request.user not in jugador.liga.presidentes.all():
-        return HttpResponseForbidden("No tenés permisos para editar este jugador.")
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para agregar jugadores a esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
 
     if request.method == 'POST':
-        form = JugadorForm(request.POST, instance=jugador, liga=jugador.liga)
+        
+        form = JugadorForm(request.POST, liga=liga) 
         if form.is_valid():
-            form.save()
-            messages.success(request, "Jugador actualizado correctamente.")
-            # Redirige a la vista de edición de la liga.
-            return redirect('editar_liga', liga_id=jugador.liga.id)
+            jugador = form.save(commit=False) 
+            jugador.liga = liga
+            jugador.activo = True 
+            jugador.save()
+            messages.success(request, f"Jugador '{jugador.apodo}' creado sin usuario asociado.")
+            return redirect('gestionar_jugadores_liga', liga_id=liga_id)
     else:
-        form = JugadorForm(instance=jugador, liga=jugador.liga)
-    
+        form = JugadorForm(liga=liga) 
+
     context = {
         'form': form,
+        'liga': liga,
+        'titulo': "Crear Jugador sin Usuario"
+    }
+    return render(request, 'AppFulbo/jugador_sin_usuario_form.html', context)
+
+
+@login_required
+def modificar_jugador(request, liga_id, jugador_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
+
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para modificar jugadores en esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+
+    if request.method == 'POST':
+        # instancia del jugador y la liga al formulario
+        form = JugadorForm(request.POST, instance=jugador, liga=liga)
+        if form.is_valid():
+            form.save() # Guarda los cambios en la instancia del jugador
+            messages.success(request, f"Jugador '{jugador.apodo}' modificado correctamente.")
+            return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+    else:
+        # formulario con los datos actuales del jugador
+        form = JugadorForm(instance=jugador, liga=liga)
+
+    context = {
+        'form': form,
+        'liga': liga,
+        'jugador': jugador,
+        'titulo': f"Modificar Jugador: {jugador.apodo}"
+    }
+    return render(request, 'AppFulbo/jugador_modificar_form.html', context) 
+
+
+@login_required
+def asociar_usuario_a_jugador(request, liga_id, jugador_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
+
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para asociar usuarios a jugadores en esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+    
+    # Validar que el jugador realmente no tenga un usuario asociado
+    if jugador.usuario is not None:
+        messages.warning(request, f"El jugador '{jugador.apodo}' ya está asociado al usuario '{jugador.usuario.username}'.")
+        return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+
+    if request.method == 'POST':
+        # Pasamos la liga y el jugador al formulario para validaciones
+        form = AsociarUsuarioForm(request.POST, liga=liga, jugador_a_asociar=jugador)
+        if form.is_valid():
+            username = form.cleaned_data['username_usuario']
+            usuario_a_asociar = User.objects.get(username=username) # Ya validado por el formulario
+            
+            jugador.usuario = usuario_a_asociar
+            jugador.save()
+            messages.success(request, f"¡El jugador '{jugador.apodo}' ha sido asociado al usuario '{usuario_a_asociar.username}'!")
+            return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+    else:
+        form = AsociarUsuarioForm(liga=liga, jugador_a_asociar=jugador)
+
+    context = {
+        'form': form,
+        'liga': liga,
+        'jugador': jugador,
+        'titulo': f"Asociar Usuario a {jugador.apodo}"
+    }
+    return render(request, 'AppFulbo/asociar_usuario_form.html', context) # Necesitarás crear esta plantilla
+
+@login_required
+def eliminar_jugador(request, liga_id, jugador_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
+
+    # Verifica si el usuario tiene permisos para desactivar jugadores en esta liga
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para desactivar jugadores de esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+
+    if request.method == 'POST':
+        # Implementación del Soft Delete:
+        # En lugar de eliminar el objeto de la base de datos,
+        # simplemente marcamos el campo 'activo' como False.
+        jugador.activo = False
+        jugador.save()
+        messages.success(request, f"Jugador '{jugador.apodo}' ha sido **desactivado** de la liga.")
+        return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+
+    # Si la petición es GET, se muestra la página de confirmación
+    context = {
+        'liga': liga,
         'jugador': jugador
     }
-    return render(request, 'AppFulbo/editar_jugador.html', context)
+    # La plantilla 'confirmar_eliminar_jugador.html' debe reflejar que es una desactivación.
+    return render(request, 'AppFulbo/confirmar_eliminar_jugador.html', context)
 
 
+@login_required
+def reactivar_jugador(request, liga_id, jugador_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    jugador = get_object_or_404(Jugador, id=jugador_id, liga=liga)
 
+    # Permisos: Solo super_presidente o presidentes pueden reactivar
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para reactivar jugadores en esta liga.")
+        return redirect('gestionar_jugadores_liga', liga_id=liga_id)
 
+    if request.method == 'POST':
+        jugador.activo = True  # Marca el jugador como activo
+        jugador.save()
+        messages.success(request, f"Jugador '{jugador.apodo}' ha sido reactivado en la liga.")
+        return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+
+    # Si se accede por GET, mostrar una página de confirmación (opcional, pero buena práctica)
+    context = {
+        'liga': liga,
+        'jugador': jugador
+    }
+    # Podrías reutilizar 'confirmar_eliminar_jugador.html' adaptando el texto,
+    # o crear una nueva como 'confirmar_reactivar_jugador.html'
+    return render(request, 'AppFulbo/confirmar_reactivar_jugador.html', context)
+     
 
 @login_required
 def encontrar_equipos_mas_parejos(request, liga_id):
@@ -663,22 +721,20 @@ def encontrar_equipos_mas_parejos(request, liga_id):
     
 @login_required
 def crear_partido(request, liga_id):
-    # Obtenemos la liga a la que se creará el partido
+    
     league = get_object_or_404(Liga, id=liga_id)
     
     if request.method == 'POST':
         form = PartidoForm(request.POST, league=league)
         if form.is_valid():
-            # Creamos el objeto Partido sin guardar aún, para asignar la liga.
+            
             partido = form.save(commit=False)
             partido.liga = league
             partido.save()
             
-            # Obtenemos la lista de jugadores que participaron.
+           
             jugadores_seleccionados = form.cleaned_data.get('jugadores')
-            
-            # Para cada jugador seleccionado, creamos un registro de participación (por ejemplo, PuntajePartido)
-            # Aquí se asume que puntaje se inicializa en 0.0.
+
             for jugador in jugadores_seleccionados:
                 PuntajePartido.objects.create(
                     jugador=jugador,
@@ -700,7 +756,7 @@ def puntuar_jugadores_partido(request, partido_id, puntuacion_pendiente_id):
     partido = get_object_or_404(Partido, id=partido_id)
     puntuacion_pendiente = get_object_or_404(PuntuacionPendiente, id=puntuacion_pendiente_id)
 
-    # Verifica que la puntuación pendiente corresponde al partido
+
     if puntuacion_pendiente.partido != partido:
         return redirect('ver_partido', partido_id=partido.id)
 
@@ -737,7 +793,7 @@ def puntuar_jugadores_partido(request, partido_id, puntuacion_pendiente_id):
         return redirect('ver_partido', partido_id=partido.id)
 
 
-
+@login_required
 def ver_partido(request, partido_id):
     partido = get_object_or_404(Partido, id=partido_id)
     puntajes = partido.puntajes_partidos.select_related('jugador').all()
@@ -756,75 +812,6 @@ def ver_partido(request, partido_id):
     return render(request, 'AppFulbo/ver_partido.html', context)
 
 
-# @login_required
-# def inbox(request):
-#     conversaciones = Conversacion.objects.filter(
-#         Q(usuario1=request.user) | Q(usuario2=request.user)
-#     ).order_by('-fecha_actualizacion')
-#     return render(request, 'mensajes/inbox.html', {'conversaciones': conversaciones})
-
-# @login_required
-# def conversacion_detail(request, conversacion_id):
-#     conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-#     # Verificar que el usuario sea participante de la conversación
-#     if request.user not in [conversacion.usuario1, conversacion.usuario2]:
-#         return HttpResponseForbidden("No tenés acceso a esta conversación.")
-#     mensajes = conversacion.mensajes.all().order_by('fecha_envio')
-
-#     if request.method == "POST":
-#         contenido = request.POST.get('contenido')
-#         if contenido:
-#             Mensaje.objects.create(
-#                 conversacion=conversacion,
-#                 remitente=request.user,
-#                 contenido=contenido
-#             )
-#             return redirect('conversacion_detail', conversacion_id=conversacion.id)
-#     return render(request, 'mensajes/conversacion_detail.html', {
-#         'conversacion': conversacion,
-#         'mensajes': mensajes
-#     })
-    
-
-
-# def obtener_mensajes(request, conversacion_id):
-#     conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-#     mensajes = conversacion.mensajes.all().order_by('fecha_envio')
-    
-#     mensajes_data = []
-#     for mensaje in mensajes:
-#         mensajes_data.append({
-#             'id': mensaje.id,
-#             'remitente': mensaje.remitente.username,
-#             'contenido': mensaje.contenido,
-#             'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
-#         })
-#     return JsonResponse({'mensajes': mensajes_data})
-
-
-# User = get_user_model()
-# @login_required
-# def nuevo_chat(request):
-#     # Listamos usuarios que no sean el actual (para iniciar un chat)
-#     usuarios = User.objects.exclude(id=request.user.id)
-#     if request.method == "POST":
-#         destinatario_id = request.POST.get('destinatario')
-#         if destinatario_id:
-#             destinatario = get_object_or_404(User, id=destinatario_id)
-#             # Buscar conversación existente sin importar el orden.
-#             conversacion = Conversacion.objects.filter(
-#                 Q(usuario1=request.user, usuario2=destinatario) |
-#                 Q(usuario1=destinatario, usuario2=request.user)
-#             ).first()
-#             if not conversacion:
-#                 # Para evitar duplicados, definí un orden, por ejemplo:
-#                 if request.user.id < destinatario.id:
-#                     conversacion = Conversacion.objects.create(usuario1=request.user, usuario2=destinatario)
-#                 else:
-#                     conversacion = Conversacion.objects.create(usuario1=destinatario, usuario2=request.user)
-#             return redirect('conversacion_detail', conversacion_id=conversacion.id)
-#     return render(request, 'mensajes/nuevo_chat.html', {'usuarios': usuarios})
-
 @login_required
 def marcar_todas_notificaciones_ajax(request):
     if request.method == "POST":
@@ -832,39 +819,5 @@ def marcar_todas_notificaciones_ajax(request):
         return JsonResponse({'success': True})
     else:
         return JsonResponse({'error': 'Invalid request'}, status=400)
-
-# @login_required
-# def enviar_mensaje_ajax(request, conversacion_id):
-#     if request.method == 'POST':
-#         conversacion = get_object_or_404(Conversacion, id=conversacion_id)
-#         contenido = request.POST.get('mensaje', '').strip()
-#         if not contenido:
-#             return JsonResponse({'error': 'El mensaje no puede estar vacío.'}, status=400)
-        
-#         mensaje = Mensaje.objects.create(
-#             conversacion=conversacion,
-#             remitente=request.user,
-#             contenido=contenido,
-#             fecha_envio=timezone.now()
-#         )
-        
-#         # Actualizamos la fecha de actualización de la conversación
-#         conversacion.fecha_actualizacion = timezone.now()
-#         conversacion.save()
-        
-#         return JsonResponse({
-#             'success': True,
-#             'mensaje_id': mensaje.id,
-#             'remitente': mensaje.remitente.username,
-#             'contenido': mensaje.contenido,
-#             'fecha_envio': mensaje.fecha_envio.strftime("%d/%m/%Y %H:%M")
-#         })
-#     else:
-#         return JsonResponse({'error': 'Método no permitido.'}, status=405)
-    
-
-
-
-
 
 

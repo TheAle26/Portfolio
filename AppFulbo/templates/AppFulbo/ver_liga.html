@@ -1,5 +1,5 @@
 {% extends 'AppFulbo/base.html' %}
-
+{% load static %}
 {% block content %}
 <div class="container mt-4">
 
@@ -74,36 +74,56 @@
                 </button>
             </h3>
             
-            {% if user.is_authenticated and user == liga.super_presidente or user in liga.presidentes.all %}
+            {% comment %} {% if user.is_authenticated and user == liga.super_presidente or user in liga.presidentes.all %}
                 <div class="my-2">
                     <a href="{% url 'agregar_jugador_a_liga' liga.id %}" class="btn btn-success">
-                        <i class="fa-solid fa-user-plus"></i> Agregar Jugador y Usuario
+                        <i class="fa-solid fa-user-plus"></i> Asociar Usuario
+                    </a>
+                    
+                    <a class="btn btn-success" href="{% url 'crear_jugador' liga.id %}">
+                        <i class="fa-solid fa-user-plus"></i> Agregar Jugador
                     </a>
                 </div>
+            {% endif %} {% endcomment %}
+            {% if request.user in liga.presidentes.all %}
+                {# ... tus otros botones de presidente ... #}
+                <a class="btn btn-primary d-inline-flex align-items-center mb-2" href="{% url 'gestionar_jugadores_liga' liga.id %}">
+                    <i class="fas fa-users-cog me-2"></i> Gestionar Jugadores
+                </a>
             {% endif %}
 
 
+           <div id="jugadoresContainer" style="display: none;">
+    <input type="text" id="buscarJugadorInput" class="form-control mb-3" placeholder="Buscar por apodo o posición...">
 
-            <div id="jugadoresContainer" style="display: none;">
-                <input type="text" id="buscarJugadorInput" class="form-control mb-3" placeholder="Buscar por apodo o posición...">
-                <div class="row" id="listaJugadores">
-                    {% for jugador in liga.jugadores.all %}
-                        {% if jugador.activo %}
-                            <div class="col-md-6 jugador-card mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ jugador.numero }} {{ jugador.apodo }}</h5>
-                                        <p class="card-text">Posición: {{ jugador.get_posicion_display }}</p>
-                                        <p class="card-text">Puntaje: {{ jugador.puntaje|floatformat:2 }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% empty %}
-                        <p>No hay jugadores activos asociados a esta liga.</p>
-                    {% endfor %}
-                </div>
-            </div>
+    <div class="list-group" id="listaJugadores">
+
+        {% for jugador in liga.jugadores.all %}
+            {% if jugador.activo %}
+
+                <li class="list-group-item d-flex align-items-center">
+                    <img src="{{ jugador.usuario.profile.foto_perfil.url }}"
+                        class="rounded-circle me-3"
+                        style="width: 60px; height: 60px; object-fit: cover;"
+                        alt="Foto de {{ jugador.apodo }}">
+
+                    <div class="flex-grow-1 d-flex flex-column justify-content-center" style="gap: 0.5rem;">
+                        <div class="fw-bold" style="font-size: 1.1rem; margin-bottom: 2px;margin-left: 1rem;">
+                            {{ jugador.apodo }}
+                        </div>
+                        <div class="text-muted" style="font-size: 0.9rem;margin-left: 1rem;">
+                            {{ jugador.get_posicion_display }} &bull; Puntaje: {{ jugador.puntaje|floatformat:2 }}
+                        </div>
+                    </div>
+                </li>
+
+            {% endif %}
+        {% empty %}
+            <li class="list-group-item">No hay jugadores registrados en esta liga.</li>
+        {% endfor %}
+
+    </div>
+</div>
         </div>
 
         <div class="col-lg-6 mb-4">
@@ -134,19 +154,46 @@
                                 <h5 class="card-title">
                                     {{ partido.cancha }} - {{ partido.fecha_partido|date:"d/m/Y" }}
                                 </h5>
-                                {% for puntuacion in puntuaciones_pendientes %}
-                                    {% if puntuacion.partido == partido and puntuacion.jugador == mi_jugador %}
-                                        <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}" class="btn btn-secondary btn-sm mt-2">Puntuación Pendiente</a>
-                                    {% endif %}
-                                {% endfor %}
-                                <p class="mt-2"><strong>Jugadores:</strong>
+
+
+                                    <div class="d-flex flex-wrap gap-2">
                                     {% for puntaje in partido.puntajes_partidos.all %}
-                                        <span class="badge bg-secondary me-1">{{ puntaje.jugador.apodo }}</span>
-                                    {% empty %}
-                                        <small>No hay jugadores registrados.</small>
+                                    {% if puntaje.puntaje >= 8 %}
+                                        <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-2 shadow-sm border border-*-subtle">
+                                    {% elif puntaje.puntaje >= 5 %}
+                                        <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 shadow-sm border border-*-subtle">
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 shadow-sm border border-*-subtle">
+                                    {% endif %}
+                                        <strong>{{ puntaje.jugador.apodo }}</strong> &nbsp;
+                                        <span class="text-white-50">{{ puntaje.puntaje|floatformat:0 }}</span>
+                                    </span>
                                     {% endfor %}
-                                </p>
-                                <a href="{% url 'ver_partido' partido.id %}" class="btn btn-sm btn-primary">Ver Detalles</a>
+                                    </div>
+
+                                    <div class="d-flex flex-wrap gap-2 mb-2 mt-2"> {# flex-wrap para que se envuelvan en móviles, gap-2 para espacio entre ellos #}
+                                
+                                        {# Botón Ver Detalles (siempre visible) #}
+                                        <a href="{% url 'ver_partido' partido.id %}"
+                                        class="btn btn-outline-info btn-sm d-inline-flex align-items-center"> {# Usamos d-inline-flex para consistencia #}
+                                            <i class="fas fa-info-circle me-2"></i> {# Ícono de Font Awesome #}
+                                            Ver Detalles
+                                        </a>
+                                        <hr class="my-1">
+
+                                        {# Botón para Calificar Jugadores (condicional) #}
+                                        {% for puntuacion in puntuaciones_pendientes %}
+                                            {% if puntuacion.partido == partido and puntuacion.jugador == mi_jugador %}
+                                                <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}"
+                                                class="btn btn-warning btn-sm d-inline-flex align-items-center btn-hover-custom"> {# Nueva clase aquí #}
+                                                    <i class="bi bi-stars me-2"></i>
+                                                    Calificar Jugadores
+                                                </a>
+                                                
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+
                             </div>
                         </div>
                     </div>
@@ -163,6 +210,13 @@
 
 
 <script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+});
 // Scripts JavaScript existentes (sin cambios funcionales significativos)
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('toggleJugadoresBtn');
@@ -196,10 +250,10 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleBtn.addEventListener('click', function () {
         if (contenedor.style.display === 'none') {
             contenedor.style.display = 'flex'; // Usar 'flex' si quieres que los items se comporten como flex
-            toggleBtn.textContent = 'Ocultar';
+            toggleBtn.textContent = 'Ocultar Partidos';
         } else {
             contenedor.style.display = 'none';
-            toggleBtn.textContent = 'Mostrar';
+            toggleBtn.textContent = 'Mostrar Partidos';
         }
     });
 

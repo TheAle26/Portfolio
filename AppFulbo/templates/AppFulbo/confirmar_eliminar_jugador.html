@@ -1,0 +1,31 @@
+
+{% extends 'AppFulbo/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Confirmar Desactivación</h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">¿Estás seguro de que quieres **desactivar** al jugador "<strong>{{ jugador.apodo }}</strong>" de la liga <strong>{{ liga.nombre_liga }}</strong>?</p>
+                    <p class="text-danger">El jugador no podrá participar en nuevas actividades, pero sus datos históricos (puntuaciones, etc.) se conservarán.</p>
+                    <form method="post" action="{% url 'eliminar_jugador' liga.id jugador.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-danger d-inline-flex align-items-center">
+                                <i class="fas fa-user-slash me-2"></i> Confirmar Desactivación
+                            </button>
+                            <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                                <i class="fas fa-times-circle me-2"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

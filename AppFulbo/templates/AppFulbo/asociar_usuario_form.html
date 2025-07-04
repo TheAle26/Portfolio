@@ -1,0 +1,21 @@
+{% extends 'AppFulbo/form_base.html' %}
+{% load crispy_forms_tags %}
+
+{% block card_header_bg %}success{% endblock %}
+{% block form_title %}{{ titulo }}{% endblock %}
+
+{% block form_content %}
+    <p class="text-muted">Asociando usuario al jugador: <strong>{{ jugador.apodo }}</strong></p>
+    <form method="post" action="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
+                <i class="fas fa-link me-2"></i> Asociar Usuario
+            </button>
+            <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+            </a>
+        </div>
+    </form>
+{% endblock form_content %}

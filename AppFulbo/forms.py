@@ -4,34 +4,40 @@ from django.contrib.auth.models import User
 from .models import *
 from django.contrib.auth import get_user_model
 
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import Profile
 
-# class Restaurante_form(forms.Form):
-#     nombre = forms.CharField(max_length=99)
-#     calificacion = forms.FloatField(min_value=0,max_value=5) #quiero que sea el promedio de las reseñas hechas
-#     descripcion = forms.CharField(max_length=250)
-#     ubicacion=forms.CharField(max_length=99)
-#     instagram = forms.URLField()
-#     foto=forms.ImageField()
-    
-#     def clean_foto(self):
-#         foto = self.cleaned_data.get('foto')
-#         if foto:
-#             # Aquí puedes agregar validaciones adicionales para la imagen si es necesario
-#             pass
-#         return foto
 
 
 class UserRegisterForm(UserCreationForm):
+
     username = forms.CharField(label="Nombre de usuario")
     first_name = forms.CharField(label="Nombre")
     last_name = forms.CharField(label="Apellido")
     email = forms.EmailField(label='Email')
     password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
     password2 = forms.CharField(label="Repetir contraseña", widget=forms.PasswordInput)
-    # fecha_nacimiento = forms.DateField(
-    #     required=False,
-    #     widget=forms.DateInput(attrs={'type': 'date'})
-    # )
+
+
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de nacimiento",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    foto_perfil = forms.ImageField(
+        label="Foto de perfil (opcional)",
+        required=False, 
+        widget=forms.FileInput
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email')
+
+    def __str__(self):
+        return self.usuario.username   
     
     class Meta:
         model = User
@@ -42,136 +48,209 @@ class UserRegisterForm(UserCreationForm):
             'email',
             'password1',
             'password2',
-            # 'fecha_nacimiento'
+            'fecha_nacimiento'
         ]
         help_texts = {k: "" for k in fields}
 
 User = get_user_model()
 
 class UserEditForm(forms.ModelForm):
-    # Los campos de contraseña son opcionales para no forzar su cambio
+    # Campos extra
     password1 = forms.CharField(label='Nueva Contraseña', widget=forms.PasswordInput, required=False)
     password2 = forms.CharField(label='Repetir Nueva Contraseña', widget=forms.PasswordInput, required=False)
+    password1 = forms.CharField(
+        label='Nueva Contraseña',
+        required=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'})
+    )
+    password2 = forms.CharField(
+        label='Repetir Nueva Contraseña',
+        required=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'})
+    )
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de nacimiento",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    foto_perfil = forms.ImageField(
+    label="Foto de perfil",
+    required=False,
+    widget=forms.FileInput  # Esto evita el checkbox "Limpiar"
+)
+    
+
 
     class Meta:
         model = User
-        fields = [ 'first_name', 'last_name','email']
+        fields = ['first_name', 'last_name', 'email']
         help_texts = {k: "" for k in fields}
+
+    def __init__(self, *args, **kwargs):
+        profile_instance = kwargs.pop('profile_instance', None)
+        super().__init__(*args, **kwargs)
+        if profile_instance:
+            self.fields['fecha_nacimiento'].initial = profile_instance.fecha_nacimiento
+            
 
     def clean(self):
         cleaned_data = super().clean()
         p1 = cleaned_data.get("password1")
         p2 = cleaned_data.get("password2")
-        # Si se ingresó alguna contraseña, ambas deben coincidir
-        if p1 or p2:
+
+        # Solo validamos si ambos campos están completos
+        if p1 and p2:
             if p1 != p2:
                 raise forms.ValidationError("Las contraseñas no coinciden.")
+        # Si vino solo uno (o ninguno), lo ignoramos y permitimos el guardado
         return cleaned_data
 
-    def save(self, commit=True):
+
+    def save(self, user_instance, profile_instance, commit=True):
         user = super().save(commit=False)
         password = self.cleaned_data.get('password1')
         if password:
             user.set_password(password)
         if commit:
             user.save()
+
+        foto_nueva = self.cleaned_data.get('foto_perfil')
+        if foto_nueva:
+            # borrar la anterior si existe
+            if profile_instance.foto_perfil and profile_instance.foto_perfil.name != 'default.jpg':
+                profile_instance.foto_perfil.delete(save=False)
+            profile_instance.foto_perfil = foto_nueva
+
+        profile_instance.fecha_nacimiento = self.cleaned_data.get('fecha_nacimiento')
+        profile_instance.save()
         return user
 
+# En tu AppFulbo/forms.py
+
+from django import forms
+from django.contrib.auth.models import User
+from .models import Jugador # Asegúrate de importar Jugador y OPCIONES si así las llamas
+
+# --- 1. Formulario para CREAR Jugador sin Usuario y MODIFICAR Jugador ---
 class JugadorForm(forms.ModelForm):
     class Meta:
         model = Jugador
-        # No incluimos el campo 'liga' porque se asignará manualmente en la vista.
-        fields = ['apodo', 'posicion','numero']
+        # No incluimos 'liga' ni 'usuario' aquí, ya que se asignan en la vista
+        fields = ['apodo', 'posicion', 'numero'] 
         labels = {
             'apodo': 'Apodo',
             'posicion': 'Posición',
-            'numero': 'Camiseta'
+            'numero': 'Camiseta',
+        }
+        widgets = { # Añadir widgets para estilos de Bootstrap
+            'apodo': forms.TextInput(attrs={'class': 'form-control'}),
+            'posicion': forms.Select(attrs={'class': 'form-select'}),
+            'numero': forms.NumberInput(attrs={'class': 'form-control'}),
+
+        }
+        # help_texts y error_messages van DENTRO de Meta para ModelForms
+        help_texts = {
+            'apodo': 'Ingrese un apodo único en la liga.'
+        }
+        # error_messages para validaciones por defecto del modelo/campo
+        # La validación 'unique' para 'apodo' es custom en clean_apodo, así que esto es más bien un fallback
+        error_messages = {
+            'apodo': {
+                'unique': "Ya existe este apodo en esta liga.",
+            },
         }
 
     def __init__(self, *args, **kwargs):
-        # Se espera recibir la instancia de la liga como argumento para filtrar el apodo.
         self.liga = kwargs.pop('liga', None)
         super().__init__(*args, **kwargs)
 
     def clean_apodo(self):
         apodo = self.cleaned_data.get('apodo')
+        if not apodo: # Si apodo puede ser nulo en el modelo, entonces required=False es válido
+            raise forms.ValidationError("El apodo es requerido.") # Esta validación se ejecuta si el campo es requerido
+        
         if self.liga:
             # Excluir el jugador actual de la validación si es que existe (al editar)
             qs = Jugador.objects.filter(apodo__iexact=apodo, liga=self.liga)
             if self.instance and self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
+            
             if qs.exists():
                 raise forms.ValidationError("Este apodo ya existe en esta liga. Por favor, elige otro.")
         return apodo
 
-    
-    help_texts = {
-            'apodo': 'Ingrese un apodo único en la liga.'
-        }
-    error_messages = {
-            'apodo': {
-                'unique': "Ya existe este apodo en esta liga.",
-            },
-        }
-
-class AgregarOAsociarJugadorForm(forms.Form):
+# --- 2. Formulario para CREAR Nuevo Jugador y Asociar Usuario ---
+class CrearYAsociarJugadorForm(forms.Form): # Renombrado para mayor claridad
     username_usuario = forms.CharField(
-        label="Nombre de Usuario",
-        help_text="Introduce el nombre de usuario de la cuenta a asociar.",
+        label="Nombre de Usuario existente",
+        help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
         widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
     )
-
-    # Estos campos no son requeridos porque pueden venir de un jugador existente
-    apodo = forms.CharField(max_length=15, required=False, label="Apodo del Jugador", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    posicion = forms.ChoiceField(choices=Jugador.OPCIONES, required=False, label="Posición", widget=forms.Select(attrs={'class': 'form-select'}))
-    numero = forms.IntegerField(required=False, label="Número de Camiseta", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    apodo = forms.CharField(
+        max_length=50, # Considera un max_length mayor que 15, quizás 50 o 100
+        label="Apodo del Jugador",
+        help_text="El apodo debe ser único en esta liga.",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    posicion = forms.ChoiceField(
+        choices=Jugador.OPCIONES, # Asumo que Jugador.OPCIONES tiene tus tuplas de opciones
+        label="Posición",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    numero = forms.IntegerField(
+        required=False,
+        label="Número de Camiseta",
+        min_value=1,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
 
     def __init__(self, *args, **kwargs):
         self.liga = kwargs.pop('liga', None)
-        self.jugador = kwargs.pop('jugador', None) # Recibimos el jugador si existe
         super().__init__(*args, **kwargs)
 
-        # Si estamos asociando, no necesitamos los campos del jugador
-        if self.jugador:
-            del self.fields['apodo']
-            del self.fields['posicion']
-            del self.fields['numero']
-
     def clean_username_usuario(self):
-        username = self.cleaned_data.get('username_usuario')
-        if not User.objects.filter(username=username).exists():
+        username = self.cleaned_data['username_usuario']
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
             raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
         
-        user = User.objects.get(username=username)
-
-        # Si estamos ASOCIANDO, el jugador ya existe. Verificamos que no tenga usuario.
-        if self.jugador and self.jugador.usuario is not None:
-             raise forms.ValidationError(f"Este perfil de jugador ya está asociado al usuario '{self.jugador.usuario.username}'.")
-
-        # Si estamos CREANDO, verificamos que el usuario no tenga ya un perfil en la liga
-        if not self.jugador and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
-            raise forms.ValidationError("Este usuario ya tiene un perfil de jugador en esta liga.")
+        if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
+            raise forms.ValidationError(f"Este usuario ('{username}') ya tiene un perfil de jugador asociado en esta liga.")
             
         return username
 
     def clean_apodo(self):
-        # Esta validación solo corre si estamos CREANDO un jugador
-        if not self.jugador:
-            apodo = self.cleaned_data.get('apodo')
-            if not apodo: # El campo es requerido si no hay jugador
-                raise forms.ValidationError("El apodo es requerido para crear un nuevo jugador.")
-            if Jugador.objects.filter(liga=self.liga, apodo=apodo).exists():
-                raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
-            return apodo
-    help_texts = {
-            'apodo': 'Ingrese un apodo único en la liga.'
-        }
-    error_messages = {
-            'apodo': {
-                'unique': "Ya existe este apodo en esta liga.",
-            },
-        }
+        apodo = self.cleaned_data['apodo']
+        if self.liga and Jugador.objects.filter(liga=self.liga, apodo__iexact=apodo).exists():
+            raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
+        return apodo
 
+# --- 3. Formulario para ASOCIAR Usuario a Jugador Existente ---
+class AsociarUsuarioForm(forms.Form):
+    username_usuario = forms.CharField(
+        label="Nombre de Usuario para Asociar",
+        help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.liga = kwargs.pop('liga', None)
+        self.jugador_a_asociar = kwargs.pop('jugador_a_asociar', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_username_usuario(self):
+        username = self.cleaned_data['username_usuario']
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
+        
+        if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
+            raise forms.ValidationError(f"El usuario '{username}' ya tiene un perfil de jugador asociado en esta liga.")
+            
+        return username
+    
 
 class LigaForm(forms.ModelForm):
     class Meta:

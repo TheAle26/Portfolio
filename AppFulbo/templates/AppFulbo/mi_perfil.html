@@ -1,26 +1,45 @@
 {% extends 'AppFulbo/base.html' %}
-
+{% load static %}
 {% block content %}
 <div class="container mt-4">
     <h2>Mi Perfil</h2>
-    
-    <!-- Información básica del usuario -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">{{ user.username }}</h5>
-            <p class="card-text">
-                <strong>Nombre:</strong> {{ user.first_name }}<br>
-                <strong>Apellido:</strong> {{ user.last_name }}<br>
-                <strong>Email:</strong> {{ user.email }}<br>
-                <strong>Fecha de registro:</strong> {{ user.date_joined|date:"d/m/Y" }}<br>
-            </p>
+
+    <!-- Foto y datos básicos -->
+    <div class="row mb-4">
+        <div class="col-md-3 text-center">
+            {% if user.profile.foto_perfil %}
+                <img src="{{ user.profile.foto_perfil.url }}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Foto de perfil">
+            {% else %}
+                <img src="{% static 'default.jpg' %}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Sin foto de perfil">
+            {% endif %}
+            <a href="{% url 'edit_Profile' %}" class="btn btn-sm btn-outline-secondary">
+                Cambiar foto
+            </a>
+        </div>
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ user.username }}</h5>
+                    <p class="card-text">
+                        <strong>Nombre:</strong> {{ user.first_name }}<br>
+                        <strong>Apellido:</strong> {{ user.last_name }}<br>
+                        <strong>Email:</strong> {{ user.email }}<br>
+                        <strong>Fecha de nacimiento:</strong> {{ user.profile.fecha_nacimiento|date:"d/m/Y" }}<br>
+                        <strong>Fecha de registro:</strong> {{ user.date_joined|date:"d/m/Y" }}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Botón de edición -->
     <a href="{% url 'edit_Profile' %}" class="btn btn-warning">
         <i class="fa-solid fa-pencil"></i> Editar perfil
     </a>
-    <br></br>
-    <!-- Ligas a las que pertenece el usuario y puntaje en cada una -->
+
+    <hr>
+
+    <!-- Ligas -->
     <h3>Mis Ligas y Puntajes</h3>
     {% if jugadores %}
     <table class="table table-striped">
@@ -36,13 +55,7 @@
             <tr>
                 <td>{{ jugador.liga }}</td>
                 <td>{{ jugador.apodo }}</td>
-                <td>
-                    {% if jugador.total_puntaje %}
-                        {{ jugador.total_puntaje }}
-                    {% else %}
-                        0
-                    {% endif %}
-                </td>
+                <td>{{ jugador.total_puntaje|default:0 }}</td>
             </tr>
             {% endfor %}
         </tbody>

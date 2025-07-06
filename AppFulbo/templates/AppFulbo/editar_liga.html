@@ -117,12 +117,13 @@
 
 
     <h3>Jugadores
-         {% if request.user in liga.presidentes.all %}
-        <a class="btn btn-success" href="{% url 'crear_jugador' liga.id %}">
-            <i class="fa-solid fa-plus"></i> Agregar Jugador
-        </a>
-        {% endif %}
-    </h3>
+            {% if request.user in liga.presidentes.all %}
+                {# ... tus otros botones de presidente ... #}
+                <a class="btn btn-primary d-inline-flex align-items-center mb-2" href="{% url 'gestionar_jugadores_liga' liga.id %}">
+                    <i class="fas fa-users-cog me-2"></i> Gestionar Jugadores
+                </a>
+            {% endif %}
+    {% comment %} </h3>
     <div class="row">
         {% for jugador in jugadores %}
            <div class="card-body">
@@ -177,15 +178,19 @@
         <p>No hay jugadores registrados.</p>
         {% endfor %}
     </div>
-    
+     {% endcomment %}
     <hr>
+
     <h3>Partidos
         {% if request.user in liga.presidentes.all %}
-        <a class="btn btn-success" href="{% url 'crear_partido' liga.id %}">
-            <i class="fa-solid fa-plus"></i> Agregar Partido
-        </a>
+<div class="mt-4 d-flex justify-content-center"> {# Puedes ajustar la alineación según tu diseño #}
+    <a href="{% url 'gestionar_partidos_liga' liga.id %}" class="btn btn-warning d-inline-flex align-items-center">
+        <i class="fas fa-calendar-alt me-2"></i> Gestionar Partidos
+    </a>
+</div>
+
         {% endif %}
-    </h3>
+    {% comment %} </h3>
     <div class="row">
         {% for partido in partidos %}
         <div class="col-md-4 mb-3">
@@ -219,5 +224,5 @@
         {% endfor %}
     </div>
     
-</div>
+</div> {% endcomment %}
 {% endblock %}

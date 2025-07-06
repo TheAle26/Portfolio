@@ -72,7 +72,7 @@ class Jugador(models.Model):
     puntaje = models.FloatField(null=True)  # Puntaje del jugador en este partido
     
     def __str__(self):
-        return f"{self.apodo} en liga {self.liga}"
+        return f"{self.apodo}"
     
     def actualizar_puntaje(self):
         i = 0

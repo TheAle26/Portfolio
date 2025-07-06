@@ -1,15 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse, HttpResponseBadRequest,HttpResponseForbidden,JsonResponse
-import datetime
+from django.http import JsonResponse
 import AppFulbo.forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth import login, authenticate, logout,get_user_model
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from .forms import JugadorForm,LigaForm,PartidoForm,SimularPartidoForm,CrearYAsociarJugadorForm,AsociarUsuarioForm, JugadorForm  #,MensajeForm
-from .models import Liga, Jugador,PuntajePartido,Partido, Notificacion, SolicitudUnionLiga, PuntuacionPendiente#,Mensaje,Conversacion
+from .forms import LigaForm,PartidoForm,SimularPartidoForm,CrearYAsociarJugadorForm,AsociarUsuarioForm,JugadorForm  #,MensajeForm
+from .models import Liga, Jugador,PuntajePartido,Partido, PuntuacionPendiente#,Mensaje,Conversacion
 from django.contrib import messages
-from django.db.models import Sum, Q
-from django.utils import timezone
+from django.db.models import Sum
 import itertools
 from django.contrib.auth.models import User
 import itertools
@@ -391,31 +389,15 @@ def editar_liga(request, liga_id):
 # Vista para verificar si el usuario existe (cambiado para usar username)
 def verificar_usuario_ajax(request):
     username = request.GET.get('username', None)
-    data = {'existe': False}
-    if username:
-        if User.objects.filter(username__iexact=username).exists():
-            # username
-            data['existe'] = True
+    data = {
+        'exists': User.objects.filter(username__iexact=username).exists()
+    }
+    if data['exists']:
+        user = User.objects.get(username__iexact=username)
+        data['first_name'] = user.first_name
+        data['last_name'] = user.last_name
     return JsonResponse(data)
 
-
-
-@login_required
-def gestionar_jugadores_liga(request, liga_id):
-    liga = get_object_or_404(Liga, id=liga_id)
-
-    # Solo los presidentes de la liga pueden gestionar jugadores
-    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
-        messages.error(request, "No tienes permiso para gestionar jugadores en esta liga.")
-        return redirect('ver_liga', liga_id=liga_id)
-
-    jugadores = Jugador.objects.filter(liga=liga).order_by('-activo', 'apodo')
-
-    context = {
-        'liga': liga,
-        'jugadores': jugadores,
-    }
-    return render(request, 'AppFulbo/gestionar_jugadores.html', context)
 
 @login_required
 def gestionar_jugadores_liga(request, liga_id):
@@ -445,17 +427,14 @@ def agregar_jugador_y_usuario(request, liga_id):
         return redirect('ver_liga', liga_id=liga_id)
 
     if request.method == 'POST':
-        
         form = CrearYAsociarJugadorForm(request.POST, liga=liga)
         if form.is_valid():
-            username = form.cleaned_data['username_usuario']
+            # Ahora username_usuario en cleaned_data ya es el objeto User
+            usuario_a_asociar = form.cleaned_data['username_usuario'] 
             apodo = form.cleaned_data['apodo']
             posicion = form.cleaned_data['posicion']
             numero = form.cleaned_data['numero']
             
-            
-            usuario_a_asociar = User.objects.get(username=username)
-
             Jugador.objects.create(
                 usuario=usuario_a_asociar,
                 liga=liga,
@@ -466,6 +445,11 @@ def agregar_jugador_y_usuario(request, liga_id):
             )
             messages.success(request, f"El jugador '{apodo}' ha sido creado y asociado a '{usuario_a_asociar.username}'.")
             return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+        else:
+            # Si el formulario no es válido, los errores se mostrarán automáticamente
+            # en la plantilla gracias al renderizado manual y Crispy.
+            # No necesitamos un 'messages.error' general aquí a menos que quieras algo extra.
+            pass 
     else:
         form = CrearYAsociarJugadorForm(liga=liga)
 
@@ -476,34 +460,43 @@ def agregar_jugador_y_usuario(request, liga_id):
     }
     return render(request, 'AppFulbo/agregar_jugador_y_usuario_form.html', context)
 
+# ... (resto de tus vistas) ...
 
-@login_required
-def crear_jugador_sin_usuario(request, liga_id):
+@login_required 
+def agregar_jugador(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
 
     if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
         messages.error(request, "No tienes permiso para agregar jugadores a esta liga.")
-        return redirect('ver_liga', liga_id=liga_id)
+        return redirect('ver_liga', liga_id=liga.id)
 
     if request.method == 'POST':
-        
-        form = JugadorForm(request.POST, liga=liga) 
+        form = JugadorForm(request.POST, liga=liga)
         if form.is_valid():
-            jugador = form.save(commit=False) 
+            jugador = form.save(commit=False)
             jugador.liga = liga
-            jugador.activo = True 
             jugador.save()
-            messages.success(request, f"Jugador '{jugador.apodo}' creado sin usuario asociado.")
-            return redirect('gestionar_jugadores_liga', liga_id=liga_id)
+
+            action = request.POST.get('action') 
+
+            if action == 'crear_y_asociar':
+                messages.success(request, f"El jugador '{jugador.apodo}' ha sido creado exitosamente. Ahora asocia un usuario.")
+                # Redirigir a TU vista de asociación, pasando el ID del jugador
+                return redirect('asociar_usuario_a_jugador', liga_id=liga.id, jugador_id=jugador.id) # <--- ¡CAMBIO AQUÍ!
+            else: # action == 'crear' o cualquier otra cosa (por defecto)
+                messages.success(request, f"El jugador '{jugador.apodo}' ha sido creado exitosamente en la liga '{liga.nombre_liga}'.") 
+                return redirect('gestionar_jugadores_liga', liga_id=liga.id)
+        else:
+            pass # Si el formulario no es válido, se renderiza de nuevo con los errores
     else:
-        form = JugadorForm(liga=liga) 
+        form = JugadorForm(liga=liga)
 
     context = {
         'form': form,
         'liga': liga,
-        'titulo': "Crear Jugador sin Usuario"
+        'titulo': "Agregar Nuevo Jugador" 
     }
-    return render(request, 'AppFulbo/jugador_sin_usuario_form.html', context)
+    return render(request, 'AppFulbo/jugador_form.html', context)
 
 
 @login_required
@@ -529,11 +522,10 @@ def modificar_jugador(request, liga_id, jugador_id):
     context = {
         'form': form,
         'liga': liga,
-        'jugador': jugador,
+        'jugador': jugador, # Pasamos el objeto jugador para que la plantilla sepa que es una modificación
         'titulo': f"Modificar Jugador: {jugador.apodo}"
     }
-    return render(request, 'AppFulbo/jugador_modificar_form.html', context) 
-
+    return render(request, 'AppFulbo/jugador_form.html', context) # <--- ¡Usamos la misma plantilla!
 
 @login_required
 def asociar_usuario_a_jugador(request, liga_id, jugador_id):
@@ -719,37 +711,38 @@ def encontrar_equipos_mas_parejos(request, liga_id):
 
 
     
-@login_required
 def crear_partido(request, liga_id):
-    
     league = get_object_or_404(Liga, id=liga_id)
     
+    # Permisos para crear partido
+    if not (request.user == league.super_presidente or request.user in league.presidentes.all()):
+        messages.error(request, "No tienes permiso para crear partidos en esta liga.")
+        return redirect('ver_liga', liga_id=league.id)
+
     if request.method == 'POST':
-        form = PartidoForm(request.POST, league=league)
+        # Pasamos 'league' SIEMPRE al formulario.
+        form = PartidoForm(request.POST, league=league) # <--- Asegúrate de que 'league' se pase aquí
         if form.is_valid():
-            
             partido = form.save(commit=False)
             partido.liga = league
             partido.save()
             
-           
             jugadores_seleccionados = form.cleaned_data.get('jugadores')
-
-            for jugador in jugadores_seleccionados:
-                PuntajePartido.objects.create(
-                    jugador=jugador,
-                    partido=partido,
-                    puntaje=0.0
-                )
+            if jugadores_seleccionados:
+                for jugador in jugadores_seleccionados:
+                    PuntajePartido.objects.create(
+                        jugador=jugador,
+                        partido=partido,
+                        puntaje=0.0
+                    )
             
             messages.success(request, "Partido creado exitosamente.")
-            return redirect('ver_liga', liga_id=league.id)
+            return redirect('gestionar_partidos_liga', liga_id=league.id)
     else:
-        form = PartidoForm(league=league)
+        # Pasamos 'league' SIEMPRE al formulario.
+        form = PartidoForm(league=league) # <--- Asegúrate de que 'league' se pase aquí
     
-    return render(request, 'registro/crear_partido.html', {'form': form, 'liga': league})
-
-
+    return render(request, 'AppFulbo/partido_form.html', {'form': form, 'liga': league, 'titulo': "Crear Nuevo Partido"})
 
 @login_required
 def puntuar_jugadores_partido(request, partido_id, puntuacion_pendiente_id):
@@ -811,6 +804,85 @@ def ver_partido(request, partido_id):
     }
     return render(request, 'AppFulbo/ver_partido.html', context)
 
+@login_required
+def gestionar_partidos_liga(request, liga_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+
+    # Permisos: Solo super_presidente o presidentes de la liga pueden gestionar partidos
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para gestionar partidos en esta liga.")
+        return redirect('ver_liga', liga_id=liga_id)
+
+    # Usamos select_related para traer la info de liga en una sola consulta
+    # y prefetch_related para traer los puntajes_partidos (y sus jugadores) eficientemente
+    partidos = Partido.objects.filter(liga=liga).order_by('-fecha_partido').prefetch_related('puntajes_partidos__jugador')
+
+    context = {
+        'liga': liga,
+        'partidos': partidos,
+        'titulo': f"Gestión de Partidos en {liga.nombre_liga}"
+    }
+    return render(request, 'AppFulbo/gestionar_partidos.html', context) # <--- Nueva plantilla
+
+
+# AppFulbo/views.p
+
+# ... (Tus vistas existentes, como agregar_jugador, gestionar_jugadores_liga, gestionar_partidos_liga, etc.) ...
+
+def modificar_partido(request, liga_id, partido_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    partido = get_object_or_404(Partido, id=partido_id, liga=liga)
+
+    # Permisos: Solo super_presidente o presidentes de la liga pueden modificar partidos
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para modificar partidos en esta liga.")
+        return redirect('gestionar_partidos_liga', liga_id=liga.id)
+
+    if request.method == 'POST':
+        # Instancia del partido y la liga al formulario. No pasamos 'initial' para jugadores
+        # porque el campo 'jugadores' ya no existirá en el formulario de modificación.
+        form = PartidoForm(request.POST, instance=partido, league=liga) 
+        if form.is_valid():
+            partido = form.save() # Guarda el partido (fecha y cancha)
+            # NO hay manejo de PuntajePartido aquí, ya que no se modifican los jugadores
+            messages.success(request, f"Partido del {partido.fecha_partido.strftime('%d/%m/%Y')} modificado correctamente.")
+            return redirect('gestionar_partidos_liga', liga_id=liga.id)
+    else:
+        # Al cargar el formulario por primera vez, se inicializa con la instancia del partido.
+        # El campo 'jugadores' no se agregará al formulario porque hay una instancia.
+        form = PartidoForm(instance=partido, league=liga) 
+
+    context = {
+        'form': form,
+        'liga': liga,
+        'partido': partido, # Pasa la instancia de partido para que la plantilla sepa que es una edición
+        'titulo': f"Modificar Partido: {partido.fecha_partido.strftime('%d/%m/%Y')}"
+    }
+    return render(request, 'AppFulbo/partido_form.html', context)
+
+@login_required
+def eliminar_partido(request, liga_id, partido_id):
+    liga = get_object_or_404(Liga, id=liga_id)
+    partido = get_object_or_404(Partido, id=partido_id, liga=liga)
+
+    # Permisos: Solo super_presidente o presidentes de la liga pueden eliminar partidos
+    if not (request.user == liga.super_presidente or request.user in liga.presidentes.all()):
+        messages.error(request, "No tienes permiso para eliminar partidos en esta liga.")
+        return redirect('gestionar_partidos_liga', liga_id=liga.id)
+
+    if request.method == 'POST':
+        partido_fecha = partido.fecha_partido.strftime('%d/%m/%Y')
+        partido.delete()
+        messages.success(request, f"Partido del {partido_fecha} eliminado correctamente.")
+        return redirect('gestionar_partidos_liga', liga_id=liga.id)
+    
+    # Para mostrar una página de confirmación antes de eliminar (opcional)
+    context = {
+        'liga': liga,
+        'partido': partido,
+        'titulo': f"Confirmar Eliminación de Partido: {partido.fecha_partido.strftime('%d/%m/%Y')}"
+    }
+    return render(request, 'AppFulbo/confirmar_eliminar_partido.html', context) # <--- Nueva plantilla de confirmación
 
 @login_required
 def marcar_todas_notificaciones_ajax(request):

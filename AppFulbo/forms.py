@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Profile
+from .models import Jugador # Asumiendo que Jugador está en el mismo apps.py
 
 
 
@@ -125,75 +125,47 @@ class UserEditForm(forms.ModelForm):
         profile_instance.save()
         return user
 
-# En tu AppFulbo/forms.py
 
-from django import forms
-from django.contrib.auth.models import User
-from .models import Jugador # Asegúrate de importar Jugador y OPCIONES si así las llamas
 
-# --- 1. Formulario para CREAR Jugador sin Usuario y MODIFICAR Jugador ---
-class JugadorForm(forms.ModelForm):
+class JugadorForm(forms.ModelForm): # Esta clase se usará para crear y modificar
     class Meta:
         model = Jugador
-        # No incluimos 'liga' ni 'usuario' aquí, ya que se asignan en la vista
-        fields = ['apodo', 'posicion', 'numero'] 
-        labels = {
-            'apodo': 'Apodo',
-            'posicion': 'Posición',
-            'numero': 'Camiseta',
-        }
-        widgets = { # Añadir widgets para estilos de Bootstrap
+        fields = ['apodo', 'posicion', 'numero'] # Ahora solo estos campos. Quité 'activo' por simplicidad si no lo necesitan al crear.
+        widgets = {
             'apodo': forms.TextInput(attrs={'class': 'form-control'}),
             'posicion': forms.Select(attrs={'class': 'form-select'}),
             'numero': forms.NumberInput(attrs={'class': 'form-control'}),
-
         }
-        # help_texts y error_messages van DENTRO de Meta para ModelForms
-        help_texts = {
-            'apodo': 'Ingrese un apodo único en la liga.'
-        }
-        # error_messages para validaciones por defecto del modelo/campo
-        # La validación 'unique' para 'apodo' es custom en clean_apodo, así que esto es más bien un fallback
-        error_messages = {
-            'apodo': {
-                'unique': "Ya existe este apodo en esta liga.",
-            },
-        }
-
+    
     def __init__(self, *args, **kwargs):
-        self.liga = kwargs.pop('liga', None)
+        self.liga = kwargs.pop('liga', None) # Se sigue esperando 'liga' al instanciar
         super().__init__(*args, **kwargs)
 
     def clean_apodo(self):
-        apodo = self.cleaned_data.get('apodo')
-        if not apodo: # Si apodo puede ser nulo en el modelo, entonces required=False es válido
-            raise forms.ValidationError("El apodo es requerido.") # Esta validación se ejecuta si el campo es requerido
-        
-        if self.liga:
-            # Excluir el jugador actual de la validación si es que existe (al editar)
-            qs = Jugador.objects.filter(apodo__iexact=apodo, liga=self.liga)
-            if self.instance and self.instance.pk:
-                qs = qs.exclude(pk=self.instance.pk)
-            
-            if qs.exists():
-                raise forms.ValidationError("Este apodo ya existe en esta liga. Por favor, elige otro.")
+        apodo = self.cleaned_data['apodo']
+        # Al crear un jugador, instance.id será None. Al modificar, será el ID del jugador.
+        # Esto asegura que el apodo sea único en la liga, excluyendo al jugador actual si estamos modificando.
+        query = Jugador.objects.filter(liga=self.liga, apodo__iexact=apodo)
+        if self.instance and self.instance.pk: # Si estamos modificando un jugador existente
+            query = query.exclude(pk=self.instance.pk)
+        if query.exists():
+            raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
         return apodo
 
-# --- 2. Formulario para CREAR Nuevo Jugador y Asociar Usuario ---
-class CrearYAsociarJugadorForm(forms.Form): # Renombrado para mayor claridad
+class CrearYAsociarJugadorForm(forms.Form):
     username_usuario = forms.CharField(
         label="Nombre de Usuario existente",
         help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
         widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
     )
     apodo = forms.CharField(
-        max_length=50, # Considera un max_length mayor que 15, quizás 50 o 100
+        max_length=50,
         label="Apodo del Jugador",
         help_text="El apodo debe ser único en esta liga.",
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     posicion = forms.ChoiceField(
-        choices=Jugador.OPCIONES, # Asumo que Jugador.OPCIONES tiene tus tuplas de opciones
+        choices=Jugador.OPCIONES, 
         label="Posición",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -215,29 +187,31 @@ class CrearYAsociarJugadorForm(forms.Form): # Renombrado para mayor claridad
         except User.DoesNotExist:
             raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
         
+        # Si el usuario ya tiene un jugador en esta liga, lanzar error
         if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
             raise forms.ValidationError(f"Este usuario ('{username}') ya tiene un perfil de jugador asociado en esta liga.")
             
-        return username
+        return user # <--- ¡CAMBIO AQUÍ! Devuelve el objeto User, no el string.
 
     def clean_apodo(self):
         apodo = self.cleaned_data['apodo']
         if self.liga and Jugador.objects.filter(liga=self.liga, apodo__iexact=apodo).exists():
             raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
         return apodo
+    
 
-# --- 3. Formulario para ASOCIAR Usuario a Jugador Existente ---
 class AsociarUsuarioForm(forms.Form):
     username_usuario = forms.CharField(
         label="Nombre de Usuario para Asociar",
         help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
+        widget=forms.TextInput(attrs={'class': 'form-control'}) # Ya no necesitamos forzar el ID aquí, Django lo hará
     )
 
     def __init__(self, *args, **kwargs):
         self.liga = kwargs.pop('liga', None)
         self.jugador_a_asociar = kwargs.pop('jugador_a_asociar', None)
         super().__init__(*args, **kwargs)
+
 
     def clean_username_usuario(self):
         username = self.cleaned_data['username_usuario']
@@ -246,10 +220,14 @@ class AsociarUsuarioForm(forms.Form):
         except User.DoesNotExist:
             raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
         
+        if self.jugador_a_asociar and self.jugador_a_asociar.usuario == user:
+            return user
+
         if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
             raise forms.ValidationError(f"El usuario '{username}' ya tiene un perfil de jugador asociado en esta liga.")
             
-        return username
+        return user
+    
     
 
 class LigaForm(forms.ModelForm):
@@ -295,20 +273,12 @@ class LigaForm(forms.ModelForm):
 #             self.fields['liga'].queryset = Liga.objects.exclude(id__in=user_league_ids)
 
 
-
-
 class PartidoForm(forms.ModelForm):
-    # Campo adicional para seleccionar los jugadores de la liga que participaron.
-    jugadores = forms.ModelMultipleChoiceField(
-        queryset=None,  # Lo definiremos en __init__
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Jugadores que participaron"
-    )
-    
+    # Ya no definimos 'jugadores' aquí directamente, se manejará en __init__
+
     class Meta:
         model = Partido
-        fields = ['fecha_partido', 'cancha']
+        fields = ['fecha_partido', 'cancha'] # Solo estos campos son parte del modelo Partido directamente
         labels = {
             'fecha_partido': 'Fecha del partido',
             'cancha': 'Cancha',
@@ -318,13 +288,27 @@ class PartidoForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
-        # Esperamos recibir la instancia de la liga (league) para filtrar los jugadores.
         league = kwargs.pop('league', None)
+        # Una forma de saber si estamos modificando es si hay una 'instance'
+        is_modifying = kwargs.get('instance') is not None 
+
         super().__init__(*args, **kwargs)
-        if league:
-            # El queryset del campo 'jugadores' se limita a los jugadores de esa liga.
-            self.fields['jugadores'].queryset = league.jugadores.all()
-            
+
+        if not is_modifying: # Solo agrega el campo jugadores si es un formulario de creación
+            self.fields['jugadores'] = forms.ModelMultipleChoiceField(
+                queryset=None,  # Se define más abajo
+                widget=forms.CheckboxSelectMultiple,
+                required=False,
+                label="Jugadores que participaron"
+            )
+            if league:
+                self.fields['jugadores'].queryset = league.jugadores.all()
+        # Si es un formulario de modificación, no agregamos el campo 'jugadores'
+        # para que no sea editable.
+        if is_modifying and self.instance and self.instance.fecha_partido:
+
+                    self.initial['fecha_partido'] = self.instance.fecha_partido.isoformat()
+
 
 class SimularPartidoForm(forms.Form):
     # Campo adicional para seleccionar los jugadores de la liga que participaron.

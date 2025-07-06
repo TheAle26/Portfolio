@@ -14,13 +14,15 @@
     <table class="table table-striped" id="tablaLigas">
         <thead>
             <tr>
-                <th>Liga</th>
-                <th>Mi Jugador</th>
+                <th class="sortable" data-sort-by="liga">Liga <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="jugador">Mi Jugador <span class="sort-icon"></span></th>
             </tr>
         </thead>
         <tbody>
             {% for liga in ligas %}
-            <tr>
+            <tr class="liga-row" 
+                data-liga="{{ liga.nombre_liga|lower }}" 
+                data-jugador="{{ liga.mi_jugador.apodo|default:""|lower }}">
                 <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td>
                 <td>
                     {{ liga.mi_jugador.apodo }}
@@ -40,66 +42,85 @@
     </table>
 </div>
 
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('buscarLigaInput');
-    const tabla = document.getElementById('tablaLigas');
-    const filas = tabla.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    // --- Lógica de Búsqueda ---
+    const searchInput = document.getElementById('buscarLigaInput');
+    const table = document.getElementById('tablaLigas');
+    const tbody = table.querySelector('tbody');
+    let rows = Array.from(tbody.querySelectorAll('.liga-row')); // Convertir a Array para poder ordenar
 
-    input.addEventListener('keyup', function() {
-        const filtro = input.value.toLowerCase();
-        Array.from(filas).forEach(fila => {
-            const nombreLiga = fila.cells[0]?.innerText.toLowerCase();
-            if (!nombreLiga || nombreLiga.includes(filtro)) {
-                fila.style.display = '';
-            } else {
-                fila.style.display = 'none';
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+
+        rows.forEach(row => {
+            let found = false;
+            const ligaName = row.cells[0]?.innerText.toLowerCase() || '';
+            const playerName = row.cells[1]?.innerText.toLowerCase() || ''; // También buscar en el nombre del jugador
+
+            if (ligaName.includes(filter) || playerName.includes(filter)) {
+                found = true;
             }
+            row.style.display = found ? '' : 'none';
+        });
+    });
+
+    // --- Lógica de Ordenamiento ---
+    const headers = table.querySelectorAll('thead th.sortable');
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc'; // 'asc' o 'desc'
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sortBy; // 'liga' o 'jugador'
+
+            // Resetear íconos de orden de otros encabezados
+            headers.forEach(h => {
+                if (h !== this) {
+                    h.querySelector('.sort-icon').className = 'sort-icon'; // Limpiar clases de Font Awesome
+                }
+            });
+
+            if (currentSortColumn === sortBy) {
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = sortBy;
+                currentSortOrder = 'asc';
+            }
+
+            // Actualizar ícono de orden
+            const sortIcon = this.querySelector('.sort-icon');
+            sortIcon.className = 'sort-icon fas'; // Base Font Awesome classes
+            if (currentSortOrder === 'asc') {
+                sortIcon.classList.add('fa-sort-up');
+            } else {
+                sortIcon.classList.add('fa-sort-down');
+            }
+
+            // Ordenar las filas
+            rows.sort((a, b) => {
+                let valA, valB;
+
+                if (sortBy === 'liga') {
+                    valA = a.dataset.liga;
+                    valB = b.dataset.liga;
+                } else if (sortBy === 'jugador') {
+                    valA = a.dataset.jugador;
+                    valB = b.dataset.jugador;
+                }
+
+                // Comparación general
+                if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Reinsertar las filas ordenadas en el tbody
+            rows.forEach(row => tbody.appendChild(row));
         });
     });
 });
 </script>
-
+{% endblock extra_js %}
 {% endblock %}
-
-
-
-{% comment %} {% extends 'AppFulbo/base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <h2>Mis Ligas</h2>
-   
-    <a class="btn btn-primary ml-2" href="{% url 'crear_liga' %}">Crear Liga</a>
-
-    <br></br>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Liga</th>
-                <th>Mi Jugador</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for liga in ligas %}
-            <tr>
-                <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td>
-                <td>
-                    {{ liga.mi_jugador.apodo }}
-                    {% if liga.mi_jugador.puntaje %}
-                        - Puntaje: {{ liga.mi_jugador.puntaje }}
-                    {% else %}
-                        - Puntaje: N/A
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">No estás en ninguna liga.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
- {% endcomment %}

@@ -1,5 +1,5 @@
 {% extends 'AppFulbo/form_base.html' %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags %} {# Mantenemos crispy_forms_tags por si tienes otros formularios que usan crispy en el futuro #}
 
 {% block card_header_bg %}success{% endblock %}
 {% block form_title %}{{ titulo }}{% endblock %}
@@ -8,14 +8,101 @@
     <p class="text-muted">Asociando usuario al jugador: <strong>{{ jugador.apodo }}</strong></p>
     <form method="post" action="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}">
         {% csrf_token %}
-        {{ form|crispy }}
+        
+
+        <div class="mb-3">
+            {{ form.username_usuario.label_tag }}
+            {{ form.username_usuario }}
+            <div id="username-feedback" class="mt-1"></div> 
+            {% if form.username_usuario.help_text %}
+                <div class="form-text text-muted">{{ form.username_usuario.help_text|safe }}</div>
+            {% endif %}
+            {% if form.username_usuario.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.username_usuario.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
                 <i class="fas fa-link me-2"></i> Asociar Usuario
             </button>
+
             <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
                 <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
             </a>
         </div>
     </form>
 {% endblock form_content %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const usernameInput = document.getElementById('id_username_usuario');
+        const feedbackDiv = document.getElementById('username-feedback');
+        let timeout = null;
+
+        if (usernameInput && feedbackDiv) {
+            usernameInput.addEventListener('keyup', function() {
+                clearTimeout(timeout);
+                const username = this.value;
+
+                feedbackDiv.innerHTML = '';
+                usernameInput.classList.remove('is-valid', 'is-invalid');
+
+                if (username.length > 2) {
+                    timeout = setTimeout(function() {
+                        fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.exists) {
+                                    feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Usuario: <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
+                                    usernameInput.classList.add('is-valid');
+                                } else {
+                                    feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Usuario no existe o no disponible.</span>';
+                                    usernameInput.classList.add('is-invalid');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error en la petición AJAX:', error);
+                                feedbackDiv.innerHTML = '<span class="text-warning">Error al verificar usuario.</span>';
+                                usernameInput.classList.remove('is-valid', 'is-invalid');
+                            });
+                    }, 500);
+                }
+            });
+
+            usernameInput.addEventListener('blur', function() {
+                clearTimeout(timeout);
+                const username = this.value;
+                if (username.length > 2) {
+                    fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.exists) {
+                                feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Usuario: <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
+                                usernameInput.classList.remove('is-invalid');
+                                usernameInput.classList.add('is-valid');
+                            } else {
+                                feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Usuario no existe o no disponible.</span>';
+                                usernameInput.classList.remove('is-valid');
+                                usernameInput.classList.add('is-invalid');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error en la petición AJAX:', error);
+                            feedbackDiv.innerHTML = '<span class="text-warning">Error al verificar usuario.</span>';
+                            usernameInput.classList.remove('is-valid', 'is-invalid');
+                        });
+                } else {
+                    feedbackDiv.innerHTML = '';
+                    usernameInput.classList.remove('is-valid', 'is-invalid');
+                }
+            });
+        }
+    });
+</script>
+{% endblock extra_js %}

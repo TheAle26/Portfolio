@@ -1,0 +1,29 @@
+{# AppFulbo/templates/AppFulbo/confirmar_eliminar_partido.html #}
+{% extends 'AppFulbo/form_base.html' %}
+
+{% block card_header_bg %}danger{% endblock %}
+{% block form_title %}{{ titulo }}{% endblock %}
+
+{% block form_content %}
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">¡Atención!</h4>
+        <p>Estás a punto de eliminar el partido de la fecha **{{ partido.fecha_partido|date:"d/m/Y" }}** en **{{ partido.cancha }}** de la liga **{{ liga.nombre_liga }}**.</p>
+        <p>Esta acción **NO SE PUEDE DESHACER** y se eliminarán todos los puntajes asociados a este partido.</p>
+        <hr>
+        <p class="mb-0">¿Estás absolutamente seguro de que quieres continuar?</p>
+    </div>
+
+    <form method="post" action="{% url 'eliminar_partido' liga.id partido.id %}" class="mt-4">
+        {% csrf_token %}
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-danger d-inline-flex align-items-center">
+                <i class="fas fa-trash-alt me-2"></i> Confirmar Eliminación
+            </button>
+            <a href="{% url 'gestionar_partidos_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                <i class="fas fa-arrow-left me-2"></i> Cancelar
+            </a>
+        </div>
+    </form>
+{% endblock form_content %}
+
+{% block extra_js %}{% endblock extra_js %}

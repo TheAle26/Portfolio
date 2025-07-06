@@ -40,10 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'AppFulbo',
     'crispy_forms',
-    'crispy_bootstrap5',
+    "crispy_bootstrap4", # ¡Aquí debe decir crispy_bootstrap4!
 ]
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5" # O "bootstrap4"
-CRISPY_TEMPLATE_PACK = "bootstrap5" # O "bootstrap4"
+
+# ... más abajo en settings.py ...
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap4"]
+CRISPY_TEMPLATE_PACK = "bootstrap4" 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

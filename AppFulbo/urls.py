@@ -19,7 +19,9 @@ urlpatterns = [
     path('ligas/<int:liga_id>/', views.ver_liga, name='ver_liga'),
     path('ligas/<int:liga_id>/editar_liga', views.editar_liga, name='editar_liga'),
     # path('solicitudes/<int:solicitud_id>/asociar/', views.asociar_jugador, name='asociar_jugador'),
-
+    path('liga/<int:liga_id>/gestionar_partidos/', views.gestionar_partidos_liga, name='gestionar_partidos_liga'),
+    path('liga/<int:liga_id>/modificar_partido/<int:partido_id>/', views.modificar_partido, name='modificar_partido'),
+    path('liga/<int:liga_id>/eliminar_partido/<int:partido_id>/', views.eliminar_partido, name='eliminar_partido'), 
     path('mis_partidos/', views.partidos_jugados, name='mis_partidos'),
     path('ligas/<int:liga_id>/crear_partido/', views.crear_partido, name='crear_partido'),
     # path('ligas/<int:liga_id>/gestionar_solicitudes/', views.gestionar_solicitudes, name='gestionar_solicitudes'),
@@ -33,10 +35,8 @@ urlpatterns = [
     path('liga/<int:liga_id>/agregar_jugador_y_usuario/', views.agregar_jugador_y_usuario, name='agregar_jugador_y_usuario'), # Renombrado para coincidir con la vista
 
     # URL para CREAR JUGADOR SIN USUARIO
-    path('liga/<int:liga_id>/crear_jugador_sin_usuario/', views.crear_jugador_sin_usuario, name='crear_jugador_sin_usuario'),
-
-    # URL para MODIFICAR un jugador existente
-    path('liga/<int:liga_id>/modificar_jugador/<int:jugador_id>/', views.modificar_jugador, name='modificar_jugador'),
+    path('liga/<int:liga_id>/agregar_jugador/', views.agregar_jugador, name='agregar_jugador'), 
+    path('liga/<int:liga_id>/modificar_jugador/<int:jugador_id>/', views.modificar_jugador, name='modificar_jugador'), # URL de modificación
     
     # URL para ASOCIAR un usuario a un jugador ya existente (sin usuario)
     path('liga/<int:liga_id>/asociar_jugador/<int:jugador_id>/', views.asociar_usuario_a_jugador, name='asociar_usuario_a_jugador'),

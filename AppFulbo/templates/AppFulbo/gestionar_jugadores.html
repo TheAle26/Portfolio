@@ -1,40 +1,49 @@
-
+{# AppFulbo/templates/AppFulbo/gestionar_jugadores_liga.html #}
 {% extends 'AppFulbo/base.html' %}
 {% load static %}
 
+{% block title %}Gestión de Jugadores - {{ liga.nombre_liga }}{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
+
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Jugadores en {{ liga.nombre_liga }}</h2>
-        <a href="{% url 'agregar_jugador_y_usuario' liga.id %}" class="btn btn-primary d-inline-flex align-items-center">
-            <i class="fas fa-plus-circle me-2"></i> Nuevo Jugador
-        </a>
+    <a href="{% url 'agregar_jugador' liga.id %}" class="btn btn-primary d-inline-flex align-items-center"> {# <-- ¡CORRECCIÓN AQUÍ! #}
+        <i class="fas fa-plus-circle me-2"></i> Nuevo Jugador
+    </a>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    <div class="mb-3">
+        <input type="text" id="buscarJugadorGestion" class="form-control" placeholder="Buscar por apodo, posición o estado...">
+    </div>
 
     <div class="table-responsive">
-        <table class="table table-hover table-striped align-middle">
+        <table class="table table-hover table-striped align-middle" id="tablaJugadoresGestion">
             <thead class="table-dark">
                 <tr>
-                    <th>Apodo</th>
-                    <th>Usuario Asociado</th>
-                    <th>Posición</th>
-                    <th>Número</th>
-                    <th>Estado</th>
-                    <th class="text-center">Acciones</th>
+                    {# Modificamos los TH para que sean clicables y tengan data-sort #}
+                    <th class="sortable" data-sort-by="apodo">Apodo <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="usuario">Usuario Asociado <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="posicion">Posición <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="numero">Número <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="estado">Estado <span class="sort-icon"></span></th>
+                    <th class="text-center">Acciones</th> {# Acciones no será ordenable #}
                 </tr>
             </thead>
             <tbody>
+                {# Los jugadores activos y inactivos se agruparán para el ordenamiento #}
+                {% comment %}
+                Simplificamos el bucle de renderizado para que JavaScript maneje
+                la distinción activo/inactivo con clases si es necesario,
+                o simplemente ordene todo y mantenga el badge.
+                Aquí mantenemos la estructura que tenías para los badges,
+                pero el ordenamiento se hará sobre todas las filas.
+                {% endcomment %}
+
                 {% for jugador in jugadores_activos %}
-                <tr>
+                <tr class="jugador-row" data-apodo="{{ jugador.apodo|lower }}" data-usuario="{{ jugador.usuario.username|default:""|lower }}" data-posicion="{{ jugador.get_posicion_display|lower }}" data-numero="{{ jugador.numero|default:"9999" }}" data-estado="activo"> {# data-numero para ordenar números, 9999 si es null #}
                     <td>{{ jugador.apodo }}</td>
                     <td>
                         {% if jugador.usuario %}
@@ -56,16 +65,13 @@
                                     <i class="fas fa-user-plus"></i>
                                 </a>
                             {% endif %}
-                            <a href="{% url 'eliminar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-danger" title="Desactivar">
+                            <a href="{% url 'eliminar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-danger" title="Desactivar" onclick="return confirm('¿Estás seguro de que quieres desactivar a {{ jugador.apodo }}?');">
                                 <i class="fas fa-user-slash"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
-                {% empty %}
-
                 {% endfor %}
-
 
                 {% if jugadores_inactivos %}
                     <tr>
@@ -73,13 +79,12 @@
                     </tr>
                 {% endif %}
 
-
                 {% for jugador in jugadores_inactivos %}
-                <tr class="table-secondary text-muted"> 
-                    <td><del>{{ jugador.apodo }}</del></td> 
+                <tr class="table-secondary text-muted jugador-row" data-apodo="{{ jugador.apodo|lower }}" data-usuario="{{ jugador.usuario.username|default:""|lower }}" data-posicion="{{ jugador.get_posicion_display|lower }}" data-numero="{{ jugador.numero|default:"9999" }}" data-estado="inactivo">
+                    <td><del>{{ jugador.apodo }}</del></td>
                     <td>
                         {% if jugador.usuario %}
-                            <span class="badge bg-secondary">{{ jugador.usuario.username }}</span> 
+                            <span class="badge bg-secondary">{{ jugador.usuario.username }}</span>
                         {% else %}
                             <span class="badge bg-dark">Sin Asociar</span>
                         {% endif %}
@@ -89,23 +94,20 @@
                     <td><span class="badge bg-danger">Inactivo</span></td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
-                            {# Botón de Reactivar solo para inactivos #}
-                            <a href="{% url 'reactivar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-success" title="Reactivar">
+                            <a href="{% url 'reactivar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-success" title="Reactivar" onclick="return confirm('¿Estás seguro de que quieres reactivar a {{ jugador.apodo }}?');">
                                 <i class="fas fa-user-check me-1"></i> Reactivar
                             </a>
-
                             <a href="{% url 'modificar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-info" title="Modificar"><i class="fas fa-edit"></i></a>
                         </div>
                     </td>
                 </tr>
-                {% empty %}
-
-                    {% if not jugadores_activos %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted">No hay jugadores registrados en esta liga.</td>
-                        </tr>
-                    {% endif %}
                 {% endfor %}
+                
+                {% if not jugadores_activos and not jugadores_inactivos %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No hay jugadores registrados en esta liga.</td>
+                    </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
@@ -116,4 +118,104 @@
         </a>
     </div>
 </div>
-{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Lógica de Búsqueda (ya existente, pero lo incluyo para que quede completo) ---
+    const searchInput = document.getElementById('buscarJugadorGestion');
+    const table = document.getElementById('tablaJugadoresGestion');
+    const tbody = table.querySelector('tbody'); // Obtenemos el tbody para manipular las filas
+    let rows = Array.from(tbody.querySelectorAll('.jugador-row')); // Convertimos a Array para poder ordenar
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+
+        rows.forEach(row => {
+            let found = false;
+            for (let i = 0; i < row.cells.length - 1; i++) {
+                if (row.cells[i].textContent.toLowerCase().includes(filter)) {
+                    found = true;
+                    break;
+                }
+            }
+            row.style.display = found ? '' : 'none';
+        });
+    });
+
+    // --- Lógica de Ordenamiento ---
+    const headers = table.querySelectorAll('thead th.sortable');
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc'; // 'asc' o 'desc'
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sortBy; // 'apodo', 'usuario', etc.
+
+            // Resetear íconos de orden de otros encabezados
+            headers.forEach(h => {
+                if (h !== this) {
+                    h.querySelector('.sort-icon').className = 'sort-icon'; // Limpiar clases de Font Awesome
+                }
+            });
+
+            if (currentSortColumn === sortBy) {
+                // Si es la misma columna, invertir el orden
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                // Si es una nueva columna, reiniciar a ascendente
+                currentSortColumn = sortBy;
+                currentSortOrder = 'asc';
+            }
+
+            // Actualizar ícono de orden
+            const sortIcon = this.querySelector('.sort-icon');
+            sortIcon.className = 'sort-icon fas'; // Base Font Awesome classes
+            if (currentSortOrder === 'asc') {
+                sortIcon.classList.add('fa-sort-up');
+            } else {
+                sortIcon.classList.add('fa-sort-down');
+            }
+
+            // Ordenar las filas
+            rows.sort((a, b) => {
+                let valA, valB;
+
+                // Obtener el valor para comparar
+                if (sortBy === 'apodo') {
+                    valA = a.dataset.apodo;
+                    valB = b.dataset.apodo;
+                } else if (sortBy === 'usuario') {
+                    valA = a.dataset.usuario;
+                    valB = b.dataset.usuario;
+                } else if (sortBy === 'posicion') {
+                    valA = a.dataset.posicion;
+                    valB = b.dataset.posicion;
+                } else if (sortBy === 'numero') {
+                    // Convertir a número para ordenar numéricamente
+                    valA = parseInt(a.dataset.numero);
+                    valB = parseInt(b.dataset.numero);
+                } else if (sortBy === 'estado') {
+                    // Para estado, podríamos querer "Activo" primero o "Inactivo" primero
+                    // Aquí, 'activo' antes que 'inactivo' por defecto en orden ascendente
+                    valA = a.dataset.estado;
+                    valB = b.dataset.estado;
+                }
+
+                // Comparación general
+                if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Reinsertar las filas ordenadas en el tbody
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+    // Opcional: Aplicar un orden inicial al cargar la página (ej. por apodo ascendente)
+    // headers[0].click(); // Simular un click en el primer encabezado
+});
+</script>
+{% endblock extra_js %}
+{% endblock content %}

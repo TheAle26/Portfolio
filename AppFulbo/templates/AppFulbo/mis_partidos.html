@@ -4,7 +4,6 @@
 <div class="container mt-4">
     <h2>Mis Partidos Jugados</h2>
 
-    <!-- 🔍 Barra de búsqueda -->
     <div class="mb-3">
         <input type="text" id="buscarPartidoInput" class="form-control" placeholder="Buscar por fecha, cancha o liga...">
     </div>
@@ -12,30 +11,33 @@
     <table class="table table-striped" id="tablaPartidos">
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Cancha</th>
-                <th>Liga</th>
-                <th>Mi Puntaje</th>
-                <th>Ir a Detalle</th>
+                <th class="sortable" data-sort-by="fecha">Fecha <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="cancha">Cancha <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="liga">Liga <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="mi_puntaje">Mi Puntaje <span class="sort-icon"></span></th>
+                <th>Ir a Detalle</th> {# No es ordenable #}
             </tr>
         </thead>
         <tbody>
             {% for puntaje in puntajes %}
-            <tr>
+            <tr class="partido-row"
+                data-fecha="{{ puntaje.partido.fecha_partido|date:"Y-m-d" }}"
+                data-cancha="{{ puntaje.partido.cancha|lower }}"
+                data-liga="{{ puntaje.partido.liga.nombre_liga|lower }}"
+                data-mi_puntaje="{{ puntaje.puntaje|default:"-1" }}"> {# Usamos -1 para 'N/A' o valores nulos para que se ordenen al final si es ascendente #}
                 <td>{{ puntaje.partido.fecha_partido|date:"d/m/y" }}</td>
                 <td>{{ puntaje.partido.cancha }}</td>
                 <td>
                     <a href="{% url 'ver_liga' puntaje.partido.liga.id %}" class="text-dark text-decoration-none">
-                        {{ puntaje.partido.liga }}
+                        {{ puntaje.partido.liga.nombre_liga }}
                     </a>
                 </td>
-                <td>{{ puntaje.puntaje }}</td>
+                <td>{{ puntaje.puntaje|default:"N/A" }}</td>
                 <td>
-                    <a href="{% url 'ver_partido' puntaje.partido.id %}" class="text-dark text-decoration-none">
-                        {{ puntaje.puntaje }}
+                    <a href="{% url 'ver_partido' puntaje.partido.id %}" class="btn btn-sm btn-outline-info d-inline-flex align-items-center">
+                        <i class="fas fa-info-circle me-1"></i> Detalles
                     </a>
                 </td>
-
             </tr>
             {% empty %}
             <tr>
@@ -46,61 +48,84 @@
     </table>
 </div>
 
-<!--Filtro en vivo -->
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('buscarPartidoInput');
-    const tabla = document.getElementById('tablaPartidos');
-    const filas = tabla.querySelectorAll('tbody tr');
-    let debounceTimer;
+    // --- Lógica de Búsqueda ---
+    const searchInput = document.getElementById('buscarPartidoInput');
+    const table = document.getElementById('tablaPartidos');
+    const tbody = table.querySelector('tbody');
+    let rows = Array.from(tbody.querySelectorAll('.partido-row')); // Convertir a Array para poder ordenar
 
-    input.addEventListener('keyup', function () {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            const filtro = input.value.toLowerCase();
-            filas.forEach(fila => {
-                const textoFila = fila.innerText.toLowerCase();
-                fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+    searchInput.addEventListener('keyup', function () {
+        const filter = searchInput.value.toLowerCase();
+        rows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            row.style.display = rowText.includes(filter) ? '' : 'none';
+        });
+    });
+
+    // --- Lógica de Ordenamiento ---
+    const headers = table.querySelectorAll('thead th.sortable');
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc'; // 'asc' o 'desc'
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sortBy; 
+
+            // Resetear íconos de orden de otros encabezados
+            headers.forEach(h => {
+                if (h !== this) {
+                    h.querySelector('.sort-icon').className = 'sort-icon'; 
+                }
             });
-        }, 300); // espera 300 ms entre teclas para no sobrecargar
+
+            if (currentSortColumn === sortBy) {
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = sortBy;
+                currentSortOrder = 'asc';
+            }
+
+            // Actualizar ícono de orden
+            const sortIcon = this.querySelector('.sort-icon');
+            sortIcon.className = 'sort-icon fas'; 
+            if (currentSortOrder === 'asc') {
+                sortIcon.classList.add('fa-sort-up');
+            } else {
+                sortIcon.classList.add('fa-sort-down');
+            }
+
+            // Ordenar las filas
+            rows.sort((a, b) => {
+                let valA, valB;
+
+                if (sortBy === 'fecha') {
+                    valA = new Date(a.dataset.fecha);
+                    valB = new Date(b.dataset.fecha);
+                } else if (sortBy === 'cancha') {
+                    valA = a.dataset.cancha;
+                    valB = b.dataset.cancha;
+                } else if (sortBy === 'liga') {
+                    valA = a.dataset.liga;
+                    valB = b.dataset.liga;
+                } else if (sortBy === 'mi_puntaje') {
+                    valA = parseFloat(a.dataset.mi_puntaje);
+                    valB = parseFloat(b.dataset.mi_puntaje);
+                }
+
+                // Comparación general
+                if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Reinsertar las filas ordenadas en el tbody
+            rows.forEach(row => tbody.appendChild(row));
+        });
     });
 });
 </script>
+{% endblock extra_js %}
 {% endblock %}
-
-
-
-
-{% comment %} {% extends 'AppFulbo/base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <h2>Mis Partidos Jugados</h2>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Cancha</th>
-                <th>Liga</th>
-                <th>Mi Puntaje</th>
-
-            </tr>
-        </thead>
-        <tbody>
-            {% for puntaje in puntajes %}
-            <tr>
-                <td>{{ puntaje.partido.fecha_partido }}</td>
-                <td>{{ puntaje.partido.cancha }}</td>
-                <td>{{ puntaje.partido.liga }}</td>
-                <td>{{ puntaje.puntaje }}</td>
-
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No has jugado ningún partido.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %} {% endcomment %}

@@ -1,0 +1,84 @@
+{# AppFulbo/templates/AppFulbo/jugador_form.html #}
+{% extends 'AppFulbo/form_base.html' %}
+
+{% block card_header_bg %}{% if jugador %}info{% else %}primary{% endif %}{% endblock %}
+{% block form_title %}{{ titulo }}{% endblock %}
+
+{% block form_content %}
+    <form method="post" action="{% if jugador %}{% url 'modificar_jugador' liga.id jugador.id %}{% else %}{% url 'agregar_jugador' liga.id %}{% endif %}">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            {{ form.apodo.label_tag }}
+            {{ form.apodo }}
+            {% if form.apodo.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.apodo.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.posicion.label_tag }}
+            {{ form.posicion }}
+            {% if form.posicion.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.posicion.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.numero.label_tag }}
+            {{ form.numero }}
+            {% if form.numero.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.numero.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        {% if jugador %}
+        <div class="form-check mb-3">
+            {{ form.activo }}
+            {{ form.activo.label_tag }}
+            {% if form.activo.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.activo.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between mt-4">
+            {# Botones para CREAR (solo aparecen si NO estamos modificando un jugador existente) #}
+            {% if not jugador %}
+                <button type="submit" name="action" value="crear" class="btn btn-success d-inline-flex align-items-center">
+                    <i class="fas fa-plus-circle me-2"></i> Crear Jugador
+                </button>
+                <button type="submit" name="action" value="crear_y_asociar" class="btn btn-primary d-inline-flex align-items-center ms-2"> {# ms-2 para un pequeño margen #}
+                    <i class="fas fa-user-plus me-2"></i> Crear y Asociar Usuario
+                </button>
+            {% else %}
+                {# Botón para MODIFICAR (solo aparece si SÍ estamos modificando un jugador existente) #}
+                <button type="submit" class="btn btn-info d-inline-flex align-items-center">
+                    <i class="fas fa-edit me-2"></i> Guardar Cambios
+                </button>
+            {% endif %}
+
+        </div>
+                    <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+            </a>
+    </form>
+{% endblock form_content %}
+
+{% block extra_js %}{% endblock extra_js %}

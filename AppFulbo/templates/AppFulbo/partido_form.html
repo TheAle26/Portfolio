@@ -1,0 +1,65 @@
+{# AppFulbo/templates/AppFulbo/partido_form.html #}
+{% extends 'AppFulbo/form_base.html' %}
+{# NO cargues crispy_forms_tags si no lo usas para este form #}
+
+{% block card_header_bg %}{% if partido %}info{% else %}primary{% endif %}{% endblock %}
+{% block form_title %}{{ titulo }}{% endblock %}
+
+{% block form_content %}
+    <form method="post" action="{% if partido %}{% url 'modificar_partido' liga.id partido.id %}{% else %}{% url 'crear_partido' liga.id %}{% endif %}">
+        {% csrf_token %}
+        
+        {# Renderiza los campos del formulario manualmente #}
+        <div class="mb-3">
+            {{ form.fecha_partido.label_tag }}
+            {{ form.fecha_partido }}
+            {% if form.fecha_partido.errors %}<div class="invalid-feedback d-block">{% for error in form.fecha_partido.errors %}{{ error }}{% endfor %}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.cancha.label_tag }}
+            {{ form.cancha }}
+            {% if form.cancha.errors %}<div class="invalid-feedback d-block">{% for error in form.cancha.errors %}{{ error }}{% endfor %}</div>{% endif %}
+        </div>
+        
+        {# SOLO renderiza el campo 'jugadores' si existe en el formulario (es decir, si es una creación) #}
+        {% if form.jugadores %}
+            <div class="mb-3">
+                {{ form.jugadores.label_tag }}
+                <div class="form-check-group"> {# Agrupar checkboxes #}
+                {% for checkbox in form.jugadores %}
+                    <div class="form-check">
+                        {{ checkbox.tag }} {# Esto renderiza el input checkbox y su <label> #}
+                        {# Opcional: Si checkbox.tag no muestra la etiqueta del texto, puedes usar: #}
+                        {# <label class="form-check-label" for="{{ checkbox.id_for_label }}"> #}
+                        {#     {{ checkbox.choice_label }} #}
+                        {# </label> #}
+                        {# La línea siguiente es para asegurar que la etiqueta del texto (ej. el apodo) siempre esté visible. #}
+                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                    </div>
+                {% endfor %}
+                </div>
+                {% if form.jugadores.errors %}<div class="invalid-feedback d-block">{% for error in form.jugadores.errors %}{{ error }}{% endfor %}</div>{% endif %}
+                {% if form.jugadores.help_text %}
+                    <div class="form-text text-muted">{{ form.jugadores.help_text|safe }}</div>
+                {% endif %}
+            </div>
+        {% else %}
+            {# Mensaje opcional cuando se está modificando y los jugadores no son editables #}
+            <div class="alert alert-info" role="alert">
+                Los jugadores participantes no se pueden modificar una vez creado el partido.
+            </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn {% if partido %}btn-info{% else %}btn-success{% endif %} d-inline-flex align-items-center">
+                <i class="fas {% if partido %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i> 
+                {% if partido %}Guardar Cambios{% else %}Crear Partido{% endif %}
+            </button>
+            <a href="{% url 'gestionar_partidos_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+            </a>
+        </div>
+    </form>
+{% endblock form_content %}
+
+{% block extra_js %}{% endblock extra_js %}

@@ -1,0 +1,249 @@
+{# AppFulbo/templates/AppFulbo/gestionar_partidos.html #}
+{% extends 'AppFulbo/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ titulo }}</h2>
+        <a href="{% url 'crear_partido' liga.id %}" class="btn btn-primary d-inline-flex align-items-center">
+            <i class="fas fa-plus-circle me-2"></i> Nuevo Partido
+        </a>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" id="buscarPartidoGestion" class="form-control" placeholder="Buscar por fecha, cancha o jugadores...">
+    </div>
+
+    {% if partidos %}
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle" id="tablaPartidosGestion">
+            <thead class="table-dark">
+                <tr>
+                    {# Modificamos los TH para que sean clicables y tengan data-sort #}
+                    <th class="sortable" data-sort-by="fecha">Fecha <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="cancha">Cancha <span class="sort-icon"></span></th>
+
+                    <th class="text-center">Acciones</th> {# Acciones no será ordenable #}
+                </tr>
+            </thead>
+            <tbody>
+                {% for partido in partidos %}
+                {# Agregamos data-atributos a la fila principal para el ordenamiento #}
+                <tr class="partido-row"
+                    data-fecha="{{ partido.fecha_partido|date:"Y-m-d" }}" {# Formato YYYY-MM-DD para fácil comparación #}
+                    data-cancha="{{ partido.cancha|lower }}"
+                    data-liga="{{ partido.liga.nombre_liga|lower }}"
+                    data-id="{{ partido.id }}" {# Guardamos el ID para relacionar con la fila de detalle #}
+                >
+                    <td>{{ partido.fecha_partido|date:"d/m/Y" }}</td>
+                    <td>{{ partido.cancha }}</td>
+
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            {# Botón para expandir/colapsar detalles #}
+                            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ partido.id }}" aria-expanded="false" aria-controls="collapse{{ partido.id }}" title="Ver Detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {# Botón para editar (modificar_partido) #}
+                            <a href="{% url 'modificar_partido' liga.id partido.id %}" class="btn btn-sm btn-info" title="Modificar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {# Botón para eliminar (eliminar_partido) #}
+                            <a href="{% url 'eliminar_partido' liga.id partido.id %}" class="btn btn-sm btn-danger" title="Eliminar" onclick="return confirm('¿Estás seguro de que quieres eliminar este partido? Esta acción es irreversible.');">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {# La fila de detalle debe ir inmediatamente después de la fila principal para que el JS la encuentre #}
+                <tr id="collapse{{ partido.id }}" class="collapse accordion-collapse detalle-partido-row">
+                    <td colspan="4">
+                        <div class="p-3 bg-light border-start border-3 border-secondary">
+                            <h6>Jugadores Participantes:</h6>
+                            {% if partido.puntajes_partidos.all %}
+                                <ul class="list-group list-group-flush mt-2">
+                                    {% for puntaje_partido in partido.puntajes_partidos.all %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                            {{ puntaje_partido.jugador.apodo }} 
+                                            {% if puntaje_partido.puntaje is not None and puntaje_partido.puntaje != 0.0 %}
+                                                <span class="badge bg-success rounded-pill">Puntaje: {{ puntaje_partido.puntaje|floatformat:1 }}</span>
+                                            {% else %}
+                                                <span class="badge bg-warning rounded-pill text-dark">Pendiente</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted mt-2">No hay jugadores registrados para este partido.</p>
+                            {% endif %}
+                            <div class="mt-3">
+                                <a href="{% url 'ver_partido' partido.id %}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center">
+                                    <i class="fas fa-info-circle me-2"></i> Ir a Detalles del Partido
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No hay partidos registrados en esta liga. ¡Anímate a crear uno!
+        </div>
+    {% endif %}
+
+    <div class="mt-4 text-center">
+        <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary d-inline-flex align-items-center">
+            <i class="fas fa-arrow-left me-2"></i> Volver a la Liga
+        </a>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('buscarPartidoGestion');
+    const table = document.getElementById('tablaPartidosGestion');
+    const tbody = table.querySelector('tbody'); // Obtenemos el tbody para manipular las filas
+    
+    // Obtener todas las filas principales de partidos y sus filas de detalle asociadas
+    // Guardamos los pares [filaPrincipal, filaDetalle]
+    let partidoRowPairs = [];
+    tbody.querySelectorAll('.partido-row').forEach(mainRow => {
+        const detailRow = mainRow.nextElementSibling; // La fila de detalle está justo después
+        partidoRowPairs.push({ main: mainRow, detail: detailRow });
+    });
+
+    // --- Lógica de Búsqueda ---
+    searchInput.addEventListener('keyup', function() {
+        const filter = searchInput.value.toLowerCase();
+
+        partidoRowPairs.forEach(pair => {
+            const mainRow = pair.main;
+            const detailRow = pair.detail;
+
+            let found = false;
+            // Busca en las primeras tres celdas (Fecha, Cancha, Liga) de la fila principal
+            for (let i = 0; i < 3; i++) { 
+                if (mainRow.cells[i].textContent.toLowerCase().includes(filter)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // También busca en los nombres de los jugadores dentro de la fila de detalle
+            if (!found && detailRow) {
+                const jugadoresText = detailRow.textContent.toLowerCase();
+                if (jugadoresText.includes(filter)) {
+                    found = true;
+                }
+            }
+
+            mainRow.style.display = found ? '' : 'none';
+
+            if (detailRow) {
+                if (!found) {
+                    detailRow.style.display = 'none';
+                    // Si estaba expandida, colápsala si se oculta
+                    if (detailRow.classList.contains('show')) {
+                        const bsCollapse = bootstrap.Collapse.getInstance(detailRow);
+                        if (bsCollapse) {
+                            bsCollapse.hide();
+                        } else {
+                            new bootstrap.Collapse(detailRow, { toggle: false }).hide();
+                        }
+                    }
+                } else {
+                    // Si se vuelve a mostrar, asegúrate de que su display base esté activado
+                    detailRow.style.display = ''; 
+                }
+            }
+        });
+    });
+
+    // --- Lógica de Ordenamiento ---
+    const headers = table.querySelectorAll('thead th.sortable');
+    let currentSortColumn = null;
+    let currentSortOrder = 'asc'; // 'asc' o 'desc'
+
+    headers.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sortBy; 
+
+            // Resetear íconos de orden de otros encabezados
+            headers.forEach(h => {
+                if (h !== this) {
+                    h.querySelector('.sort-icon').className = 'sort-icon'; 
+                }
+            });
+
+            if (currentSortColumn === sortBy) {
+                currentSortOrder = (currentSortOrder === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = sortBy;
+                currentSortOrder = 'asc';
+            }
+
+            // Actualizar ícono de orden
+            const sortIcon = this.querySelector('.sort-icon');
+            sortIcon.className = 'sort-icon fas'; 
+            if (currentSortOrder === 'asc') {
+                sortIcon.classList.add('fa-sort-up');
+            } else {
+                sortIcon.classList.add('fa-sort-down');
+            }
+
+            // Ordenar los pares de filas
+            partidoRowPairs.sort((a, b) => {
+                let valA, valB;
+
+                // Obtener el valor para comparar de la fila principal (a.main o b.main)
+                if (sortBy === 'fecha') {
+                    valA = new Date(a.main.dataset.fecha);
+                    valB = new Date(b.main.dataset.fecha);
+                } else if (sortBy === 'cancha') {
+                    valA = a.main.dataset.cancha;
+                    valB = b.main.dataset.cancha;
+                } else if (sortBy === 'liga') {
+                    valA = a.main.dataset.liga;
+                    valB = b.main.dataset.liga;
+                }
+
+                // Comparación general
+                if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Reinsertar las filas ordenadas en el tbody
+            partidoRowPairs.forEach(pair => {
+                tbody.appendChild(pair.main);
+                tbody.appendChild(pair.detail); // Reinsertar la fila de detalle justo después de la principal
+            });
+
+            // Después de reordenar, es buena idea re-inicializar los collapses de Bootstrap
+            // para que no haya problemas si estaban abiertos y se movieron.
+            // Esto es opcional y podría no ser necesario con las versiones más recientes de Bootstrap,
+            // pero es un buen paso de depuración si los colapsables se portan raro.
+            // let collapseElements = tbody.querySelectorAll('.collapse');
+            // collapseElements.forEach(elem => {
+            //     let bsCollapse = bootstrap.Collapse.getInstance(elem);
+            //     if (bsCollapse) {
+            //         bsCollapse.dispose(); // Eliminar la instancia existente
+            //     }
+            //     new bootstrap.Collapse(elem, { toggle: false }); // Crear nueva instancia (cerrada por defecto)
+            // });
+        });
+    });
+});
+</script>
+{% endblock extra_js %}
+{% endblock content %}

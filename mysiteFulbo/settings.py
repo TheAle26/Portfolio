@@ -24,9 +24,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-16)(@j&5hi+yuy=i$a4ftd!0nupkcmwed&uz+5e-7ozs+nx3@0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+import socket
 
-ALLOWED_HOSTS = []
+hostname = socket.gethostname()
+
+if hostname == '2wz':
+    DEBUG = False
+    ALLOWED_HOSTS = ['192.168.0.240']
+    STATIC_ROOT = '/var/www/Fulbo/static'
+    # Otras configuraciones para producción
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = []
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    # Configuración para desarrollo
+
+
+
 
 
 # Application definition
@@ -81,13 +95,23 @@ WSGI_APPLICATION = 'mysiteFulbo.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    # Base de datos para desarrollo (por ejemplo, SQLite)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }   
+else:
+    # Base de datos para producción (puede ser SQLite o PostgreSQL)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/var/www/Fulbo/db.sqlite3',
+        }
     }
-}
+
 
 
 # Password validation
@@ -125,7 +149,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = '/home/alejovincent26/mysiteFulbo/static'
+import socket
+
+if socket.gethostname() == '2wz':
+    STATIC_ROOT = '/var/www/Fulbo/static'
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATIC_URL = 'static/'
 # STATICFILES_DIRS = [

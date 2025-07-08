@@ -1,26 +1,15 @@
 {% extends 'AppFulbo/base.html' %}
 
 {% block content %}
-<h1 class="mb-5"> Hola, bienvenido al sitio!
-</h1>
  
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cree su cuenta</title>
-</head>
-<body>
+
     {{mensaje}}
-    <form action="" method="post" > {% csrf_token %}
+{% load crispy_forms_tags %}
 
-        
-        {{ formulario.as_p }}
-
-        <input type="submit" value="Registrarse">
-    </form>
-
-{% endblock %}
-
-{% block botones %}
+<form method="post">
+    {% csrf_token %}
+    {{ formulario|crispy }}
+    <button type="submit" class="btn btn-success">Registrarse</button>
+</form>
 
 {% endblock %}

@@ -34,7 +34,8 @@ if hostname == '2wz':
     'localhost',
     '127.0.0.1',
     '192.168.0.240',
-    'fulboapp.redirectme.net',  # <- importante
+    '190.189.49.129',
+    'fulboapp.redirectme.net',
 ]
     STATIC_ROOT = '/var/www/Fulbo/static'
     # Otras configuraciones para producción

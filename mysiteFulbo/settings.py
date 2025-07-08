@@ -30,7 +30,12 @@ hostname = socket.gethostname()
 
 if hostname == '2wz':
     DEBUG = False
-    ALLOWED_HOSTS = ['192.168.0.240']
+    ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.0.240',
+    'fulboapp.redirectme.net',  # <- importante
+]
     STATIC_ROOT = '/var/www/Fulbo/static'
     # Otras configuraciones para producción
 else:

@@ -55,7 +55,8 @@
 
                 if (username.length > 2) {
                     timeout = setTimeout(function() {
-                        fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}`)
+                        fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}&liga_id={{ liga.id }}`)
+
                             .then(response => response.json())
                             .then(data => {
                                 if (data.exists) {
@@ -79,7 +80,8 @@
                 clearTimeout(timeout);
                 const username = this.value;
                 if (username.length > 2) {
-                    fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}`)
+                    fetch(`{% url "verificar_usuario_ajax" %}?username=${encodeURIComponent(username)}&liga_id={{ liga.id }}`)
+
                         .then(response => response.json())
                         .then(data => {
                             if (data.exists) {

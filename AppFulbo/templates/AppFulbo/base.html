@@ -120,10 +120,7 @@
             {% endfor %}
         {% endif %}
     </div>
-    {# Volvemos a tu estructura original, pero quitamos el `container` exterior #}
-    {# y dejamos que tu CSS y Bootstrap (el que ya tienes) hagan el trabajo #}
-    {# Aquí ya no necesitamos el container-fluid, row, col-12, col-md-8 #}
-    {# porque el CSS de .contenedor-blanco y sus media queries lo manejarán. #}
+
     <div class="mt-4"> 
         <div class="contenedor-blanco p-4 rounded shadow">
             {% block content %}{% endblock %}

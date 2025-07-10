@@ -169,11 +169,13 @@ class PuntuacionPendiente(models.Model):
 #         return f"De {self.remitente.username} - {self.fecha_envio:%d/%m/%Y %H:%M}"
 
     
+# en AppFulbo/models.py
+
 class Notificacion(models.Model):
     TIPO_CHOICES = [
         ('MSG', 'Mensaje'),
         ('SOL', 'Solicitud'),
-        ('PP','Puntuat Partido'),
+        ('PP', 'Puntuat Partido'),
     ]
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -182,12 +184,19 @@ class Notificacion(models.Model):
     )
     tipo = models.CharField(max_length=3, choices=TIPO_CHOICES)
     mensaje = models.CharField(max_length=255)
-    url = models.URLField(blank=True, null=True)  # Para enlazar a la acción relacionada
+    url = models.URLField(blank=True, null=True)
     leido = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Notificación para {self.usuario} - {self.mensaje}"
+
+    # --- AÑADE ESTO ---
+    class Meta:
+        indexes = [
+            models.Index(fields=['usuario', 'leido']),
+        ]
+        
 
 class SolicitudUnionLiga(models.Model):
     usuario = models.ForeignKey(

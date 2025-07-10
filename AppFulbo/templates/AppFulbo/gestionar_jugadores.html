@@ -13,6 +13,12 @@
     <a href="{% url 'agregar_jugador' liga.id %}" class="btn btn-primary d-inline-flex align-items-center"> {# <-- ¡CORRECCIÓN AQUÍ! #}
         <i class="fas fa-plus-circle me-2"></i> Nuevo Jugador
     </a>
+
+        <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary d-inline-flex align-items-center">
+            <i class="fas fa-arrow-left me-2"></i> Volver a la Liga
+        </a>
+
+</div>
     </div>
 
     <div class="mb-3">
@@ -112,12 +118,7 @@
         </table>
     </div>
 
-    <div class="mt-4 text-center">
-        <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary d-inline-flex align-items-center">
-            <i class="fas fa-arrow-left me-2"></i> Volver a la Liga
-        </a>
-    </div>
-</div>
+
 
 {% block extra_js %}
 <script>

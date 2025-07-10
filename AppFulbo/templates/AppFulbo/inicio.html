@@ -1,11 +1,42 @@
 {% extends 'AppFulbo/base.html' %}
-
+{% load static %}
 {% block content %}
-<div class="jumbotron mt-4">
-  <h1 class="display-4">¡Bienvenido a FulboApp!</h1>
-  <p class="lead">Esta es la página de inicio de tu aplicación de fútbol.</p>
+<div class="jumbotron mt-4 p-4 rounded bg-light border shadow-sm">
+  <h1 class="display-4 mb-3">⚽ Bienvenido a FulboApp</h1>
+  <p class="lead">FulboApp es una plataforma liviana y eficiente para organizar tus ligas de fútbol amateur.</p>
+  
   <hr class="my-4">
-  <p>Aquí podrás gestionar tus ligas y jugadores, además de acceder a otras funcionalidades.</p>
-  <a class="btn btn-primary btn-lg" href="{% url 'mis_ligas' %}" role="button">Ver Mis Ligas</a>
+
+  <div class="row">
+    <div class="col-md-8">
+      <h5>¿Qué podés hacer en FulboApp?</h5>
+      <ul class="list-unstyled mt-3">
+        <li>✅ Crear y gestionar <strong>ligas</strong>.</li>
+        <li>✅ Agregar y editar <strong>jugadores</strong> con sus estadísticas.</li>
+        <li>✅ Registrar <strong>partidos</strong> y puntuar a los jugadores.</li>
+        <li>✅ Visualizar datos de rendimiento y seguimiento individual.</li>
+      </ul>      
+      <h5>¿En un futuro!</h5>
+      <ul class="list-unstyled mt-3">
+        <li>✅ Ver cachas cercanas.</li>
+        <li>✅ Ver Niveles de las ligas.</li>
+        <li>✅ Visualizar datos de rendimiento y seguimiento individual.</li>
+      </ul>
+
+      <h5 class="mt-4">¿Cómo fue desarrollada?</h5>
+      <p>Esta aplicación fue desarrollada con <strong>Django (Python)</strong> y utiliza <strong>Bootstrap 5</strong> para el diseño. Corre en una <strong>Raspberry Pi Zero 2W</strong>, demostrando que se pueden lograr sistemas web funcionales y rápidos incluso con hardware limitado.</p>
+    </div>
+
+    <div class="col-md-4 text-center">
+      <img src="{% static 'img/imgraspberry-pi-logo.png' %}" alt="Raspberry Pi" style="max-width: 150px;" class="img-fluid mb-3">
+      <p class="text-muted"><small>Servidor actual: Raspberry Pi Zero 2W</small></p>
+    </div>
+  </div>
+
+  <div class="mt-4 text-center">
+    <a class="btn btn-primary btn-lg" href="{% url 'mis_ligas' %}" role="button">
+      <i class="fas fa-futbol me-2"></i> Ver Mis Ligas
+    </a>
+  </div>
 </div>
 {% endblock %}

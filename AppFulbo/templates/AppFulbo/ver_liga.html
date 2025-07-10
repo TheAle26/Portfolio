@@ -49,7 +49,7 @@
 
     <div class="row mb-3">
         <div class="col-12">
-            {# Bloque 3: Botones de Gestión #}
+
             {% if request.user in liga.presidentes.all %}
                 <a class="btn btn-success me-2 mb-2" href="{% url 'editar_liga' liga.id %}">
                     <i class="fa-solid fa-pencil"></i> Editar Liga
@@ -59,9 +59,8 @@
                 ✨ Formar Equipos ✨
             </a>
             
-            {# Agrego aquí el botón de puntuación pendiente que tenías suelto #}
             {% if mi_jugador.puntuacion_pendiente.all %}
-                {# Asegúrate de que solo se tome la primera puntuación pendiente si hay varias para el mismo jugador #}
+
                 <a href="{% url 'puntuar_jugadores_partido' liga.id mi_jugador.puntuacion_pendiente.first.partido.id %}" class="btn btn-warning mb-2 d-inline-flex align-items-center">
                     <i class="bi bi-stars me-2"></i> Puntuación Pendiente
                 </a>
@@ -134,7 +133,14 @@
                     <h5 class="alert-heading">¡Tienes puntuaciones pendientes!</h5>
                 </div>
             {% endif %}
-
+            {% if request.user in liga.presidentes.all %}
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>{{ titulo }}</h2>
+                    <a href="{% url 'crear_partido' liga.id %}" class="btn btn-primary d-inline-flex align-items-center">
+                        <i class="fas fa-plus-circle me-2"></i> Nuevo Partido
+                    </a>
+                </div>
+            {% endif %}
             <div class="row" id="contenedorPartidos" style="display: none;"> {# Inicialmente oculto #}
                 <input id="buscarPartidoInput" type="text" class="form-control my-2" placeholder="Buscar por cancha o fecha...">
                 
@@ -185,7 +191,7 @@
                                         {# Botón para Calificar Jugadores (condicional) #}
                                         {% for puntuacion in puntuaciones_pendientes %}
                                             {% if puntuacion.partido == partido and puntuacion.jugador == mi_jugador %}
-                                                <a href="{% url 'puntuar_jugadores_partido' liga.id partido.id %}"
+                                                <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}"
                                                 class="btn btn-warning btn-sm d-inline-flex align-items-center btn-hover-custom">
                                                     <i class="bi bi-stars me-2"></i>
                                                     Calificar Jugadores

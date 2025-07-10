@@ -35,7 +35,7 @@ if hostname == '2wz':
     '127.0.0.1',
     '192.168.0.240',
     '190.189.49.129',
-    'fulboapp.redirectme.net',
+    'fulboapp.zapto.org',
 ]
     STATIC_ROOT = '/var/www/Fulbo/static'
     # Otras configuraciones para producción
@@ -154,18 +154,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
 import socket
 
-if socket.gethostname() == '2wz':
-    STATIC_ROOT = '/var/www/Fulbo/static'
-else:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
 
-STATIC_URL = 'static/'
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'AppFulbo/static'),
-# ]
+if socket.gethostname() == '2wz':  # Producción (Raspberry Pi)
+    STATIC_ROOT = '/var/www/Fulbo/static'
+    STATICFILES_DIRS = []  # No se usa en producción
+else:  # Desarrollo (tu PC)
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'AppFulbo/static'),
+    ]
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Por si hacés collectstatic localmente
+
 
 
 # Default primary key field type
@@ -177,3 +178,10 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 LOGIN_URL='/AppFulbo/login'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}

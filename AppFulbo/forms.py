@@ -218,17 +218,14 @@ class AsociarUsuarioForm(forms.Form):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
-        
-        if self.jugador_a_asociar and self.jugador_a_asociar.usuario == user:
-            return user
+            raise forms.ValidationError("El usuario no existe.")
 
         if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
-            raise forms.ValidationError(f"El usuario '{username}' ya tiene un perfil de jugador asociado en esta liga.")
-            
-        return user
-    
-    
+            raise forms.ValidationError("Este usuario ya tiene un perfil de jugador en esta liga.")
+
+        return user  # importante: devolver el objeto User
+        
+  
 
 class LigaForm(forms.ModelForm):
     class Meta:

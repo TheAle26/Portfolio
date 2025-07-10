@@ -384,19 +384,31 @@ def editar_liga(request, liga_id):
 
 
     
-# Vista para verificar si el usuario existe (para AJAX)
 
-# Vista para verificar si el usuario existe (cambiado para usar username)
+
 def verificar_usuario_ajax(request):
-    username = request.GET.get('username', None)
-    data = {
-        'exists': User.objects.filter(username__iexact=username).exists()
-    }
-    if data['exists']:
-        user = User.objects.get(username__iexact=username)
-        data['first_name'] = user.first_name
-        data['last_name'] = user.last_name
-    return JsonResponse(data)
+    username = request.GET.get('username', '')
+    liga_id = request.GET.get('liga_id')
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'exists': False})
+
+    # Verificar si ya tiene un jugador en esa liga
+    if liga_id:
+        try:
+            liga = Liga.objects.get(id=liga_id)
+            if Jugador.objects.filter(usuario=user, liga=liga).exists():
+                return JsonResponse({'exists': False})  # ya tiene jugador en esta liga
+        except Liga.DoesNotExist:
+            return JsonResponse({'exists': False})
+
+    return JsonResponse({
+        'exists': True,
+        'first_name': user.first_name,
+        'last_name': user.last_name
+    })
 
 
 @login_required

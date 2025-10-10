@@ -63,11 +63,13 @@
                 <li class="nav-item d-none d-lg-block"><span class="nav-link">|</span></li>
 
                 {% if user.is_authenticated %}
+
                     <li class="nav-item dropdown">
                         <a id="notificationDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa-solid fa-bell"></i>
+                            
                             {% if notificaciones_no_leidas > 0 %}
-                                <span class="badge bg-danger">{{ notificaciones_no_leidas }}</span>
+                                <span id="notificacion-badge" class="badge bg-danger">{{ notificaciones_no_leidas }}</span>
                             {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width: 300px;">
@@ -76,12 +78,14 @@
                                     {% for notificacion in notifs %}
                                         <li>
                                             <a class="dropdown-item" href="{{ notificacion.url|default:'#' }}">
+                                                
                                                 {% if not notificacion.leido %}
-                                                <i class="fa-solid fa-circle" style="color: blue; font-size: 0.8rem;"></i>
-                                                {{ notificacion.mensaje }}
+                                                    <i class="fa-solid fa-circle unread-dot" style="color: blue; font-size: 0.8rem;"></i>
+                                                    {{ notificacion.mensaje }}
                                                 {% else %}
-                                                <small class="text-muted">{{ notificacion.mensaje }}</small>
+                                                    <small class="text-muted">{{ notificacion.mensaje }}</small>
                                                 {% endif %}
+                                                
                                                 <br>
                                                 <small class="text-muted">{{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}</small>
                                             </a>
@@ -157,5 +161,53 @@
     {# Este bloque es para scripts adicionales de las plantillas hijas #}
     {% block extra_js %} 
     {% endblock extra_js %}
+    {% if user.is_authenticated %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownElement = document.getElementById('notificationDropdown');
+        let yaMarcado = false; // Una bandera para evitar múltiples llamadas
+
+        if (dropdownElement) {
+            // Bootstrap dispara este evento justo cuando el menú desplegable se empieza a mostrar
+            dropdownElement.addEventListener('show.bs.dropdown', function () {
+                
+                const badge = document.getElementById('notificacion-badge');
+                
+                // Solo ejecutamos la lógica si hay notificaciones sin leer y no lo hemos hecho ya
+                if (badge && !yaMarcado) {
+                    
+                    // Marcamos para no volver a ejecutarlo en esta carga de página
+                    yaMarcado = true;
+
+                    // Llamamos a la vista que ya tienes para marcar todas como leídas
+                    fetch("{% url 'marcar_todas_notificaciones_ajax' %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Si el servidor confirma, actualizamos la interfaz sin recargar
+                            
+                            // 1. Ocultamos el contador rojo
+                            badge.style.display = 'none';
+                            
+                            // 2. Ocultamos todos los puntos azules de "no leído"
+                            const unreadDots = document.querySelectorAll('.unread-dot');
+                            unreadDots.forEach(dot => {
+                                dot.style.display = 'none';
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Error al marcar notificaciones:', error));
+                }
+            });
+        }
+    });
+    </script>
+    {% endif %}
 </body>
 </html>

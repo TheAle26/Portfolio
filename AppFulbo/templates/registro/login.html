@@ -9,16 +9,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inice sesion</title>
 </head>
-<body>
+{% load crispy_forms_tags %}
+
     {{mensaje}}
     <form action="" method="post" > {% csrf_token %}
 
        
-        {{ formulario.as_p }}
+        {{ formulario|crispy }}
 
         <input type="submit" value="Iniciar sesion">
     </form>
     <br> </br>
-    <a class="btn btn-secondary" href="{% url 'register' %}">No tienes una cuenta? Unete aqui!</a>
+    <div class="text-center mt-3">
+    <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+    </div>
+    <a class="btn btn-secondary" href="{% url 'registro' %}">No tienes una cuenta? Unete aqui!</a>
 {% endblock %}
 

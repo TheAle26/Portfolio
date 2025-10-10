@@ -7,7 +7,7 @@
     <h3>Seleccionar Jugadores</h3>
     <div>
         {% for jugador in form.fields.jugadores.queryset %}
-            <input type="checkbox" name="jugadores" value="{{ jugador.id }}"> {{ jugador.apodo }} (Puntaje: {{ jugador.puntaje|floatformat:2 }})<br>
+            <input type="checkbox" name="jugadores" value="{{ jugador.id }}"> {{ jugador.apodo }} ({{ jugador.puntaje|floatformat:2 }})<br>
         {% endfor %}
     </div>
 

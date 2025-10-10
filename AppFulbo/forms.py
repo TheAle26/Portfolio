@@ -230,45 +230,29 @@ class AsociarUsuarioForm(forms.Form):
 class LigaForm(forms.ModelForm):
     class Meta:
         model = Liga
-        fields = ['nombre_liga','descripcion']
+        fields = ['nombre_liga','descripcion','publica']
         labels = {
             'nombre_liga': 'Nombre de la liga',
-            'descripcion': 'Descripccion de la liga'
+            'descripcion': 'Descripccion de la liga',
+            'publica':'Publica o Privada'
         }
         widgets = {
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Descripción'}),
         }
         help_texts = {
-            'nombre_liga': 'Ingrese un nombre único para la liga.'
+            'nombre_liga': 'Ingrese un nombre único para la liga.',
+            'publica': 'Una liga publica permite que cualquier usuario vea todo su contenido.'
         }
         error_messages = {
             'nombre_liga': {
                 'unique': "Ya existe una liga con este nombre. Por favor, elige otro nombre.",
             },
         }
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields.pop('nombre_liga', None)
-
-        
-
-# class MiJugadorForm(JugadorForm):
-#     class Meta(JugadorForm.Meta):
-#         # Por ejemplo, podrías agregar o modificar campos, si fuera necesario.
-#         pass
-
-
-#     def __init__(self, *args, **kwargs):
-#         # Se espera recibir el usuario logueado para filtrar las ligas
-#         user = kwargs.pop('user', None)
-#         super().__init__(*args, **kwargs)
-#         if user:
-#             # Obtener los IDs de las ligas en las que el usuario ya tiene un jugador.
-#             user_league_ids = Jugador.objects.filter(usuario=user).values_list('liga', flat=True)
-#            # Filtrar el queryset del campo liga para excluir esas ligas.
-#             self.fields['liga'].queryset = Liga.objects.exclude(id__in=user_league_ids)
-
 
 class PartidoForm(forms.ModelForm):
     # Ya no definimos 'jugadores' aquí directamente, se manejará en __init__

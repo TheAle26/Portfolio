@@ -233,11 +233,15 @@ def crear_liga(request):
 def ver_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     mi_jugador = None
-    partidos = liga.partidos.all().order_by('-fecha_partido')
+    
 
     if request.user.is_authenticated:
         mi_jugador = liga.jugadores.filter(usuario=request.user).first()
-
+        if mi_jugador is None: # Usar 'is None' es la forma idiomática en Python
+            messages.error(request, f'No tienes un perfil de jugador asociado a esta liga privada. Por favor, contacta al presidente de la liga.')
+            return redirect('inicio')  
+            
+    partidos = liga.partidos.all().order_by('-fecha_partido')
     puntuaciones_pendientes = mi_jugador.puntuaciones_jugador.filter(liga=liga) if mi_jugador else None
 
 
@@ -256,6 +260,10 @@ def editar_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     # Obtén las relaciones
     presidentes = liga.presidentes.all()
+    if not (request.user == liga.super_presidente or request.user in presidentes.all()):
+        messages.error(request, f'No tiene permiso para editar la liga.')
+        return redirect('ver_liga.html',liga_id) 
+    
     jugadores = liga.jugadores.filter(activo=True)
     partidos = liga.partidos.all()
 
@@ -382,10 +390,7 @@ def editar_liga(request, liga_id):
     }
     return render(request, 'AppFulbo/editar_liga.html', context)
 
-
     
-
-
 def verificar_usuario_ajax(request):
     username = request.GET.get('username', '')
     liga_id = request.GET.get('liga_id')

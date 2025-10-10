@@ -38,6 +38,7 @@ NUMERO_CHOICES = [(i, str(i)) for i in range(1, 100)]
 class Liga(models.Model):
     nombre_liga = models.CharField(max_length=20, unique=True)
     descripcion = models.TextField(blank=True, null=True)
+    publica= models.BooleanField(blank=False, default=False)
     presidentes = models.ManyToManyField(User, related_name="ligas_presididas")  # Relación ManyToMany con los presidentes
     super_presidente = models.ForeignKey(
          settings.AUTH_USER_MODEL,

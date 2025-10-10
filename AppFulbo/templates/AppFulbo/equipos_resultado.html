@@ -12,7 +12,7 @@
 <h3>Equipo 2</h3>
 <ul>
     {% for jugador in equipo2 %}
-        <li>{{ jugador.apodo }} (Puntaje: {{ jugador.puntaje|floatformat:2 }})</li>
+        <li>{{ jugador.apodo }} ({{ jugador.puntaje|floatformat:2 }})</li>
     {% endfor %}
 </ul>
 

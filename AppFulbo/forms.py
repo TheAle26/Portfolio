@@ -12,46 +12,63 @@ from .models import Jugador # Asumiendo que Jugador está en el mismo apps.py
 
 
 class UserRegisterForm(UserCreationForm):
+    # Campos obligatorios adicionales
+    email = forms.EmailField(required=True, label='Email')
+    first_name = forms.CharField(required=True, label="Nombre")
+    last_name = forms.CharField(required=True, label="Apellido")
 
-    username = forms.CharField(label="Nombre de usuario")
-    first_name = forms.CharField(label="Nombre")
-    last_name = forms.CharField(label="Apellido")
-    email = forms.EmailField(label='Email')
-    password1 = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Repetir contraseña", widget=forms.PasswordInput)
-
-
+    # Campos del Perfil (Profile) que no están en User
     fecha_nacimiento = forms.DateField(
         label="Fecha de nacimiento",
         required=False,
-        widget=forms.DateInput(attrs={'type': 'date'})
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
     foto_perfil = forms.ImageField(
         label="Foto de perfil (opcional)",
         required=False, 
-        widget=forms.FileInput
+        widget=forms.FileInput(attrs={'class': 'form-control'})
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
+        # Quitamos password1 y password2 de aquí porque UserCreationForm ya los maneja internamente
         fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email')
 
-    def __str__(self):
-        return self.usuario.username   
-    
-    class Meta:
-        model = User
-        fields = [
-            'username',
-            'first_name',
-            'last_name',
-            'email',
-            'password1',
-            'password2',
-            'fecha_nacimiento'
-        ]
-        help_texts = {k: "" for k in fields}
+    # --- 1. AQUÍ ESTÁ LA MAGIA PARA EL EMAIL ÚNICO ---
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # iexact busca sin importar mayúsculas/minúsculas
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Este email ya está registrado. Prueba con otro.")
+        return email
 
+    # --- 2. GUARDADO PERSONALIZADO (Para guardar foto y fecha) ---
+    def save(self, commit=True):
+        # Primero guardamos el usuario (UserCreationForm se encarga del hash de la contraseña)
+        user = super().save(commit=False)
+        
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
+
+        if commit:
+            user.save() # Esto dispara la señal que crea el Profile vacío
+            
+            # Ahora guardamos los datos extra en el perfil
+            # (Asegúrate de que el usuario tenga perfil, por si la señal falló)
+            if hasattr(user, 'profile'):
+                profile = user.profile
+                profile.fecha_nacimiento = self.cleaned_data.get('fecha_nacimiento')
+                
+                # Solo actualizamos la foto si el usuario subió una nueva
+                foto = self.cleaned_data.get('foto_perfil')
+                if foto:
+                    profile.foto_perfil = foto
+                
+                profile.save()
+
+        return user
+    
 User = get_user_model()
 
 class UserEditForm(forms.ModelForm):

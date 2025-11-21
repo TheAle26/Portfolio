@@ -12,38 +12,24 @@ import itertools
 from django.contrib.auth.models import User
 import itertools
 from .models import Liga, Jugador
-
+from .forms import UserRegisterForm
 def inicio(request):
     return render(request,"AppFulbo/inicio.html") #como tercer argumento le tengo que pasar en forma de diccionario la info
 
 
 def register(request):
     if request.method == 'POST':
-        # 1. Usamos el formulario que acepta tanto datos como archivos (request.FILES)
-        form = AppFulbo.forms.UserRegisterForm(request.POST, request.FILES)
+        form = UserRegisterForm(request.POST, request.FILES)
 
         if form.is_valid():
-            # 2. Guardamos el usuario. El perfil se crea automáticamente gracias a las señales.
             user = form.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
-            # 3. Guardamos los datos extra (foto y fecha) en el modelo Profile.
-            user.profile.fecha_nacimiento = form.cleaned_data.get('fecha_nacimiento')
-            if 'foto_perfil' in request.FILES:
-                user.profile.foto_perfil = request.FILES['foto_perfil']
-            user.profile.save()
+            messages.success(request, f'¡Bienvenido, {user.username}! Tu cuenta ha sido creada.')
+            return redirect('inicio')
 
-            # 4. AÑADIMOS TU LÓGICA DE AUTO-LOGIN
-            # Usamos la contraseña limpia del formulario para autenticar
-            password = form.cleaned_data.get('password2')
-            authenticated_user = authenticate(username=user.username, password=password)
-
-            if authenticated_user is not None:
-                login(request, authenticated_user)
-                messages.success(request, f'¡Bienvenido, {user.username}! Tu cuenta ha sido creada.')
-                # 5. Redirigimos a 'inicio', como querías.
-                return redirect('inicio')
     else:
-        form = AppFulbo.forms.UserRegisterForm()
+        form = UserRegisterForm()
 
     return render(request, "registro/register.html", {"formulario": form})
 

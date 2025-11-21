@@ -6,7 +6,7 @@
     {{mensaje}}
 {% load crispy_forms_tags %}
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ formulario|crispy }}
     <button type="submit" class="btn btn-success">Registrarse</button>

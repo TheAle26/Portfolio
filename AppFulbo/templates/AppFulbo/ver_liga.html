@@ -42,7 +42,14 @@
             {% else %}
                 <p class="text-muted">No tienes un perfil de jugador en esta liga.</p>
             {% endif %}
+
+
         </div>
+                                {% if request.user in liga.presidentes.all %}
+                <a class="btn btn-success me-2 mb-2" href="{% url 'editar_liga' liga.id %}">
+                    <i class="fa-solid fa-pencil"></i> Editar Liga
+                </a>
+            {% endif %}
     </div>
     <hr>
 
@@ -50,11 +57,6 @@
     <div class="row mb-3">
         <div class="col-12">
 
-            {% if request.user in liga.presidentes.all %}
-                <a class="btn btn-success me-2 mb-2" href="{% url 'editar_liga' liga.id %}">
-                    <i class="fa-solid fa-pencil"></i> Editar Liga
-                </a>
-            {% endif %}
             <a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn-magic mb-2">
                 ✨ Formar Equipos ✨
             </a>

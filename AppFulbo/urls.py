@@ -1,7 +1,7 @@
 from django.urls import path
 from AppFulbo import views
 from django.contrib.auth.views import LogoutView
-
+from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('inicio/',views.inicio,name='inicio'),
     path('login/',views.login_request,name='login'),
@@ -45,4 +45,26 @@ urlpatterns = [
     path('liga/<int:liga_id>/eliminar_jugador/<int:jugador_id>/', views.eliminar_jugador, name='eliminar_jugador'),
     path('liga/<int:liga_id>/jugadores/<int:jugador_id>/reactivar/', views.reactivar_jugador, name='reactivar_jugador'),
     path('notificaciones/marcar_todas_ajax/', views.marcar_todas_notificaciones_ajax, name='marcar_todas_notificaciones_ajax'),
+    
+    
+    #para cabiar la clave
+    # 1. El formulario para pedir el correo
+    path('reset_password/', 
+         auth_views.PasswordResetView.as_view(template_name="registro/password_reset_form.html"), 
+         name='password_reset'),
+
+    # 2. Mensaje de "Correo enviado exitosamente"
+    path('reset_password_sent/', 
+         auth_views.PasswordResetDoneView.as_view(template_name="registro/password_reset_done.html"), 
+         name='password_reset_done'),
+
+    # 3. Link que le llega al usuario para poner la nueva clave
+    path('reset/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(template_name="registro/password_reset_confirm.html"), 
+         name='password_reset_confirm'),
+
+    # 4. Mensaje de "Contraseña cambiada con éxito"
+    path('reset_password_complete/', 
+         auth_views.PasswordResetCompleteView.as_view(template_name="registro/password_reset_complete.html"), 
+         name='password_reset_complete'),
 ]

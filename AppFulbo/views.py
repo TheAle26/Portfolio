@@ -66,7 +66,7 @@ def login_request(request):
            
         else:
             formulario = AuthenticationForm()
-            return render(request, "registro/login.html", {"mensaje":"Formulario erroneo","formulario": formulario})
+            return render(request, "registro/login.html", {"mensaje":"Datos incorrectos","formulario": formulario})
 
     formulario = AuthenticationForm()
 

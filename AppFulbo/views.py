@@ -92,9 +92,11 @@ def mis_ligas(request):
         liga = jugador.liga
         liga.mi_jugador = jugador  # Agregamos el jugador a la instancia de liga
         ligas_con_jugador.append(liga)
-    
+        
+    ligas_publicas = Liga.objects.filter(publica=True).exclude(nombre_liga__in=ligas_con_jugador)
     context = {
-        'ligas': ligas_con_jugador
+        'ligas': ligas_con_jugador,
+        'ligas_publicas':ligas_publicas
     }
     return render(request, 'AppFulbo/mis_ligas.html', context)
 
@@ -208,7 +210,9 @@ def crear_liga(request):
             messages.success(request, "Liga y jugador creados exitosamente.")
             return redirect('ver_liga', liga_id=nueva_liga.id)
     else:
-        context = {
+        form_liga = LigaForm()
+        form_jugador = JugadorForm()
+    context = {
             'form_liga' : LigaForm(),
             'form_jugador' : JugadorForm(),  
         }
@@ -220,12 +224,12 @@ def ver_liga(request, liga_id):
     liga = get_object_or_404(Liga, id=liga_id)
     mi_jugador = None
     
-
-    if request.user.is_authenticated:
-        mi_jugador = liga.jugadores.filter(usuario=request.user).first()
-        if mi_jugador is None: # Usar 'is None' es la forma idiomática en Python
-            messages.error(request, f'No tienes un perfil de jugador asociado a esta liga privada. Por favor, contacta al presidente de la liga.')
-            return redirect('inicio')  
+    if not liga.publica:
+        if request.user.is_authenticated:
+            mi_jugador = liga.jugadores.filter(usuario=request.user).first()
+            if mi_jugador is None: # Usar 'is None' es la forma idiomática en Python
+                messages.error(request, f'No tienes un perfil de jugador asociado a esta liga privada. Por favor, contacta al presidente de la liga.')
+                return redirect('inicio')  
             
     partidos = liga.partidos.all().order_by('-fecha_partido')
     puntuaciones_pendientes = mi_jugador.puntuaciones_jugador.filter(liga=liga) if mi_jugador else None

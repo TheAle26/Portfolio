@@ -251,14 +251,14 @@ class LigaForm(forms.ModelForm):
         labels = {
             'nombre_liga': 'Nombre de la liga',
             'descripcion': 'Descripccion de la liga',
-            'publica':'Publica o Privada'
+            'publica':'Publica'
         }
         widgets = {
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Descripción'}),
         }
         help_texts = {
             'nombre_liga': 'Ingrese un nombre único para la liga.',
-            'publica': 'Una liga publica permite que cualquier usuario vea todo su contenido.'
+            'Publica': 'Una liga publica permite que cualquier usuario vea todo su contenido.'
         }
         error_messages = {
             'nombre_liga': {

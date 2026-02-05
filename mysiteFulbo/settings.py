@@ -90,6 +90,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'AppFulbo',
+    'portal',
+    'tracking',
     'crispy_forms',
     'crispy_bootstrap4', # OJO: Ver nota abajo sobre Bootstrap 5
 ]

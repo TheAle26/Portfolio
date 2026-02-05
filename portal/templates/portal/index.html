@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alejo Vincent | Portfolio IT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            /* Paleta de colores "Tech / Server" */
+            --primary: #0284c7; /* Celeste Tecnológico */
+            --dark-bg: #0f172a; /* Azul noche (tipo terminal) */
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-light: #64748b;
+            --success: #10b981; /* Verde para "Online" */
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* HEADER: Perfil Profesional */
+        header {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e3a8a 100%);
+            color: white;
+            padding: 80px 20px 100px; /* Extra padding bottom para el efecto curveado */
+            text-align: center;
+            position: relative;
+        }
+
+        /* Efecto de ola/curva abajo del header */
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background-color: #f1f5f9;
+            clip-path: ellipse(60% 100% at 50% 100%);
+        }
+
+        header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3.5rem;
+            margin: 0;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        header .role {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        header .sub-role {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 10px auto;
+        }
+
+        /* BARRA DE TECNOLOGÍAS */
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .tech-badge {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 50px;
+            color: white;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .tech-badge:hover { transform: scale(1.05); background: rgba(255,255,255,0.2); }
+
+        /* CONTENEDOR PRINCIPAL */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            top: -40px; /* Sube sobre el header */
+        }
+
+        /* GRID DE TARJETAS */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* DISEÑO DE TARJETA */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            border-top: 5px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Header de la tarjeta con Icono */
+        .card-header {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .card-title h3 { margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif; }
+        .card-title span { font-size: 0.8rem; text-transform: uppercase; font-weight: 700; opacity: 0.7; }
+
+        /* Cuerpo de la tarjeta */
+        .card-body {
+            padding: 25px;
+            flex-grow: 1;
+        }
+        
+        .card-body p { margin-top: 0; color: var(--text-light); }
+
+        /* Status Badge (Online/Live) */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #059669;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* Footer de tarjeta */
+        .card-footer {
+            padding: 15px 25px;
+            background: #f8fafc;
+            border-top: 1px solid #f0f0f0;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* COLORES ESPECÍFICOS POR TARJETA */
+        
+        /* App Fulbo (Django) */
+        .card-django { border-top-color: #092e20; } /* Verde oscuro Django */
+        .card-django .card-icon { background-color: #092e20; color: white; }
+        .card-django .card-footer { color: #092e20; }
+
+        /* Server (Raspberry) */
+        .card-server { border-top-color: #C51A4A; } /* Frambuesa */
+        .card-server .card-icon { background-color: #C51A4A; color: white; }
+        .card-server .card-footer { color: #C51A4A; }
+
+        /* IoT (Teltonika) */
+        .card-iot { border-top-color: #0284c7; } /* Azul */
+        .card-iot .card-icon { background-color: #0284c7; color: white; }
+        .card-iot .card-footer { color: #0284c7; }
+
+        /* Admin */
+        .card-admin { border-top-color: #475569; }
+        .card-admin .card-icon { background-color: #475569; color: white; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Alejo Vincent</h1>
+        <div class="role">Backend Developer & IT Engineer</div>
+        <div class="sub-role">
+            Ingeniero Civil migrando al mundo del código.<br>
+            Especialista en Python, Django e Infraestructura Linux.
+        </div>
+
+        <div class="tech-stack">
+            <div class="tech-badge"><i class="fab fa-python"></i> Python</div>
+            <div class="tech-badge"><i class="fas fa-server"></i> Django</div>
+            <div class="tech-badge"><i class="fab fa-java"></i> Java</div>
+            <div class="tech-badge"><i class="fab fa-linux"></i> Linux / Bash</div>
+            <div class="tech-badge"><i class="fab fa-c"></i> C</div>
+            <div class="tech-badge"><i class="fab fa-raspberry-pi"></i> Raspberry Pi</div>
+            <div class="tech-badge"><i class="fas fa-database"></i> SQL</div>
+            <div class="tech-badge"><i class="fab fa-git-alt"></i> Git</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+
+            <a href="/AppFulbo/inicio" class="card card-django">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-futbol"></i></div>
+                    <div class="card-title">
+                        <span>Full Stack Project</span>
+                        <h3>FulboApp</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="status-badge"><span class="dot"></span> Live Deployment</div>
+                    <p>
+                        Sistema integral de gestión deportiva. Desarrollado en <strong>Django</strong> con base de datos PostgreSQL.
+                        <br><br>
+                        <em>Este proyecto está hosteado y corriendo actualmente en el servidor local (tarjeta de al lado).</em>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    Ir a la App <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+
+            <div class="card card-server">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-server"></i></div>
+                    <div class="card-title">
+                        <span>Infraestructura & DevOps</span>
+                        <h3>Home Server (Raspberry Pi)</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="status-badge"><span class="dot"></span> Online (Tú estás aquí)</div>
+                    <p>
+                        Servidor Linux configurado desde cero. Manejo de seguridad SSH, DNS Dinámico (No-IP) y Gunicorn/Nginx.
+                        <br><br>
+                        <strong>Función:</strong> Hostear este Portfolio y servir la <em>FulboApp</em> al mundo.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    Infraestructura Local <i class="fas fa-check"></i>
+                </div>
+            </div>
+
+            <a href="/tracking/" class="card card-iot">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-satellite-dish"></i></div>
+                    <div class="card-title">
+                        <span>Hardware & Protocolos</span>
+                        <h3>Rastreo IoT</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>
+                        Integración de hardware telemático (Teltonika FMC150). Decodificación de tramas TCP/UDP y visualización en tiempo real vía Flespi Platform.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    Ver Dashboard <i class="fas fa-external-link-alt"></i>
+                </div>
+            </a>
+
+            <a href="/admin/" class="card card-admin">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fas fa-cogs"></i></div>
+                    <div class="card-title">
+                        <span>Sistema</span>
+                        <h3>Django Admin</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p>Acceso restringido para mantenimiento de base de datos y usuarios.</p>
+                </div>
+                <div class="card-footer">
+                    Acceder <i class="fas fa-lock"></i>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <footer style="text-align: center; padding: 40px; color: #64748b; font-size: 0.9rem;">
+        <p>&copy; 2026 Alejo Vincent. Desarrollado en Django, servido desde Raspberry Pi.</p>
+        <div style="font-size: 1.5rem; margin-top: 10px;">
+            <a href="#" style="color: #0f172a; margin: 0 10px;"><i class="fab fa-linkedin"></i></a>
+            <a href="#" style="color: #0f172a; margin: 0 10px;"><i class="fab fa-github"></i></a>
+        </div>
+    </footer>
+
+</body>
+</html>

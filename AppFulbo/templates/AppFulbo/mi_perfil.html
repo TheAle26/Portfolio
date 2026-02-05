@@ -12,7 +12,7 @@
             {% else %}
                 <img src="{% static 'default.jpg' %}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Sin foto de perfil">
             {% endif %}
-            <a href="{% url 'edit_Profile' %}" class="btn btn-sm btn-outline-secondary">
+            <a href="{% url 'AppFulbo_edit_profile' %}" class="btn btn-sm btn-outline-secondary">
                 Cambiar foto
             </a>
         </div>
@@ -33,7 +33,7 @@
     </div>
 
     <!-- Botón de edición -->
-    <a href="{% url 'edit_Profile' %}" class="btn btn-warning">
+    <a href="{% url 'AppFulbo_edit_profile' %}" class="btn btn-warning">
         <i class="fa-solid fa-pencil"></i> Editar perfil
     </a>
 

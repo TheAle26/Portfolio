@@ -1,0 +1,46 @@
+{% extends 'tracking/base.html' %}
+
+{% block title %}Mapa en Vivo | {{ device_name }}{% endblock %}
+
+{% block extra_css %}
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+   <style>
+       /* Ajustamos la altura para restar el navbar y que no haya scroll */
+       #map { height: calc(100vh - 56px - 50px); width: 100%; }
+   </style>
+{% endblock %}
+{% block main_container %}
+    {% if mis_dispositivos %}
+    <div class="device-selector">
+        <small style="color:#888; text-transform:uppercase; font-weight:bold;">Tus Unidades</small>
+        {% for disp in mis_dispositivos %}
+            <a href="{% url 'tracking_device' disp.id %}" 
+               class="device-link {% if disp.id == device_id_actual %}active{% endif %}">
+               🚛 {{ disp.nombre }}
+            </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div id="map"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var lat = {{ lat|stringformat:".6f" }};
+        var lon = {{ lon|stringformat:".6f" }};
+
+        var map = L.map('map').setView([lat, lon], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        L.marker([lat, lon]).addTo(map)
+            .bindPopup('<b>{{ device_name }}</b><br>Última conexión: {{ last_update }}')
+            .openPopup();
+    </script>
+{% endblock %}
+
+

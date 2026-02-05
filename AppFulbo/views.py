@@ -26,7 +26,7 @@ def register(request):
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
             messages.success(request, f'¡Bienvenido, {user.username}! Tu cuenta ha sido creada.')
-            return redirect('inicio')
+            return redirect('AppFulbo_inicio')
 
     else:
         form = UserRegisterForm()
@@ -46,7 +46,7 @@ def login_request(request):
 
             if user is not None:
                 login(request, user)
-                return redirect('inicio')
+                return redirect('AppFulbo_inicio')
             else:
                 return render(request, "registro/login.html", {"mensaje":"Datos incorrectos"})
            
@@ -61,7 +61,7 @@ def login_request(request):
 @login_required
 def custom_logout(request):
     logout(request)
-    return redirect('inicio')
+    return redirect('AppFulbo_inicio')
 
 #editar usuario
 
@@ -229,7 +229,7 @@ def ver_liga(request, liga_id):
             mi_jugador = liga.jugadores.filter(usuario=request.user).first()
             if mi_jugador is None: # Usar 'is None' es la forma idiomática en Python
                 messages.error(request, f'No tienes un perfil de jugador asociado a esta liga privada. Por favor, contacta al presidente de la liga.')
-                return redirect('inicio')  
+                return redirect('AppFulbo_inicio')  
             
     partidos = liga.partidos.all().order_by('-fecha_partido')
     puntuaciones_pendientes = mi_jugador.puntuaciones_jugador.filter(liga=liga) if mi_jugador else None

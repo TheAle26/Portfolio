@@ -41,7 +41,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'inicio' %}">⚽ FulboApp</a>
+            <a class="navbar-brand fw-bold" href="{% url 'AppFulbo_inicio' %}">⚽ FulboApp</a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent" aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -86,10 +86,10 @@
                                 Hola, {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow">
-                                <li><a class="dropdown-item" href="{% url 'mi_perfil' %}">Mi Perfil</a></li>
+                                <li><a class="dropdown-item" href="{% url 'AppFulbo_mi_perfil' %}">Mi Perfil</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <form action="{% url 'logout' %}" method="post" class="px-2">
+                                    <form action="{% url 'AppFulbo_logout' %}" method="post" class="px-2">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-danger btn-sm w-100">Cerrar sesión</button>
                                     </form>
@@ -97,8 +97,8 @@
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item"><a class="btn btn-outline-light me-2" href="{% url 'login' %}">Iniciar sesión</a></li>
-                        <li class="nav-item"><a class="btn btn-primary" href="{% url 'register' %}">Registrarse</a></li>
+                        <li class="nav-item"><a class="btn btn-outline-light me-2" href="{% url 'AppFulbo_login' %}">Iniciar sesión</a></li>
+                        <li class="nav-item"><a class="btn btn-primary" href="{% url 'AppFulbo_register' %}">Registrarse</a></li>
                     {% endif %}
                 </ul>
             </div>

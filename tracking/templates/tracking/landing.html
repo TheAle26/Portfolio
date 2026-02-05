@@ -1,0 +1,69 @@
+{% extends 'tracking/base.html' %}
+
+{% block title %}Arquitectura IoT | Inicio{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos específicos que SOLO usa esta página */
+    header.hero {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+        color: white; padding: 60px 20px; text-align: center;
+    }
+    .flow-container {
+        max-width: 1000px; margin: 50px auto; padding: 0 20px;
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;
+    }
+    .step-card {
+        background: white; width: 220px; padding: 30px 20px; border-radius: 15px;
+        text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.05); position: relative;
+    }
+    .icon-box {
+        width: 70px; height: 70px; background: #e0f2fe; color: #0284c7;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 2rem; margin: 0 auto 20px;
+    }
+    .btn-start {
+        background: #0284c7; color: white; padding: 15px 40px; border-radius: 50px;
+        text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 10px;
+        transition: transform 0.2s;
+    }
+    .btn-start:hover { transform: scale(1.05); }
+</style>
+
+<header class="hero">
+    <h1 style="margin:0; font-family:'Montserrat', sans-serif;">Sistema de Rastreo IoT</h1>
+    <p style="opacity:0.8;">Arquitectura de Telemetría en Tiempo Real</p>
+</header>
+
+<div class="flow-container">
+    <div class="step-card">
+        <div class="icon-box"><i class="fas fa-truck-moving"></i></div>
+        <h3>1. Adquisición</h3>
+        <p>El dispositivo <strong>Teltonika FMC150</strong> captura coordenadas GPS.</p>
+    </div>
+
+    <div class="step-card">
+        <div class="icon-box"><i class="fas fa-broadcast-tower"></i></div>
+        <h3>2. Transmisión</h3>
+        <p>Los datos viajan via <strong>4G</strong> hacia la nube.</p>
+    </div>
+
+    <div class="step-card">
+        <div class="icon-box"><i class="fas fa-cloud"></i></div>
+        <h3>3. Flespi.io</h3>
+        <p>La plataforma procesa los paquetes y expone una API.</p>
+    </div>
+
+    <div class="step-card" style="border: 2px solid #0284c7;">
+        <div class="icon-box" style="background: #0284c7; color: white;"><i class="fas fa-server"></i></div>
+        <h3>4. Raspberry Pi</h3>
+        <p>Este servidor consume la API y dibuja el mapa.</p>
+    </div>
+</div>
+
+<div style="text-align: center; margin: 60px 0;">
+    <a href="{% url 'tracking_map' %}" class="btn-start">
+        Ver Mapa en Vivo <i class="fas fa-map-marked-alt"></i>
+    </a>
+</div>
+{% endblock %}

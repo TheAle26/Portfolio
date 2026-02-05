@@ -1,17 +1,16 @@
-from django.urls import path
+from django.urls import path ,reverse_lazy
 from AppFulbo import views
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth import views as auth_views
 urlpatterns = [
-    path('inicio/',views.inicio,name='inicio'),
-    path('login/',views.login_request,name='login'),
-    path('logout/', LogoutView.as_view(next_page='inicio'), name='logout'),
-    path('register/',views.register,name='register'),
-    path('edit_Profile/', views.edit_profile, name='edit_Profile'),
-    path('mi_perfil/', views.mi_perfil, name='mi_perfil'),
+    path('inicio/',views.inicio,name='AppFulbo_inicio'),
+    path('login/',views.login_request,name='AppFulbo_login'),
+    path('logout/', LogoutView.as_view(next_page='AppFulbo_inicio'), name='AppFulbo_logout'),
+    path('register/',views.register,name='AppFulbo_register'),
+    path('edit_Profile/', views.edit_profile, name='AppFulbo_edit_profile'),
+    path('mi_perfil/', views.mi_perfil, name='AppFulbo_mi_perfil'),
     
-    # path('ligas/buscar_ligas/', views.buscar_ligas, name='buscar_ligas'),
-    #path('ligas/unirse/<int:liga_id>/', views.solicitar_unirse, name='solicitar_unirse'),
+
     path('mis_ligas/',views.mis_ligas, name='mis_ligas'),
 
 
@@ -47,24 +46,38 @@ urlpatterns = [
     path('notificaciones/marcar_todas_ajax/', views.marcar_todas_notificaciones_ajax, name='marcar_todas_notificaciones_ajax'),
     
     
-    #para cabiar la clave
-    # 1. El formulario para pedir el correo
-    path('reset_password/', 
-         auth_views.PasswordResetView.as_view(template_name="registro/password_reset_form.html"), 
-         name='password_reset'),
+     path('reset_password/', 
+          auth_views.PasswordResetView.as_view(
+               template_name="registro/password_reset_form.html",
+               # Forzamos la redirección a NUESTRA url de éxito:
+               success_url=reverse_lazy('AppFulbo_password_reset_done'),
+               # IMPORTANTE: Usamos un template de email propio para que el link apunte bien
+               email_template_name="registro/password_reset_email.html"
+          ), 
+          name='AppFulbo_password_reset'),
 
-    # 2. Mensaje de "Correo enviado exitosamente"
-    path('reset_password_sent/', 
-         auth_views.PasswordResetDoneView.as_view(template_name="registro/password_reset_done.html"), 
-         name='password_reset_done'),
+     # 2. Mensaje de "Correo enviado exitosamente"
+     path('reset_password_sent/', 
+          auth_views.PasswordResetDoneView.as_view(
+               template_name="registro/password_reset_done.html"
+          ), 
+          name='AppFulbo_password_reset_done'),
 
-    # 3. Link que le llega al usuario para poner la nueva clave
-    path('reset/<uidb64>/<token>/', 
-         auth_views.PasswordResetConfirmView.as_view(template_name="registro/password_reset_confirm.html"), 
-         name='password_reset_confirm'),
+     # 3. Link que le llega al usuario para poner la nueva clave
+     path('reset/<uidb64>/<token>/', 
+          auth_views.PasswordResetConfirmView.as_view(
+               template_name="registro/password_reset_confirm.html",
+               # Al terminar, ir a nuestro mensaje de éxito:
+               success_url=reverse_lazy('AppFulbo_password_reset_complete')
+          ), 
+          name='AppFulbo_password_reset_confirm'),
 
-    # 4. Mensaje de "Contraseña cambiada con éxito"
-    path('reset_password_complete/', 
-         auth_views.PasswordResetCompleteView.as_view(template_name="registro/password_reset_complete.html"), 
-         name='password_reset_complete'),
-]
+     # 4. Mensaje de "Contraseña cambiada con éxito"
+     path('reset_password_complete/', 
+          auth_views.PasswordResetCompleteView.as_view(
+               template_name="registro/password_reset_complete.html"
+          ), 
+          name='AppFulbo_password_reset_complete'),
+     
+     
+     ]

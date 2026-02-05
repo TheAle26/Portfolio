@@ -1,5 +1,9 @@
-from django.http import HttpResponse
-from django.template import loader, Template, Context
+# portal/views.py
+from django.shortcuts import render
 
-def saludo(request):
- return HttpResponse('Hola Django - Coder')
+def index(request):
+    
+    context = {
+        'titulo': 'Alejo Vincent Home',
+    }
+    return render(request, 'portal/index.html', context)

@@ -1,0 +1,103 @@
+{% extends 'tracking/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Live Map" %} | {{ device_name|default:"Fleet" }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Map takes full height minus navbar */
+        #map { 
+            height: calc(100vh - 56px); 
+            width: 100%; 
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Floating Panel for Device List */
+        .device-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 999; /* Above the map */
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .device-selector h6 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .device-link {
+            display: block;
+            padding: 8px 10px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .device-link:hover {
+            background-color: #f8f9fa;
+        }
+
+        .device-link.active {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            font-weight: 600;
+            border-left: 3px solid #0d6efd;
+        }
+    </style>
+{% endblock %}
+
+{# Override main_container to remove the white box padding from base.html #}
+{% block main_container %}
+
+    <div id="map"></div>
+
+    <div class="device-selector">
+        <h6>{% trans "Your Units" %}</h6>
+        
+        {% if devices %}
+            {% for device in devices %}
+                <a href="{% url 'tracking_device_map' device.id %}" 
+                   class="device-link {% if device.id == current_device_id %}active{% endif %}">
+                    <i class="fa-solid fa-truck-moving me-2"></i>{{ device.name }}
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-warning p-2" style="font-size: 0.8rem;">
+                {% trans "No devices assigned. Please contact your administrator." %}
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Basic Map Initialization (Centered in La Plata default)
+        var map = L.map('map').setView([-34.9214, -57.9545], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Note: The markers logic will be handled in the 'map.html' template 
+        // or fetched via AJAX if this is a dashboard view.
+    </script>
+{% endblock %}

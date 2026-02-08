@@ -1,69 +1,101 @@
 {% extends 'tracking/base.html' %}
+{% load i18n %}
 
-{% block title %}Arquitectura IoT | Inicio{% endblock %}
+{% block title %}{% trans "IoT Architecture" %} | {% trans "Home" %}{% endblock %}
 
 {% block content %}
-<style>
-    /* Estilos específicos que SOLO usa esta página */
-    header.hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-        color: white; padding: 60px 20px; text-align: center;
-    }
-    .flow-container {
-        max-width: 1000px; margin: 50px auto; padding: 0 20px;
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;
-    }
-    .step-card {
-        background: white; width: 220px; padding: 30px 20px; border-radius: 15px;
-        text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.05); position: relative;
-    }
-    .icon-box {
-        width: 70px; height: 70px; background: #e0f2fe; color: #0284c7;
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 2rem; margin: 0 auto 20px;
-    }
-    .btn-start {
-        background: #0284c7; color: white; padding: 15px 40px; border-radius: 50px;
-        text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 10px;
-        transition: transform 0.2s;
-    }
-    .btn-start:hover { transform: scale(1.05); }
-</style>
 
-<header class="hero">
-    <h1 style="margin:0; font-family:'Montserrat', sans-serif;">Sistema de Rastreo IoT</h1>
-    <p style="opacity:0.8;">Arquitectura de Telemetría en Tiempo Real</p>
-</header>
-
-<div class="flow-container">
-    <div class="step-card">
-        <div class="icon-box"><i class="fas fa-truck-moving"></i></div>
-        <h3>1. Adquisición</h3>
-        <p>El dispositivo <strong>Teltonika FMC150</strong> captura coordenadas GPS.</p>
-    </div>
-
-    <div class="step-card">
-        <div class="icon-box"><i class="fas fa-broadcast-tower"></i></div>
-        <h3>2. Transmisión</h3>
-        <p>Los datos viajan via <strong>4G</strong> hacia la nube.</p>
-    </div>
-
-    <div class="step-card">
-        <div class="icon-box"><i class="fas fa-cloud"></i></div>
-        <h3>3. Flespi.io</h3>
-        <p>La plataforma procesa los paquetes y expone una API.</p>
-    </div>
-
-    <div class="step-card" style="border: 2px solid #0284c7;">
-        <div class="icon-box" style="background: #0284c7; color: white;"><i class="fas fa-server"></i></div>
-        <h3>4. Raspberry Pi</h3>
-        <p>Este servidor consume la API y dibuja el mapa.</p>
+{# 1. HERO SECTION #}
+<div class="p-5 mb-4 rounded-3 text-center text-white" 
+     style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">{% trans "IoT Tracking System" %}</h1>
+        <p class="col-md-8 fs-4 mx-auto opacity-75">
+            {% trans "Real-Time Telemetry Architecture" %}
+        </p>
     </div>
 </div>
 
-<div style="text-align: center; margin: 60px 0;">
-    <a href="{% url 'tracking_map' %}" class="btn-start">
-        Ver Mapa en Vivo <i class="fas fa-map-marked-alt"></i>
+{# 2. FLOW STEPS (Using Bootstrap Grid) #}
+<div class="container mb-5">
+    <div class="row g-4 justify-content-center">
+        
+        {# STEP 1: ACQUISITION #}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm text-center p-4 hover-effect">
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary mx-auto mb-3" 
+                     style="width: 70px; height: 70px; font-size: 1.5rem;">
+                    <i class="fas fa-truck-moving"></i>
+                </div>
+                <h5 class="card-title fw-bold">1. {% trans "Acquisition" %}</h5>
+                <p class="card-text text-muted small">
+                    {% trans "The Teltonika FMC150 device captures GPS coordinates and sensor data." %}
+                </p>
+            </div>
+        </div>
+
+        {# STEP 2: TRANSMISSION #}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm text-center p-4 hover-effect">
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-info-subtle text-info mx-auto mb-3" 
+                     style="width: 70px; height: 70px; font-size: 1.5rem;">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <h5 class="card-title fw-bold">2. {% trans "Transmission" %}</h5>
+                <p class="card-text text-muted small">
+                    {% trans "Encrypted data travels via 4G/LTE cellular network to the cloud." %}
+                </p>
+            </div>
+        </div>
+
+        {# STEP 3: PROCESSING #}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm text-center p-4 hover-effect">
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success mx-auto mb-3" 
+                     style="width: 70px; height: 70px; font-size: 1.5rem;">
+                    <i class="fas fa-cloud"></i>
+                </div>
+                <h5 class="card-title fw-bold">3. Flespi.io</h5>
+                <p class="card-text text-muted small">
+                    {% trans "Middleware platform normalizes data packets and exposes a JSON API." %}
+                </p>
+            </div>
+        </div>
+
+        {# STEP 4: VISUALIZATION #}
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 border-primary border-2 shadow text-center p-4 hover-effect">
+                <div class="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white mx-auto mb-3" 
+                     style="width: 70px; height: 70px; font-size: 1.5rem;">
+                    <i class="fas fa-server"></i>
+                </div>
+                <h5 class="card-title fw-bold">4. {% trans "Your Server" %}</h5>
+                <p class="card-text text-muted small">
+                    {% trans "Raspberry Pi / Django consumes the API and renders the live dashboard." %}
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# 3. CALL TO ACTION #}
+<div class="text-center my-5">
+    <a href="{% url 'tracking_device_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 shadow">
+        {% trans "View Live Map" %} <i class="fas fa-map-marked-alt ms-2"></i>
     </a>
 </div>
+
+{% endblock %}
+
+{# Optional: Tiny custom CSS just for hover animation #}
+{% block extra_css %}
+<style>
+    .hover-effect {
+        transition: transform 0.3s ease;
+    }
+    .hover-effect:hover {
+        transform: translateY(-5px);
+    }
+</style>
 {% endblock %}

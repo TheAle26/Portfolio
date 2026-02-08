@@ -1,0 +1,35 @@
+{% extends 'tracking/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Logged Out" %} | IoT System{% endblock %}
+
+{% block content %}
+<div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 50vh;">
+    
+    <div class="text-center">
+        {# ICON #}
+        <div class="mb-4 text-secondary" style="font-size: 4rem;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        </div>
+
+        {# MESSAGE #}
+        <h2 class="fw-bold mb-3">{% trans "You have been logged out" %}</h2>
+        <p class="text-muted mb-4">
+            {% trans "Thank you for using the IoT Tracking System." %}
+            <br>
+            {% trans "Your session has been closed securely." %}
+        </p>
+
+        {# ACTIONS #}
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{% url 'tracking_login' %}" class="btn btn-primary px-4 rounded-pill">
+                <i class="fa-solid fa-user-lock me-2"></i>{% trans "Log In Again" %}
+            </a>
+            <a href="{% url 'tracking_home' %}" class="btn btn-outline-secondary px-4 rounded-pill">
+                {% trans "Return Home" %}
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

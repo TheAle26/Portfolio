@@ -1,26 +1,36 @@
+# tracking/admin.py
 from django.contrib import admin
-from .models import Empresa, Dispositivo, Empleado
+from .models import Company, Device, Employee, Telemetry, DailyReport, FuelType
 
-class EmpleadoInline(admin.StackedInline):
-    model = Empleado
-    can_delete = False
-    verbose_name_plural = 'Datos de Empresa'
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at')
 
-# Esto nos permite ver a qué empresa pertenece el usuario desde la pantalla de Users
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.contrib.auth.models import User
+@admin.register(FuelType)
+class FuelTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price_per_liter', 'company')
+    list_filter = ('company',)
 
-class UserAdmin(BaseUserAdmin):
-    inlines = (EmpleadoInline,)
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    # Agregamos 'fuel_type' a la lista
+    list_display = ('name', 'imei', 'device_type', 'company', 'fuel_type', 'is_online')
+    list_filter = ('company', 'device_type', 'is_online')
+    search_fields = ('name', 'imei')
 
-# Re-registramos el User admin
-admin.site.unregister(User)
-admin.site.register(User, UserAdmin)
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'company', 'can_assign')
 
-@admin.register(Dispositivo)
-class DispositivoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'imei', 'empresa')
-    list_filter = ('empresa',)
-    filter_horizontal = ('usuarios_permitidos',) # Interfaz linda para seleccionar muchos usuarios
+@admin.register(Telemetry)
+class TelemetryAdmin(admin.ModelAdmin):
+    list_display = ('device', 'timestamp', 'speed', 'ignition')
+    list_filter = ('device', 'timestamp')
+    # Optimización para tablas grandes
+    show_full_result_count = False 
 
-admin.site.register(Empresa)
+@admin.register(DailyReport)
+class DailyReportAdmin(admin.ModelAdmin):
+    # Usamos los nombres correctos que definimos en models.py
+    list_display = ('date', 'device', 'distance_km', 'total_fuel_liters', 'idle_fuel_liters', 'wasted_cost')
+    list_filter = ('date', 'device')

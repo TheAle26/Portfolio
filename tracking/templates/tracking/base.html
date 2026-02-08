@@ -1,97 +1,107 @@
 {% load static %}
+{% load i18n %}
+
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}IoT Tracking{% endblock %}</title>
+    <title>{% block title %}{% trans "IoT Tracking" %}{% endblock %}</title>
 
     {# CSS Bootstrap 5.3 #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-
+    
     {# Font Awesome #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    {# Bloque para CSS específico (Leaflet, etc) #}
     {% block extra_css %}{% endblock %}
 
     <style>
+        /* Solo dejamos lo que Bootstrap no puede hacer por defecto: el Gradiente y el fondo específico */
         body {
-            /* Fondo técnico/oscuro para diferenciar de FulboApp */
-            background-color: #f0f2f5; 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            background-color: #f0f2f5; /* Un gris un poco más "tech" que el bg-light de Bootstrap */
         }
-        
-        /* Estilo de la caja blanca (igual a AppFulbo) */
-        .contenedor-blanco {
-            background-color: rgba(255, 255, 255, 1);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        /* Navbar estilo "Tech" */
-        .navbar-tech {
+        .bg-gradient-tech {
             background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%);
         }
-
-        /* Footer siempre abajo */
-        footer {
-            margin-top: auto;
-            background-color: #e9ecef;
-            padding: 15px 0;
-            text-align: center;
-            font-size: 0.85rem;
-            color: #6c757d;
+        /* Ajuste fino para el selector de idioma transparente */
+        .form-select-transparent {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+        }
+        .form-select-transparent:focus {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            box-shadow: none;
+        }
+        .form-select-transparent option {
+            color: black;
         }
     </style>
 </head>
 
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-tech shadow-sm">
-        <div class="container-fluid"> <a class="navbar-brand fw-bold" href="{% url 'tracking_home' %}">
-                <i class="fa-solid fa-satellite-dish me-2"></i>IoT Tracking
+{# Usamos clases flex de Bootstrap para el sticky footer #}
+<body class="d-flex flex-column min-vh-100">
+
+    {# Navbar con clases utilitarias #}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-tech shadow-sm">
+        <div class="container-fluid"> 
+            <a class="navbar-brand fw-bold" href="{% url 'tracking_home' %}">
+                <i class="fa-solid fa-satellite-dish me-2"></i>{% trans "IoT Tracking" %}
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                {# Menú Izquierdo #}
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tracking_home' %}">Inicio</a>
+                        <a class="nav-link" href="{% url 'tracking_home' %}">{% trans "Home" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tracking_map' %}">Mapa en Vivo</a>
+                        <a class="nav-link" href="{% url 'tracking_device_list' %}">{% trans "Live Map" %}</a>
                     </li>
                 </ul>
 
-                {# Menú Derecho #}
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    {# SELECTOR DE IDIOMA #}
+                    <li class="nav-item">
+                        <form action="{% url 'set_language' %}" method="post">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ redirect_to }}">
+                            <select name="language" class="form-select form-select-sm form-select-transparent" onchange="this.form.submit()">
+                                {% get_current_language as LANGUAGE_CODE %}
+                                {% get_available_languages as LANGUAGES %}
+                                {% for lang_code, lang_name in LANGUAGES %}
+                                    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %} selected {% endif %}>
+                                        {{ lang_code|upper }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </li>
+
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="fa-solid fa-user-astronaut me-1"></i> {{ user.username }}
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow">
-                                <li><a class="dropdown-item" href="/">Volver al Portal</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li><a class="dropdown-item" href="/">{% trans "Back to Portal" %}</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form action="{% url 'tracking_logout' %}" method="post" class="px-2 mb-0">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger btn-sm w-100">Cerrar sesión</button>
+                                        <button type="submit" class="btn btn-danger btn-sm w-100 rounded-pill">{% trans "Log out" %}</button>
                                     </form>
                                 </li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn btn-outline-light btn-sm" href="{% url 'tracking_login' %}">Ingresar</a>
+                            <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{% url 'tracking_login' %}">{% trans "Login" %}</a>
                         </li>
                     {% endif %}
                 </ul>
@@ -99,35 +109,36 @@
         </div>
     </nav>
 
+    {# Mensajes flash #}
     <div class="container mt-3">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
-    {% block main_container %}
-    <div class="container mt-4">
-        <div class="contenedor-blanco">
-            {% block content %}{% endblock %}
-        </div>
+    {# Contenido Principal #}
+    {# NOTA: Eliminamos 'white-container' del CSS y usamos clases Bootstrap directas #}
+    <div class="container mt-4 mb-5">
+        {% block main_container %}
+            <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm"> 
+                {% block content %}{% endblock %}
+            </div>
+        {% endblock %}
     </div>
-    {% endblock %}
 
-    <footer>
+    {# Footer (mt-auto lo empuja al fondo gracias al flex del body) #}
+    <footer class="mt-auto py-3 bg-light text-center text-secondary small border-top">
         <div class="container">
-            &copy; 2026 Sistema de Telemetría | Alejo Vincent
+            &copy; 2026 Telemetry System | Alejo Vincent
         </div>
     </footer>
 
-    {# Scripts Bootstrap #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-
-    {# Scripts Extra #}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

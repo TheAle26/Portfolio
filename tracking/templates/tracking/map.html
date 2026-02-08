@@ -1,46 +1,119 @@
 {% extends 'tracking/base.html' %}
+{% load i18n %}
 
-{% block title %}Mapa en Vivo | {{ device_name }}{% endblock %}
+{% block title %}{{ device_name }} | {% trans "Live Tracking" %}{% endblock %}
 
 {% block extra_css %}
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-   <style>
-       /* Ajustamos la altura para restar el navbar y que no haya scroll */
-       #map { height: calc(100vh - 56px - 50px); width: 100%; }
-   </style>
-{% endblock %}
-{% block main_container %}
-    {% if mis_dispositivos %}
-    <div class="device-selector">
-        <small style="color:#888; text-transform:uppercase; font-weight:bold;">Tus Unidades</small>
-        {% for disp in mis_dispositivos %}
-            <a href="{% url 'tracking_device' disp.id %}" 
-               class="device-link {% if disp.id == device_id_actual %}active{% endif %}">
-               🚛 {{ disp.nombre }}
-            </a>
-        {% endfor %}
-    </div>
-    {% endif %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* El mapa ocupa toda la pantalla menos el navbar */
+        #map { 
+            height: calc(100vh - 56px); 
+            width: 100%; 
+            z-index: 1;
+        }
 
+        /* Tarjeta de información flotante (arriba a la izquierda) */
+        .info-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+{% endblock %}
+
+{# Sobrescribimos el contenedor principal para tener mapa a pantalla completa #}
+{% block main_container %}
+
+    {# 1. MAPA #}
     <div id="map"></div>
+
+    {# 2. TARJETA DE INFORMACIÓN FLOTANTE #}
+    <div class="card info-card shadow border-0">
+        <div class="card-body">
+            <h5 class="card-title fw-bold text-primary mb-3">
+                <i class="fa-solid fa-truck-fast me-2"></i>{{ device_name }}
+            </h5>
+
+            {% if error %}
+                <div class="alert alert-danger p-2" style="font-size: 0.9rem;">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ error }}
+                </div>
+                <div class="text-center mt-2">
+                    <a href="{% url 'tracking_device_list' %}" class="btn btn-sm btn-outline-secondary">
+                        {% trans "Go Back" %}
+                    </a>
+                </div>
+            {% else %}
+                <ul class="list-unstyled mb-3 small">
+                    <li class="mb-2">
+                        <strong>{% trans "Last Update" %}:</strong><br>
+                        <span class="text-muted">
+                            {% if last_update %}
+                                {{ last_update|date:"d M Y H:i:s" }}
+                            {% else %}
+                                {% trans "No data available" %}
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li class="mb-2">
+                        <strong>{% trans "Coordinates" %}:</strong><br>
+                        <span class="font-monospace text-muted">{{ lat|floatformat:5 }}, {{ lon|floatformat:5 }}</span>
+                    </li>
+                </ul>
+
+                <div class="d-grid gap-2">
+                    <a href="{% url 'tracking_device_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fa-solid fa-arrow-left me-1"></i> {% trans "Back to Fleet" %}
+                    </a>
+                    {# Botón para recargar la página y ver nueva posición #}
+                    <a href="" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-rotate-right me-1"></i> {% trans "Refresh Position" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block extra_js %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var lat = {{ lat|stringformat:".6f" }};
-        var lon = {{ lon|stringformat:".6f" }};
+        {% if not error and lat and lon %}
+            // 1. Inicializar Mapa centrado en el dispositivo
+            // Usamos |stringformat:"f" para asegurar que Django no ponga comas decimales (formato europeo) que rompen JS
+            var lat = {{ lat|stringformat:"f" }};
+            var lon = {{ lon|stringformat:"f" }};
+            
+            var map = L.map('map').setView([lat, lon], 15);
 
-        var map = L.map('map').setView([lat, lon], 15);
+            // 2. Capa Base (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+            // 3. Marcador Personalizado
+            // Creamos un icono rojo para destacar
+            var truckIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:#e63946; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);'></div>",
+                iconSize: [15, 15],
+                iconAnchor: [7, 7]
+            });
 
-        L.marker([lat, lon]).addTo(map)
-            .bindPopup('<b>{{ device_name }}</b><br>Última conexión: {{ last_update }}')
-            .openPopup();
+            L.marker([lat, lon], {icon: truckIcon}).addTo(map)
+                .bindPopup("<b>{{ device_name }}</b><br>Lat: " + lat + "<br>Lon: " + lon)
+                .openPopup();
+
+        {% else %}
+            // Fallback si hay error o no hay coordenadas: Mostrar mapa general
+            var map = L.map('map').setView([-34.9214, -57.9545], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OS' }).addTo(map);
+        {% endif %}
     </script>
 {% endblock %}
-
-

@@ -57,14 +57,29 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tracking_home' %}">{% trans "Home" %}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tracking_device_list' %}">{% trans "Live Map" %}</a>
-                    </li>
-                </ul>
 
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tracking_dashboard' %}">{% trans "Live Map" %}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'tracking_inventory' %}">{% trans "Device Inventory" %}</a>
+                        </li>
+                        </ul>
+                        {% if user.is_authenticated and user.employee.company %}
+                                <div class="mx-auto d-none d-lg-flex align-items-center text-white">
+                                    {% if user.employee.company.logo %}
+                                        <img src="{{ user.employee.company.logo.url }}" 
+                                            alt="{{ user.employee.company.name }}" 
+                                            class="me-2 rounded bg-white p-1" 
+                                            style="height: 40px; width: auto; object-fit: contain;">
+                                    {% else %}
+                                        <i class="fa-solid fa-building me-2"></i>
+                                    {% endif %}
+                                    <span class="fw-bold" style="letter-spacing: 1px;">
+                                        {{ user.employee.company.name|upper }}
+                                    </span>
+                                </div>
+                            {% endif %}
                 <ul class="navbar-nav ms-auto align-items-center gap-2">
                     {# SELECTOR DE IDIOMA #}
                     <li class="nav-item">

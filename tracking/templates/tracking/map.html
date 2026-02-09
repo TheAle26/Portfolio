@@ -6,114 +6,197 @@
 {% block extra_css %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* El mapa ocupa toda la pantalla menos el navbar */
-        #map { 
-            height: calc(100vh - 56px); 
-            width: 100%; 
-            z-index: 1;
-        }
-
-        /* Tarjeta de información flotante (arriba a la izquierda) */
+        #map { height: calc(100vh - 56px); width: 100%; z-index: 1; }
         .info-card {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 999;
-            width: 300px;
-            background: rgba(255, 255, 255, 0.95);
+            position: absolute; top: 80px; left: 20px; z-index: 999;
+            width: 300px; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px);
         }
     </style>
 {% endblock %}
 
-{# Sobrescribimos el contenedor principal para tener mapa a pantalla completa #}
 {% block main_container %}
-
-    {# 1. MAPA #}
     <div id="map"></div>
 
-    {# 2. TARJETA DE INFORMACIÓN FLOTANTE #}
-    <div class="card info-card shadow border-0">
+    <div class="card info-card shadow border-0 rounded-4">
         <div class="card-body">
-            <h5 class="card-title fw-bold text-primary mb-3">
+            <h5 class="card-title fw-bold text-primary mb-2">
                 <i class="fa-solid fa-truck-fast me-2"></i>{{ device_name }}
             </h5>
+            
+            {# ESTADO DE CONEXIÓN (Le ponemos ID para cambiarlo con JS) #}
+            <div class="mb-3" id="status-badge">
+                {% if error %}
+                     <span class="badge bg-danger">{% trans "Error" %}</span>
+                {% else %}
+                    {% if ignition %}
+                        <span class="badge bg-success"><i class="fa-solid fa-key me-1"></i> ON</span>
+                    {% else %}
+                        <span class="badge bg-secondary"><i class="fa-solid fa-power-off me-1"></i> OFF</span>
+                    {% endif %}
+                {% endif %}
+            </div>
 
-            {% if error %}
-                <div class="alert alert-danger p-2" style="font-size: 0.9rem;">
-                    <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ error }}
+            <div class="bg-light rounded p-3 mb-3 border">
+                <div class="row g-2">
+                    {# Agregamos ID a cada valor numérico #}
+                    <div class="col-6">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.7rem;">{% trans "Speed" %}</div>
+                        <div class="fw-bold text-dark">
+                            <i class="fa-solid fa-gauge-high text-primary me-1"></i> 
+                            <span id="val-speed">{{ speed|floatformat:0 }}</span> <small>km/h</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.7rem;">{% trans "Fuel" %}</div>
+                        <div class="fw-bold text-dark">
+                            <i class="fa-solid fa-gas-pump text-warning me-1"></i> 
+                            <span id="val-fuel">{{ fuel_level|floatformat:0 }}</span> <small>%</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.7rem;">{% trans "Battery" %}</div>
+                        <div class="fw-bold text-dark">
+                            <i class="fa-solid fa-car-battery text-danger me-1"></i> 
+                            <span id="val-battery">{{ battery_voltage }}</span> <small>V</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted text-uppercase" style="font-size: 0.7rem;">{% trans "Odometer" %}</div>
+                        <div class="fw-bold text-dark">
+                            <i class="fa-solid fa-road text-secondary me-1"></i> 
+                            <span id="val-odometer">{{ odometer|floatformat:0 }}</span> <small>km</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center mt-2">
-                    <a href="{% url 'tracking_device_list' %}" class="btn btn-sm btn-outline-secondary">
-                        {% trans "Go Back" %}
-                    </a>
-                </div>
-            {% else %}
-                <ul class="list-unstyled mb-3 small">
-                    <li class="mb-2">
-                        <strong>{% trans "Last Update" %}:</strong><br>
-                        <span class="text-muted">
-                            {% if last_update %}
-                                {{ last_update|date:"d M Y H:i:s" }}
-                            {% else %}
-                                {% trans "No data available" %}
-                            {% endif %}
-                        </span>
-                    </li>
-                    <li class="mb-2">
-                        <strong>{% trans "Coordinates" %}:</strong><br>
-                        <span class="font-monospace text-muted">{{ lat|floatformat:5 }}, {{ lon|floatformat:5 }}</span>
-                    </li>
-                </ul>
+            </div>
 
-                <div class="d-grid gap-2">
-                    <a href="{% url 'tracking_device_list' %}" class="btn btn-outline-primary btn-sm">
-                        <i class="fa-solid fa-arrow-left me-1"></i> {% trans "Back to Fleet" %}
-                    </a>
-                    {# Botón para recargar la página y ver nueva posición #}
-                    <a href="" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-rotate-right me-1"></i> {% trans "Refresh Position" %}
-                    </a>
-                </div>
-            {% endif %}
+            <ul class="list-unstyled mb-3 small border-top pt-2">
+                <li class="mb-1 d-flex justify-content-between">
+                    <strong class="text-muted">{% trans "Updated" %}:</strong>
+                    <span id="val-updated">
+                        {% if last_update %}{{ last_update|date:"H:i:s" }}{% else %}-{% endif %}
+                    </span>
+                </li>
+            </ul>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'tracking_dashboard' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i> {% trans "Back to Fleet" %}
+                </a>
+            </div>
         </div>
     </div>
-
 {% endblock %}
 
 {% block extra_js %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        /* ESTILO PARA LAS ETIQUETAS (NOMBRES) */
+        .my-labels {
+            background-color: white !important;
+            border: 1px solid #333 !important;
+            color: black !important;
+            font-weight: 800 !important;
+            font-size: 12px !important;
+            padding: 2px 5px !important;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
+            opacity: 1 !important;
+        }
+        /* Eliminar la flechita del tooltip */
+        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+            display: none !important;
+        }
+    </style>
+
     <script>
-        {% if not error and lat and lon %}
-            // 1. Inicializar Mapa centrado en el dispositivo
-            // Usamos |stringformat:"f" para asegurar que Django no ponga comas decimales (formato europeo) que rompen JS
-            var lat = {{ lat|stringformat:"f" }};
-            var lon = {{ lon|stringformat:"f" }};
-            
-            var map = L.map('map').setView([lat, lon], 15);
+        // 1. Inicializar Mapa
+        var map = L.map('map').setView([-34.9214, -57.9545], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
 
-            // 2. Capa Base (OpenStreetMap)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
+        // Diccionario para guardar los marcadores y no borrarlos cada vez
+        var fleetMarkers = {};
+        
+        // Grupo para el auto-zoom
+        var featureGroup = L.featureGroup().addTo(map);
 
-            // 3. Marcador Personalizado
-            // Creamos un icono rojo para destacar
-            var truckIcon = L.divIcon({
+        function createIcon(ignition) {
+            // Verde si está encendido, Gris si está apagado
+            var color = ignition ? '#2ecc71' : '#7f8c8d'; 
+            return L.divIcon({
                 className: 'custom-div-icon',
-                html: "<div style='background-color:#e63946; width: 15px; height: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);'></div>",
-                iconSize: [15, 15],
-                iconAnchor: [7, 7]
+                html: `<div style='background-color:${color}; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);'></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
             });
+        }
 
-            L.marker([lat, lon], {icon: truckIcon}).addTo(map)
-                .bindPopup("<b>{{ device_name }}</b><br>Lat: " + lat + "<br>Lon: " + lon)
-                .openPopup();
+        function updateFleet() {
+            fetch("{% url 'api_telemetry_all' %}")
+                .then(response => response.json())
+                .then(data => {
+                    var devices = data.devices;
 
-        {% else %}
-            // Fallback si hay error o no hay coordenadas: Mostrar mapa general
-            var map = L.map('map').setView([-34.9214, -57.9545], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OS' }).addTo(map);
-        {% endif %}
+                    devices.forEach(device => {
+                        // --- CORRECCIÓN AQUÍ: Usamos los nombres correctos del JSON ---
+                        var id = device.device_id;       // Antes era device.id
+                        var name = device.device_name;   // Antes era device.name
+                        var lat = device.lat;
+                        var lon = device.lon;
+                        var ign = device.ignition;
+
+                        var newLatLng = new L.LatLng(lat, lon);
+
+                        // A. SI YA EXISTE -> ACTUALIZAR
+                        if (fleetMarkers[id]) {
+                            fleetMarkers[id].setLatLng(newLatLng);
+                            fleetMarkers[id].setIcon(createIcon(ign));
+                        } 
+                        // B. SI ES NUEVO -> CREAR
+                        else {
+                            var marker = L.marker(newLatLng, {icon: createIcon(ign)})
+                                .addTo(map);
+                            
+                            // ETIQUETA PERMANENTE (NOMBRE)
+                            marker.bindTooltip(name, {
+                                permanent: true,    // SIEMPRE VISIBLE
+                                direction: 'top', 
+                                className: 'my-labels', // Clase CSS definida arriba
+                                offset: [0, -12]
+                            });
+
+                            // POPUP (CLIC)
+                            marker.bindPopup(`
+                                <div class="text-center">
+                                    <strong>${name}</strong><br>
+                                    <span class="badge ${ign ? 'bg-success' : 'bg-secondary'}">${ign ? 'ON' : 'OFF'}</span><br>
+                                    <a href="/tracking/map/${id}/" class="btn btn-sm btn-primary mt-2" style="font-size: 0.7rem;">Ver Detalles</a>
+                                </div>
+                            `);
+
+                            // Guardar en memoria
+                            fleetMarkers[id] = marker;
+                            featureGroup.addLayer(marker);
+                        }
+                    });
+
+                    // Auto-Zoom (Solo la primera vez que detecta flota)
+                    if (devices.length > 0 && !window.zoomedOnce) {
+                        try {
+                            map.fitBounds(featureGroup.getBounds(), {padding: [50, 50]});
+                            window.zoomedOnce = true;
+                        } catch(e) {}
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Ejecutar inmediatamente y repetir cada 2 segundos para fluidez
+        updateFleet();
+        setInterval(updateFleet, 2000);
+
     </script>
 {% endblock %}

@@ -1,103 +1,186 @@
 {% extends 'tracking/base.html' %}
 {% load i18n %}
 
-{% block title %}{% trans "Live Map" %} | {{ device_name|default:"Fleet" }}{% endblock %}
+{% block title %}{% trans "Fleet Dashboard" %}{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* Map takes full height minus navbar */
+        .dashboard-wrapper {
+            display: flex;
+            height: calc(100vh - 56px);
+            width: 100%;
+            overflow: hidden;
+        }
+
         #map { 
-            height: calc(100vh - 56px); 
-            width: 100%; 
-            position: relative;
+            flex: 1; 
+            height: 100%; 
             z-index: 1;
         }
 
-        /* Floating Panel for Device List */
-        .device-selector {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 250px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 999; /* Above the map */
-            max-height: 80vh;
+        .sidebar-list {
+            width: 300px;
+            height: 100%;
+            background-color: white;
+            border-left: 1px solid #ddd;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+            z-index: 2;
         }
 
-        .device-selector h6 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #6c757d;
+        /* --- ESTILO DE ETIQUETA MEJORADO (FONDO BLANCO) --- */
+        .leaflet-tooltip.device-label {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #333;
+            color: #000;
             font-weight: bold;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-
-        .device-link {
-            display: block;
-            padding: 8px 10px;
-            color: #333;
-            text-decoration: none;
+            font-size: 11px;
+            padding: 2px 5px;
             border-radius: 4px;
-            margin-bottom: 4px;
-            transition: background 0.2s;
-            font-size: 0.9rem;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        /* Quitamos la flechita del tooltip para que quede más limpio */
+        .leaflet-tooltip-top:before, 
+        .leaflet-tooltip-bottom:before, 
+        .leaflet-tooltip-left:before, 
+        .leaflet-tooltip-right:before {
+            display: none; 
         }
 
-        .device-link:hover {
-            background-color: #f8f9fa;
-        }
-
-        .device-link.active {
-            background-color: #e7f1ff;
-            color: #0d6efd;
-            font-weight: 600;
-            border-left: 3px solid #0d6efd;
+        @media (max-width: 768px) {
+            .dashboard-wrapper { flex-direction: column; }
+            .sidebar-list { width: 100%; height: 40%; }
         }
     </style>
 {% endblock %}
 
-{# Override main_container to remove the white box padding from base.html #}
 {% block main_container %}
+    <div class="dashboard-wrapper">
+        <div id="map"></div>
 
-    <div id="map"></div>
-
-    <div class="device-selector">
-        <h6>{% trans "Your Units" %}</h6>
-        
-        {% if devices %}
-            {% for device in devices %}
-                <a href="{% url 'tracking_device_map' device.id %}" 
-                   class="device-link {% if device.id == current_device_id %}active{% endif %}">
-                    <i class="fa-solid fa-truck-moving me-2"></i>{{ device.name }}
-                </a>
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-warning p-2" style="font-size: 0.8rem;">
-                {% trans "No devices assigned. Please contact your administrator." %}
+        <div class="sidebar-list">
+            <div class="p-3 bg-light border-bottom">
+                <h6 class="mb-0 text-uppercase text-muted fw-bold">{% trans "Fleet Status" %}</h6>
             </div>
-        {% endif %}
+            
+            {% if devices %}
+                {% for device in devices %}
+                    <a href="{% url 'tracking_device_map' device.id %}" class="d-block p-3 text-decoration-none text-dark border-bottom hover-bg-light">
+                       <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">
+                                <i class="fa-solid fa-truck-moving me-2 text-primary"></i>
+                                {{ device.name }}
+                            </span>
+                            {% if device.is_online %}
+                                <span class="badge bg-success rounded-pill" style="font-size: 0.6rem;">ON</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill" style="font-size: 0.6rem;">OFF</span>
+                            {% endif %}
+                       </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="p-4 text-center text-muted">
+                    {% trans "No devices assigned." %}
+                </div>
+            {% endif %}
+        </div>
     </div>
-
 {% endblock %}
 
 {% block extra_js %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Basic Map Initialization (Centered in La Plata default)
-        var map = L.map('map').setView([-34.9214, -57.9545], 12);
-
+        // 1. Inicializar Mapa
+        var map = L.map('map').setView([-34.9214, -57.9545], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // Note: The markers logic will be handled in the 'map.html' template 
-        // or fetched via AJAX if this is a dashboard view.
+        var fleetMarkers = {};
+        var featureGroup = L.featureGroup().addTo(map);
+
+        function createIcon(isOnline) {
+            var color = isOnline ? '#2ecc71' : '#95a5a6'; 
+            return L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style='background-color:${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);'></div>`,
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            });
+        }
+
+        // --- FUNCIÓN ANTI-SUPERPOSICIÓN ---
+        // Si varios camiones tienen la misma lat/lon exacta, los separa visualmente un poquito
+        function addJitter(lat, lon) {
+            // Solo para visualización, no guarda en BD
+            return [
+                lat + (Math.random() - 0.5) * 0.0005, 
+                lon + (Math.random() - 0.5) * 0.0005
+            ];
+        }
+
+        function updateFleet() {
+            fetch("{% url 'api_telemetry_all' %}")
+                .then(response => response.json())
+                .then(data => {
+                    var devices = data.devices;
+                    
+                    // DEBUG: Ver en consola cuántos recibimos
+                    console.log("Recibidos:", devices.length, "dispositivos.");
+
+                    devices.forEach(device => {
+                        // Usamos lat/lon directos. Si se ven superpuestos, usa addJitter(device.lat, device.lon)
+                        // Por ahora lo dejamos directo para precisión.
+                        var newLatLng = new L.LatLng(device.lat, device.lon);
+
+                        // A. ACTUALIZAR EXISTENTE
+                        if (fleetMarkers[device.id]) {
+                            fleetMarkers[device.id].setLatLng(newLatLng);
+                            fleetMarkers[device.id].setIcon(createIcon(device.online));
+                        } 
+                        // B. CREAR NUEVO
+                        else {
+                            var marker = L.marker(newLatLng, {icon: createIcon(device.online)})
+                                .addTo(map);
+                            
+                            // ETIQUETA PERMANENTE (NOMBRE ARRIBA)
+                            marker.bindTooltip(device.name, {
+                                permanent: true,      // <--- ESTO ES LA CLAVE
+                                direction: 'top', 
+                                className: 'device-label',
+                                offset: [0, -10],
+                                opacity: 1
+                            });
+
+                            // POPUP AL CLIC (DETALLES)
+                            marker.bindPopup(`
+                                <div class="text-center">
+                                    <strong>${device.name}</strong><br>
+                                    <a href="/tracking/map/${device.id}/" class="btn btn-sm btn-primary mt-2">Ver Detalles</a>
+                                </div>
+                            `);
+
+                            fleetMarkers[device.id] = marker;
+                            featureGroup.addLayer(marker);
+                        }
+                    });
+
+                    // Auto-zoom la primera vez
+                    if (devices.length > 0 && !window.zoomedOnce) {
+                        try {
+                            map.fitBounds(featureGroup.getBounds(), {padding: [50, 50]});
+                            window.zoomedOnce = true;
+                        } catch(e) { console.log("Esperando coordenadas válidas para zoom..."); }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        updateFleet();
+        setInterval(updateFleet, 5000);
     </script>
 {% endblock %}

@@ -7,7 +7,18 @@ from pathlib import Path
 import os
 import socket
 from dotenv import load_dotenv 
+from django.utils.translation import gettext_lazy as _
 
+
+LANGUAGES = [
+    ('en', _('English')), 
+    ('es', _('Spanish')), 
+]
+
+LANGUAGE_CODE = 'en-us' # O 'es-ar' si preferís español por defecto
+
+
+USE_I18N = True
 # Carga las variables del archivo .env
 load_dotenv() 
 

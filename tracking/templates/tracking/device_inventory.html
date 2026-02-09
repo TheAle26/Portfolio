@@ -1,0 +1,125 @@
+{% extends 'tracking/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Device Inventory" %}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 rounded-4">
+    
+    {# Encabezado de la Tabla #}
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-primary">
+            <i class="fa-solid fa-list-check me-2"></i>{% trans "My Fleet Inventory" %}
+        </h5>
+        <span class="badge bg-light text-dark border">
+            {{ devices.count }} {% trans "Units" %}
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">{% trans "Vehicle Name" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>IMEI</th>
+                        <th>{% trans "Fuel / Cost" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Last Update" %}</th>
+                        <th class="text-end pe-4">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                    <tr>
+                        {# 1. NOMBRE #}
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ device.name }}</div>
+                            <small class="text-muted">{{ device.company.name }}</small>
+                        </td>
+
+                        {# 2. TIPO (Icono + Texto) #}
+                        <td>
+                            {% if device.device_type == 'truck' %}
+                                <i class="fa-solid fa-truck text-secondary me-1"></i>
+                            {% elif device.device_type == 'car' %}
+                                <i class="fa-solid fa-car text-secondary me-1"></i>
+                            {% elif device.device_type == 'motorcycle' %}
+                                <i class="fa-solid fa-motorcycle text-secondary me-1"></i>
+                            {% else %}
+                                <i class="fa-solid fa-cube text-secondary me-1"></i>
+                            {% endif %}
+                            {{ device.get_device_type_display }}
+                        </td>
+
+                        {# 3. IMEI #}
+                        <td>
+                            <span class="font-monospace bg-light border px-2 py-1 rounded small">
+                                {{ device.imei }}
+                            </span>
+                        </td>
+
+                        {# 4. COMBUSTIBLE #}
+                        <td>
+                            {% if device.fuel_type %}
+                                <div class="text-success fw-bold">
+                                    {{ device.fuel_type.name }}
+                                </div>
+                                <small class="text-muted">
+                                    ${{ device.fuel_type.price_per_liter }}/L
+                                </small>
+                            {% else %}
+                                <span class="text-muted fst-italic">{% trans "Not assigned" %}</span>
+                            {% endif %}
+                        </td>
+
+                        {# 5. ESTADO #}
+                        <td>
+                            {% if device.is_online %}
+                                <span class="badge bg-success-subtle text-success border border-success px-2">
+                                    <i class="fa-solid fa-circle fa-2xs me-1"></i>{% trans "Online" %}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2">
+                                    <i class="fa-regular fa-circle fa-2xs me-1"></i>{% trans "Offline" %}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        {# 6. ULTIMA CONEXION #}
+                        <td>
+                            {% if device.last_update %}
+                                {{ device.last_update|date:"d M Y H:i" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        {# 7. ACCIONES #}
+                        <td class="text-end pe-4">
+                            <a href="{% url 'tracking_device_map' device.id %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               title="{% trans "View on Map" %}">
+                                <i class="fa-solid fa-map-location-dot"></i>
+                            </a>
+                            {# Aquí podrías agregar un botón de Editar en el futuro #}
+                            <button class="btn btn-sm btn-outline-secondary" disabled title="{% trans "Edit Settings (Coming Soon)" %}">
+                                <i class="fa-solid fa-gear"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-folder-open fa-2x mb-3"></i>
+                            <p>{% trans "No devices found." %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

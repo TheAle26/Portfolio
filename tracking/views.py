@@ -1,68 +1,135 @@
-# tracking/views.py
 import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils.translation import gettext as _  # Import for translation hooks
-from .models import Device
+from django.utils.translation import gettext as _ 
+from .models import Device , Telemetry
+from django.http import JsonResponse 
 
 # SECURITY NOTE: In production, keep this secret!
 FLESPI_TOKEN = 'exQOwyhjfgtXiZV5sBu3WCdhpm0A1HWdLfCGy1dLRBT6mle1lv5roOMvSAlWgbnL'
 
+def obtain_users_devices(user):
+    """
+    Helper function to get devices assigned to a user.
+    Uses select_related for performance optimization.
+    """
+    return user.assigned_devices.all().select_related('company', 'fuel_type')
+
+
+
 def landing_page(request):
     return render(request, 'tracking/landing.html')
 
-@login_required(login_url='tracking_login') # We use the URL name, not the path
-def device_list(request):
+@login_required(login_url='tracking_login')
+def device_inventory(request):
     """
-    Shows the list of devices assigned to the user.
+    Shows the TABLE list of devices (Inventory).
     """
-    devices = request.user.assigned_devices.all()
+    devices = obtain_users_devices(request.user)
+    return render(request, 'tracking/device_inventory.html', {'devices': devices})
+
+
+
+@login_required(login_url='tracking_login')
+def device_map_list(request):
+    """
+    Shows the DASHBOARD: Split screen (Map + Sidebar List).
+    """
+    devices = obtain_users_devices(request.user)
     return render(request, 'tracking/device_map_list.html', {'devices': devices})
 
 @login_required(login_url='tracking_login')
 def live_map(request, device_id=None):
-    """
-    Shows the live map for a specific device.
-    Fetches real-time data from Flespi API.
-    """
-    # 1. Get the specific device from the user's allowed list
-    # We use 'first()' to avoid crashing if it doesn't exist
-    device = request.user.assigned_devices.filter(id=device_id).first()
+    # 1. Obtener dispositivo
+    device = obtain_users_devices(request.user).filter(id=device_id).first()
     
     if not device:
-        # We wrap the string in _() so Django knows it can be translated later
-        messages.error(request, _("Device not found or you don't have permission to view it."))
-        return redirect('tracking_device_list') # Must match the name in urls.py
+        messages.error(request, _("Device not found."))
+        return redirect('tracking_dashboard')
 
-    # 2. Prepare Flespi API Request
-    url = f'https://flespi.io/gw/devices/{device.imei}/telemetry/position'
-    headers = {'Authorization': f'FlespiToken {FLESPI_TOKEN}'}
-    
+    # 2. Obtener EL ÚLTIMO dato de NUESTRA base de datos
+    last_telemetry = Telemetry.objects.filter(device=device).order_by('-timestamp').first()
+
     context = {
         'device_name': device.name,
-        'lat': -34.9214, # Default: La Plata
+        # Valores por defecto (La Plata)
+        'lat': -34.9214, 
         'lon': -57.9545,
         'last_update': None,
+        'speed': 0,
+        'ignition': False,
+        'odometer': 0,
+        'fuel_level': 0,
+        'battery_voltage': 0,
         'error': None
     }
-    
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if 'result' in data and len(data['result']) > 0:
-                telemetry = data['result'][0]
-                
-                context['lat'] = telemetry.get('position.latitude', 0)
-                context['lon'] = telemetry.get('position.longitude', 0)
-                context['last_update'] = telemetry.get('timestamp', 0)
-        else:
-            context['error'] = f"Flespi Error: {response.status_code}"
-            
-    except Exception as e:
-        # Mark this string for translation too
-        context['error'] = _("Connection error: ") + str(e)
-        
+
+    if last_telemetry:
+        # 3. Rellenar contexto con datos locales
+        context['lat'] = last_telemetry.latitude
+        context['lon'] = last_telemetry.longitude
+        context['last_update'] = last_telemetry.timestamp
+        context['speed'] = last_telemetry.speed
+        context['ignition'] = last_telemetry.ignition
+        context['odometer'] = last_telemetry.odometer
+        context['fuel_level'] = last_telemetry.fuel_level
+        context['battery_voltage'] = last_telemetry.battery_voltage
+    else:
+        context['error'] = _("No historical data available yet.")
+
     return render(request, 'tracking/map.html', context)
+
+
+
+
+@login_required(login_url='tracking_login')
+def get_device_telemetry(request, device_id):
+    """
+    API endpoint que devuelve JSON para actualizar el mapa vía AJAX.
+    """
+    try:
+        device = obtain_users_devices(request.user).filter(id=device_id).first()
+        if not device:
+            return JsonResponse({'success': False, 'error': 'Device not found'}, status=404)
+
+        last = Telemetry.objects.filter(device=device).order_by('-timestamp').first()
+
+        if last:
+            return JsonResponse({
+                'success': True,
+                'lat': last.latitude,
+                'lon': last.longitude,
+                'speed': last.speed,
+                'ignition': last.ignition,
+                'odometer': last.odometer,
+                'fuel_level': last.fuel_level,
+                'battery_voltage': last.battery_voltage,
+                'last_update': last.timestamp.strftime('%H:%M:%S'),
+            })
+        else:
+            return JsonResponse({'success': False, 'error': 'No data'}, status=200)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    
+@login_required(login_url='tracking_login')
+def get_all_devices_telemetry(request):
+   
+   
+    devices = obtain_users_devices(request.user)
+    data = []
+    for device in devices:
+        last = Telemetry.objects.filter(device=device).order_by('-timestamp').first()
+        if last:
+            data.append({
+                'device_id': device.id,
+                'device_name': device.name,
+                'lat': last.latitude,
+                'lon': last.longitude,
+                'ignition': last.ignition,
+                'fuel_level': last.fuel_level,
+            })
+            
+    return JsonResponse({'devices': data})

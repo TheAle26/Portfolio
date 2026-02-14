@@ -1,36 +1,30 @@
-"""
-Django settings for mysiteFulbo project.
-OPTIMIZADO PARA PRODUCCION Y DESARROLLO
-"""
-
 from pathlib import Path
 import os
-import socket
 from dotenv import load_dotenv 
 from django.utils.translation import gettext_lazy as _
 
-
-LANGUAGES = [
-    ('en', _('English')), 
-    ('es', _('Spanish')), 
-]
-
-LANGUAGE_CODE = 'en-us' # O 'es-ar' si preferís español por defecto
-
-
-USE_I18N = True
 # Carga las variables del archivo .env
 load_dotenv() 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# --- SEGURIDAD Y ENTORNO ---
-hostname = socket.gethostname()
-
-# IMPORTANTE: Pon tu SECRET_KEY en el archivo .env también por seguridad
+# --- SEGURIDAD Y CREDENCIALES ---
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-clave-por-defecto-cambiar-en-prod')
 
-if hostname == '2wz':
+# Definimos el entorno leyendo el .env (Si no existe, asume 'development')
+DJANGO_ENV = os.environ.get('DJANGO_ENV', 'development')
+
+# --- CONFIGURACIÓN DE CORREO (COMÚN) ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'Alejo Vincent <thedarckalejoxo@gmail.com>'
+
+# --- ENTORNOS ---
+if DJANGO_ENV == 'production':
     # --- PRODUCCIÓN (Raspberry Pi / Servidor) ---
     DEBUG = False
     ALLOWED_HOSTS = [
@@ -40,59 +34,39 @@ if hostname == '2wz':
         '190.189.49.129',
         'fulboapp.zapto.org',
     ]
-    
-    # Configuración de Correo REAL (Gmail)
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
     
     # Rutas estáticas de producción
     STATIC_ROOT = '/var/www/Fulbo/static'
     STATICFILES_DIRS = []
-    
-    # Base de Datos Producción
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '/var/www/Fulbo/db.sqlite3',
-        }
-    }
 
 else:
-    # --- DESARROLLO (Tu PC) ---
+    # --- DESARROLLO (Tu PC / Docker Local) ---
     DEBUG = True
-    ALLOWED_HOSTS = []
-    
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = 'smtp.gmail.com'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    # Usamos '*' en desarrollo para que Docker y tu PC se comuniquen sin bloqueos
+    ALLOWED_HOSTS = ['*'] 
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
     
     # Rutas estáticas locales
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'AppFulbo/static'),
     ]
-    
-    # Base de Datos Desarrollo
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+
+# --- BASE DE DATOS (COMÚN PARA DOCKER: POSTGRESQL) ---
+# Al usar Docker, tanto en prod como en dev usaremos la misma arquitectura de DB
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'mi_proyecto_db'),
+        'USER': os.environ.get('DB_USER', 'alejo'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password_secreto'),
+        'HOST': os.environ.get('DB_HOST', 'db'), # 'db' es el contenedor de Postgres
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
+}
 
-# Configuración común para ambos entornos
-DEFAULT_FROM_EMAIL = 'Proyectito Fulbo <thedarckalejoxo@gmail.com>'
-CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
-
-
-# Application definition
+# --- APLICACIONES ---
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -100,11 +74,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Tus Apps
     'AppFulbo',
     'portal',
     'tracking',
+    # Librerías
     'crispy_forms',
-    'crispy_bootstrap4', # OJO: Ver nota abajo sobre Bootstrap 5
+    'crispy_bootstrap4', 
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap4"]
@@ -125,7 +101,7 @@ ROOT_URLCONF = 'mysiteFulbo.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [], # Si tienes templates globales, agrégalos aquí
+        'DIRS': [], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,21 +125,25 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
-# Internationalization
-LANGUAGE_CODE = 'es-arg'
-TIME_ZONE = 'UTC'
+# --- INTERNACIONALIZACIÓN ---
+LANGUAGES = [
+    ('en', _('English')), 
+    ('es', _('Spanish')), 
+]
+LANGUAGE_CODE = 'es-ar' # Unificado (tenías en-us y es-arg duplicados)
+TIME_ZONE = 'America/Argentina/Buenos_Aires' # Ajustado a tu zona horaria real
 USE_I18N = True
 USE_TZ = True
 
-# Static & Media
+# --- ARCHIVOS ESTÁTICOS Y MULTIMEDIA ---
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-LOGIN_URL='/AppFulbo/login'
+LOGIN_URL = '/AppFulbo/login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Cache
+# --- CACHÉ ---
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',

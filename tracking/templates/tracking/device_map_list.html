@@ -68,9 +68,10 @@
             
             {% if devices %}
                 {% for device in devices %}
-                    <a href="{% url 'tracking_device_map' device.id %}" class="d-block p-3 text-decoration-none text-dark border-bottom hover-bg-light">
-                       <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">
+                    <div class="d-block p-3 border-bottom hover-bg-light">
+                       
+                       <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark">
                                 <i class="fa-solid fa-truck-moving me-2 text-primary"></i>
                                 {{ device.name }}
                             </span>
@@ -80,7 +81,19 @@
                                 <span class="badge bg-secondary rounded-pill" style="font-size: 0.6rem;">OFF</span>
                             {% endif %}
                        </div>
-                    </a>
+
+                       <div class="d-flex gap-2">
+                           
+                            <button onclick="focusDevice({{ device.id }})" class="btn btn-sm btn-outline-primary flex-fill" title="Centrar en Mapa">
+                                <i class="fa-solid fa-crosshairs me-1"></i> Centrar
+                            </button>
+
+                            <a href="{% url 'tracking_device_map' device.id %}" class="btn btn-sm btn-primary flex-fill" title="Ver Telemetría">
+                                Detalles <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                       </div>
+
+                    </div>
                 {% endfor %}
             {% else %}
                 <div class="p-4 text-center text-muted">
@@ -113,16 +126,31 @@
             });
         }
 
-        // --- FUNCIÓN ANTI-SUPERPOSICIÓN ---
+        // --- FUNCIÓN ANTI-SUPERPOSICIÓN --
         // Si varios camiones tienen la misma lat/lon exacta, los separa visualmente un poquito
         function addJitter(lat, lon) {
-            // Solo para visualización, no guarda en BD
+            
             return [
                 lat + (Math.random() - 0.5) * 0.0005, 
                 lon + (Math.random() - 0.5) * 0.0005
             ];
         }
 
+        function focusDevice(id) {
+            var marker = fleetMarkers[id];
+
+            if (marker) {
+
+                var latLng = marker.getLatLng();
+                map.flyTo(latLng, 16, {
+                    animate: true,
+                    duration: 1.5 
+                });
+                marker.openPopup();
+            } else {
+                alert("Este vehículo no tiene ubicación reciente en el mapa.");
+            }
+        }
         function updateFleet() {
             fetch("{% url 'api_telemetry_all' %}")
                 .then(response => response.json())

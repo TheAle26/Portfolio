@@ -3,12 +3,14 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.translation import gettext as _ 
-from .models import Device , Telemetry
+from .models import Device , Telemetry, DailyReport
 from django.http import JsonResponse 
 
 # SECURITY NOTE: In production, keep this secret!
 FLESPI_TOKEN = 'exQOwyhjfgtXiZV5sBu3WCdhpm0A1HWdLfCGy1dLRBT6mle1lv5roOMvSAlWgbnL'
 
+
+@login_required(login_url='tracking_login')
 def obtain_users_devices(user):
     """
     Helper function to get devices assigned to a user.
@@ -17,7 +19,16 @@ def obtain_users_devices(user):
     return user.assigned_devices.all().select_related('company', 'fuel_type')
 
 
+@login_required(login_url='tracking_login')
+def data_dashboard(request):
+    """
+    View para mostrar estadisticas
+    """
+    devices = obtain_users_devices(request.user).order_by('imei')
+    reports = DailyReport.objects.filter(device__in=devices).order_by('imei', '-date')
+    return render(request, 'tracking/device_map_list.html', {'devices': devices, 'reports': reports})
 
+@login_required(login_url='tracking_login')
 def landing_page(request):
     return render(request, 'tracking/landing.html')
 

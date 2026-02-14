@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # 1. LA BASE DE DATOS
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file: 
+      - .env  # <-- DOCKER LEERÁ TU ARCHIVO .ENV AQUÍ
+    environment:
+      # Postgres usa nombres específicos, así que los mapeamos desde tu .env
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  # 2. TU PROYECTO DJANGO
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env  # <-- LE PASAMOS EL .ENV A DJANGO
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+
+  # 3. EL WORKER
+  worker:
+    build: .
+    command: python manage.py sync_flespi 
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - web
+    env_file:
+      - .env  # <-- LE PASAMOS EL .ENV AL WORKER
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+
+  # 4. GRAFANA
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

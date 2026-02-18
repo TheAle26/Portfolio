@@ -14,8 +14,8 @@ class FuelTypeAdmin(admin.ModelAdmin):
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     # Agregamos 'fuel_type' a la lista
-    list_display = ('name', 'imei', 'device_type', 'company', 'fuel_type', 'is_online')
-    list_filter = ('company', 'device_type', 'is_online')
+    list_display = ('name', 'imei', 'device_type', 'company', 'fuel_type', 'last_update')
+    list_filter = ('company', 'device_type', 'fuel_type','last_update')
     search_fields = ('name', 'imei')
 
 @admin.register(Employee)

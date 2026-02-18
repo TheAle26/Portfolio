@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User  # Modelo de usuario predeterminado de Django
+from django.conf import settings  # Modelo de usuario predeterminado de Django
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -8,7 +8,7 @@ from django.dispatch import receiver
 
 class Profile(models.Model):
     # La relación uno-a-uno. Cada usuario tiene un solo perfil.
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
     # El campo para la foto.
     # upload_to='fotos_perfil/': Las fotos se guardarán en la carpeta 'media/fotos_perfil/'
@@ -22,15 +22,22 @@ class Profile(models.Model):
 
 # --- Señales para crear el perfil automáticamente ---
 
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance, raw=False, created=False, **kwargs):
     """Crea un perfil automáticamente cada vez que se crea un nuevo usuario."""
+    
+    if raw:
+        return  # Evita crear perfiles al cargar fixtures o datos en bruto
+    
     if created:
         Profile.objects.create(user=instance)
 
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def save_user_profile(sender, instance, raw=False, **kwargs):
     """Guarda el perfil automáticamente cada vez que se guarda el objeto User."""
+    if raw:
+        return
+    
     instance.profile.save()
 
 NUMERO_CHOICES = [(i, str(i)) for i in range(1, 100)]
@@ -39,7 +46,7 @@ class Liga(models.Model):
     nombre_liga = models.CharField(max_length=20, unique=True)
     descripcion = models.TextField(blank=True, null=True)
     publica= models.BooleanField(blank=False, default=False)
-    presidentes = models.ManyToManyField(User, related_name="ligas_presididas")  # Relación ManyToMany con los presidentes
+    presidentes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="ligas_presididas")  # Relación ManyToMany con los presidentes
     super_presidente = models.ForeignKey(
          settings.AUTH_USER_MODEL,
          on_delete=models.SET_NULL,
@@ -58,8 +65,8 @@ class Jugador(models.Model):
         ('3', 'Mediocampista'),
         ('4', 'Delantero'),
     ]
-    usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE,related_name="jugadores")
-    apodo = models.CharField(max_length=10)
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE,related_name="jugadores")
+    apodo = models.CharField(max_length=15)
     posicion = models.CharField(max_length=1, choices=OPCIONES, null=True, blank=True)
     liga = models.ForeignKey(Liga, on_delete=models.CASCADE, related_name="jugadores")
     numero = models.IntegerField(

@@ -81,7 +81,10 @@ INSTALLED_APPS = [
     # Librerías
     'crispy_forms',
     'crispy_bootstrap4', 
+    'apps.accounts',
+    'apps.orders',
 ]
+
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = ["bootstrap4"]
 CRISPY_TEMPLATE_PACK = "bootstrap4" 
@@ -116,7 +119,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'mysiteFulbo.wsgi.application'
-
+AUTH_USER_MODEL = 'portal.User'
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},

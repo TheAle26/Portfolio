@@ -19,7 +19,10 @@ services:
   # 2. TU PROYECTO DJANGO
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+             
     volumes:
       - .:/app
     ports:
@@ -58,6 +61,26 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
     depends_on:
       - db
+  generador_datos:
+    build: .  # Usa la misma imagen que tu web para tener Python y las librerías
+    # Aquí pones el comando exacto que usas para correr el script
+    command: >
+      sh -c "python manage.py poblar_base && 
+             python manage.py simular_viaje 123456789012345 & 
+             python manage.py simular_viaje 987654321098765 & 
+             wait"
+
+    volumes:
+      - .:/app  # Mapea tus archivos para que lea el script actualizado
+    depends_on:
+      - db
+      - web
+    # Si tu script necesita conectarse a la DB o a la API, 
+    # pásale las mismas variables de entorno que tiene tu servicio web:
+    env_file:
+      - .env
+
 
 volumes:
   postgres_data:
+

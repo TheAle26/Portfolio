@@ -9,24 +9,24 @@ class Command(BaseCommand):
     help = 'Simula un viaje en tiempo real para un dispositivo específico'
 
     def add_arguments(self, parser):
-        # Permitimos pasar el ID como argumento
-        parser.add_argument('device_id', type=int, help='ID del dispositivo a mover')
+        # Permitimos pasar el IMEI como argumento
+        parser.add_argument('imei', type=str, help='IMEI del dispositivo a mover')
 
     def handle(self, *args, **kwargs):
-        device_id = kwargs['device_id']
+        device_imei = kwargs['imei']
         
         try:
-            device = Device.objects.get(id=device_id)
+            device = Device.objects.get(imei=device_imei)
         except Device.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f"No existe el dispositivo con ID {device_id}"))
+            self.stdout.write(self.style.ERROR(f"No existe el dispositivo con IMEI {device_imei}"))
             return
 
-        self.stdout.write(self.style.SUCCESS(f"--- INICIANDO SIMULACIÓN PARA: {device.name} (ID: {device_id}) ---"))
+        self.stdout.write(self.style.SUCCESS(f"--- INICIANDO SIMULACIÓN PARA: {device.name} (IMEI: {device_imei}) ---"))
         self.stdout.write("Presiona CTRL+C para detener.")
 
         # Coordenadas iniciales (Plaza Moreno, La Plata)
-        lat = -34.9214
-        lon = -57.9545
+        lat = -40.9214 + random.uniform(-5, 5) 
+        lon = -67.9545 + random.uniform(-5, 5) 
         
         # Valores iniciales
         odometer = 150000
@@ -68,4 +68,4 @@ class Command(BaseCommand):
 
             # 5. Esperar 5 segundos antes del siguiente punto
             # (El mapa se actualiza cada 10s, así que generamos datos más rápido que el mapa)
-            time.sleep(5)
+            time.sleep(1)

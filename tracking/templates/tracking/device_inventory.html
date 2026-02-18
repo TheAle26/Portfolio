@@ -25,7 +25,10 @@
                         <th>{% trans "Type" %}</th>
                         <th>IMEI</th>
                         <th>{% trans "Fuel / Cost" %}</th>
-                        <th>{% trans "Status" %}</th>
+                        
+                        {# COLUMNA DE IGNICIÓN #}
+                        <th class="text-center">{% trans "Ignition" %}</th>
+                        
                         <th>{% trans "Last Update" %}</th>
                         <th class="text-end pe-4">{% trans "Actions" %}</th>
                     </tr>
@@ -74,23 +77,31 @@
                             {% endif %}
                         </td>
 
-                        {# 5. ESTADO #}
-                        <td>
-                            {% if device.is_online %}
-                                <span class="badge bg-success-subtle text-success border border-success px-2">
-                                    <i class="fa-solid fa-circle fa-2xs me-1"></i>{% trans "Online" %}
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2">
-                                    <i class="fa-regular fa-circle fa-2xs me-1"></i>{% trans "Offline" %}
-                                </span>
-                            {% endif %}
+                    
+
+                       {# ESTADO DE IGNICIÓN VISUAL #}
+                        <td class="text-center">
+                            {# Usamos .all.0 para obtener el primero de la lista prefetched (el más nuevo por el ordering del modelo) #}
+                            {% with last=device.telemetries.all.0 %}
+                                {% if last %}
+                                    {% if last.ignition %}
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="fa-solid fa-key me-1"></i> ON
+                                        </span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-secondary">
+                                            <i class="fa-solid fa-power-off me-1"></i> OFF
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">{% trans "No data" %}</span>
+                                {% endif %}
+                            {% endwith %}
                         </td>
 
-                        {# 6. ULTIMA CONEXION #}
                         <td>
-                            {% if device.last_update %}
-                                {{ device.last_update|date:"d M Y H:i" }}
+                            {% if device.get_last_telemetry %}
+                                {{ device.get_last_telemetry.timestamp|date:"d/m H:i" }}
                             {% else %}
                                 -
                             {% endif %}

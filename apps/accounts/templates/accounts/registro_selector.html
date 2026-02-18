@@ -1,0 +1,16 @@
+{% extends "accounts/base.html" %}
+{% block content %}
+<div class="text-center">
+  <h1 class="h5 mb-4">Elegí tu tipo de cuenta</h1>
+  <div class="d-grid gap-2 col-6 mx-auto">
+    <a class="btn btn-primary" href="{% url 'registro_cliente' %}">Cliente</a>
+    <a class="btn btn-success" href="{% url 'registro_farmacia' %}">Farmacia</a>
+    <a class="btn btn-warning" href="{% url 'registro_repartidor' %}">Repartidor</a>
+  </div>
+</div>
+
+<script>
+    document.title = document.title + " | Registro";
+</script>
+
+{% endblock %}

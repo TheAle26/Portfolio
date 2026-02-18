@@ -16,7 +16,9 @@ urlpatterns = [
     path('map/<int:device_id>/', views.live_map, name='tracking_device_map'),
     
     path('api/telemetry/<int:device_id>/', views.get_device_telemetry, name='api_telemetry'),
+    
     path('api/telemetry/all/', views.get_all_devices_telemetry, name='api_telemetry_all'),
+    
     
     # --- AUTHENTICATION ---
     path('login/', auth_views.LoginView.as_view(

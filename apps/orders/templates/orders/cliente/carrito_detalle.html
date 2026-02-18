@@ -1,0 +1,215 @@
+{% extends "orders/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Mi Carrito de Compras</h2> 
+    <a class="btn btn-primary" href="{% url 'buscar_medicamentos' %}">Buscar Medicamentos</a>
+
+    <form action="{% url 'finalizar_compra' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% for farmacia_data in carrito_data.farmacias %}
+            <h3 class="h5 mb-0">
+            Pedido a: 
+            <strong class="ms-1">{{ farmacia_data.nombre_farmacia }}</strong>
+            </h3>
+            <h4></h4>
+            <div class="card mb-3">
+                
+                <ul class="list-group list-group-flush">
+                    {% for item in farmacia_data.items_enriquecidos %}
+                        <li class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <strong>{{ item.cantidad }}x {{ item.stock_obj.medicamento.nombre_comercial }}</strong>
+                                    <p class="mb-1 text-muted small">
+                                        Precio Unitario: ${{ item.precio_unitario }}
+                                    </p>
+                                    <h5 class="mb-0 text-success">
+                                        Subtotal: ${{ item.subtotal }}
+                                    </h5>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="d-flex">
+                                        <input type="number" 
+                                               name="cantidad-{{ item.stock_obj.id }}" 
+                                               class="form-control form-control-sm" 
+                                               value="{{ item.cantidad }}" 
+                                               min="1" 
+                                               max="{{ item.stock_obj.stock_actual }}"
+                                               style="width: 80px;">
+                                        
+                                        <button type"submit"
+                                                class="btn btn-secondary btn-sm ms-2"
+                                                formaction="{% url 'update_cart_item' item.stock_obj.id %}"
+                                                formnovalidate>
+                                            Actualizar
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 text-end">
+                                    <a href="{% url 'remove_cart_item' item.stock_obj.id %}" class="btn btn-danger btn-sm">
+                                        Quitar
+                                    </a>
+                                </div>
+                            </div>
+
+                            {% if item.stock_obj.medicamento.requiere_receta %}
+                                <div class="mt-3 p-2" style="background-color:var(--farmago-light-primary);">
+                                    <input type="file" 
+                                           class="form-control form-control-sm" 
+                                           name="receta_{{ item.stock_obj.id }}" 
+                                           accept="image/*,.pdf" 
+                                           required>
+                                           <div class="form-text text-muted mt-1">
+                                                Formatos aceptados: <strong>PDF, JPG, PNG</strong>.
+                                            </div>
+                                </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                
+                </div>
+        {% empty %}
+            <div class="alert alert-info" role="alert">Carrito vacío.</div>
+            
+        {% endfor %}
+
+        {% if total_general > 0 %}
+        <div class="row justify-content-end mb-4">
+                <div class="col-lg-8">
+                    <h4>Dirección de Entrega</h4>
+                    <p class="text-muted small">
+                        Verifica tu dirección. Puedes cambiarla solo para este pedido.
+                    </p>
+                    <div class="mb-3">
+                        <label for="direccion_entrega" class="form-label">Enviar a:</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="direccion_entrega" 
+                               name="direccion_entrega" 
+                               value="{{ default_direccion|default:'' }}" 
+                               required>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-md-5">
+                <h4>Método de Pago</h4>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="metodo_pago" id="pago_efectivo" value="efectivo" checked>
+                    <label class="form-check-label" for="pago_efectivo">
+                        Efectivo
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="metodo_pago" id="pago_transferencia" value="transferencia">
+                    <label class="form-check-label" for="pago_transferencia">
+                        Transferencia Bancaria (La farmacia te contactará con los datos)
+                    </label>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <h3>Total General: ${{ total_general }}</h3>
+                <button type="submit" class="btn btn-info btn-lg">
+                    Finalizar Compra y Realizar Pedidos
+                </button>
+            </div>
+        {% endif %}
+    </form>
+</div>
+
+<script>
+    document.title = document.title + " | Carrito de Compras";
+</script>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cantidadInputs = document.querySelectorAll('input[name^="cantidad-"]');
+
+    cantidadInputs.forEach(input => {
+        
+        // --- 1. LÓGICA PROACTIVA (Evento 'input') ---
+        // Se activa mientras el usuario teclea.
+        function handleInput() {
+            const maxStock = parseInt(input.getAttribute('max'), 10);
+            const currentValue = parseInt(input.value, 10);
+            const minStock = parseInt(input.getAttribute('min'), 10);
+
+            // Si el valor es inválido, pre-cargamos el mensaje de error.
+            if (currentValue > maxStock) {
+                input.setCustomValidity('La cantidad no puede superar el stock (' + maxStock + ').');
+            } else if (currentValue < minStock) {
+                 input.setCustomValidity('La cantidad debe ser al menos ' + minStock + '.');
+            } else {
+                // ¡IMPORTANTE! Limpiar el mensaje si el valor vuelve a ser válido.
+                input.setCustomValidity(''); 
+            }
+        }
+
+        // --- 2. LÓGICA DE INTERCEPCIÓN (Evento 'invalid') ---
+        // Se activa SÓLO si el usuario intenta enviar el formulario
+        // y el navegador detecta que este campo es inválido.
+        function handleInvalid() {
+            // Este evento es nuestra "última oportunidad" para
+            // sobrescribir el mensaje del navegador.
+            // Volvemos a ejecutar la misma lógica de validación
+            // para asegurarnos de que el mensaje esté puesto.
+            handleInput();
+        }
+
+        // Asignar los "escuchadores"
+        input.addEventListener('input', handleInput); // Al teclear
+        input.addEventListener('invalid', handleInvalid); // Al intentar enviar
+        
+
+        // --- 3. LÓGICA PARA LA TECLA 'ENTER' (Se mantiene) ---
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                const updateButton = this.nextElementSibling;
+                if (updateButton && updateButton.type === 'submit') {
+                    updateButton.click(); 
+                }
+            }
+        });
+    });
+});
+</script>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ... (tu código anterior para cantidad/enter) ...
+
+    // --- VALIDACIÓN DE ARCHIVOS ---
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                // Definir extensiones permitidas
+                const allowedExtensions = /(\.jpg|\.jpeg|\.png|\.pdf)$/i;
+                
+                if (!allowedExtensions.exec(file.name)) {
+                    alert('Archivo no válido. Solo se permiten imágenes (JPG, PNG) o PDF.');
+                    this.value = ''; // Borra el archivo seleccionado
+                    return false;
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock extra_js %}

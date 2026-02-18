@@ -1,0 +1,220 @@
+{% extends "orders/base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h5 mb-3">Pedidos entrantes - {{ user.farmacia.nombre }}</h1>
+
+    <div class="mb-3">
+        <a href="{% url 'farmacia_panel' %}" class="btn btn-secondary">Volver al panel</a>
+        <a href="{% url 'gestionar_inventario' %}" class="btn btn-info">Gestionar Inventario</a>
+    </div>
+
+    <hr>
+
+    {% if pedidos.exists %}
+        {% for p in pedidos %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Pedido #{{ p.id }}</strong>
+                            <div class="text-muted">Cliente: {% if p.cliente %}{{ p.cliente.user.email }}{% else %}--{% endif %}</div>
+                            <div class="text-muted">Creado: {{ p.creado|date:"d/m/Y H:i" }}</div>
+                            <div class="text-muted">Codigo: <strong> {{ p.codigo_seguridad }}</strong></div>
+                        
+                            <div class="mt-2">Estado: 
+                                <span class="badge bg-secondary">{{ p.get_estado_display }}</span> 
+                                {% if p.estado == 'RECHAZADO' %}
+                                    {% if p.motivo_rechazo %}
+                                        <text class="small mt-1 text-muted">
+                                            <strong>&nbsp Motivo:</strong> {{ p.motivo_rechazo_legible }}
+                                            {% if p.comentario_rechazo %}
+                                                ({{ p.comentario_rechazo }})
+                                            {% endif %}
+                                        </text>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            <div>Total: <strong>${{ p.total }}</strong></div>
+                            {% if p.estado == 'PENDIENTE' %}
+                                <form action="{% url 'farmacia_aceptar' p.id %}" method="post" class="form-aceptar" id="form-aceptar-{{ p.id }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm btn-aceptar" disabled>Aceptar</button>
+                                </form>
+                                <button class="btn btn-danger btn-sm"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#rechazoForm_{{ p.id }}"
+                                        aria-expanded="false"
+                                        aria-controls="rechazoForm_{{ p.id }}">
+                                    Rechazar
+                                </button>
+
+                                <div class="collapse mt-2" id="rechazoForm_{{ p.id }}">
+                                    <form action="{% url 'farmacia_rechazar' p.id %}" method="post" class="rechazo-form" data-pedido-id="{{ p.id }}">
+                                    {% csrf_token %}
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-sm-5">
+                                        <label class="form-label mb-1">Motivo</label>
+                                        <select name="motivo" class="form-select form-select-sm motivo-select" required>
+                                            <option value="" selected disabled>Seleccioná un motivo…</option>
+                                            <option value="SIN_STOCK">Sin stock</option>
+                                            <option value="RECETA_INVALIDA">Receta inválida</option>
+                                            <option value="FUERA_DE_COBERTURA">Fuera de cobertura/entrega</option>
+                                            <option value="DATOS_INCOMPLETOS">Datos incompletos/ilegibles</option>
+                                            <option value="OTRO">Otro</option>
+                                        </select>
+                                        </div>
+                                        <div class="col-sm-7">
+                                        <label class="form-label mb-1">Detalle (requerido si elegís “Otro”)</label>
+                                        <textarea name="comentario"
+                                                    rows="2"
+                                                    class="form-control form-control-sm comentario-input"
+                                                    placeholder="Especificá el motivo…"></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">Confirmar rechazo</button>
+                                        </div>
+                                    </div>
+                                    </form>
+                                </div>
+                                
+
+
+
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if p.items.all %}
+                        <hr>
+                        <h6 class="mb-2">Artículos</h6>
+                        <ul class="list-group">
+                            {% for item in p.items.all %}
+                                <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
+                                    <div class="w-100 d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ item.medicamento.nombre_comercial }}</strong>
+                                            <div class="small text-muted">Cantidad: {{ item.cantidad }} · Precio unitario: ${{ item.precio_unitario_snapshot }}</div>
+                                            {% if item.receta_adjunta %}
+                                                <div class="small"><a href="{{ item.receta_adjunta.url }}" target="_blank">Ver receta adjunta</a></div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span>${{ item.subtotal }}</span>
+                                        </div>
+                                    </div>
+                                    {% if p.estado == 'PENDIENTE' %}
+                                        {% if item.medicamento.requiere_receta %}
+                                            <div class="form-check mb-1">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    id="chk_{{ item.id }}"
+                                                    name="confirmar_receta_{{ item.id }}"
+                                                    form="form-aceptar-{{ p.id }}"
+                                                >
+                                                <label class="form-check-label small" for="chk_{{ item.id }}">
+                                                    Confirmo la receta de <strong>{{ item.medicamento.nombre_comercial }}</strong>
+                                                    {% if not item.receta_adjunta %}
+                                                        — <span class="text-danger">No hay receta adjunta</span>
+                                                    {% endif %}
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No hay pedidos para mostrar.</p>
+    {% endif %}
+
+</div>
+
+
+<!-- JavaScript para manejar la lógica de habilitar/deshabilitar el botón "Aceptar" -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Busca todas las "cards" de pedido
+    document.querySelectorAll(".card.mb-3").forEach(function(card) {
+        
+        // 2. Encuentra el formulario de "Aceptar" y el botón DENTRO de esa card
+        const formAceptar = card.querySelector(".form-aceptar");
+        if (!formAceptar) return; // Si no hay formulario, no hace nada
+
+        const aceptarBtn = formAceptar.querySelector(".btn-aceptar");
+        if (!aceptarBtn) return; // Si no hay botón, no hace nada
+
+        // 3. Encuentra TODOS los checkboxes DENTRO de ESE formulario
+        const checks = Array.from(card.querySelectorAll(".form-check-input"));
+
+        // 4. Función que verifica si TODOS los checks están marcados
+        function actualizarEstadoBoton() {
+            // ¿Hay algún medicamento que requiera receta? (si hay checkboxes, sí)
+            const hayRequeridas = checks.length > 0;
+
+            // ¿Falta alguna receta adjunta? (buscamos el span de alerta en la card)
+            const faltaAdjunta = card.querySelector(".form-check-label .text-danger") !== null;
+
+            // ¿Todas las casillas marcadas?
+            const todasMarcadas = checks.every(chk => chk.checked);
+
+            // Regla:
+            // - Si hay requeridas: habilitar solo si todas están marcadas y no falta adjunta
+            // - Si NO hay requeridas: habilitar (no hay nada que validar)
+            aceptarBtn.disabled = hayRequeridas ? !(todasMarcadas && !faltaAdjunta) : false;
+        }
+
+        // Eventos
+        checks.forEach(chk => chk.addEventListener("change", actualizarEstadoBoton));
+        // Si cambiara el DOM dinámicamente (no es tu caso), se podría observar, pero con esto alcanza.
+
+        // Estado inicial
+        actualizarEstadoBoton();
+    });
+});
+</script>
+
+<!-- JavaScript para manejar la lógica de requerir comentario si el motivo es OTRO -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Para cada form de rechazo, hacer requerido el comentario si el motivo es OTRO
+  document.querySelectorAll(".rechazo-form").forEach(function(form) {
+    const select = form.querySelector(".motivo-select");
+    const comentario = form.querySelector(".comentario-input");
+
+    function syncComentarioRequired() {
+      const esOtro = (select.value === "OTRO");
+      comentario.required = esOtro;
+      // UX: marcar/desmarcar visual
+      comentario.classList.toggle("is-invalid", esOtro && !comentario.value.trim());
+    }
+
+    // Inicial y listeners
+    syncComentarioRequired();
+    select.addEventListener("change", syncComentarioRequired);
+    comentario.addEventListener("input", syncComentarioRequired);
+
+    // Validación extra antes de enviar
+    form.addEventListener("submit", function(e) {
+      if (select.value === "OTRO" && !comentario.value.trim()) {
+        e.preventDefault();
+        comentario.focus();
+        comentario.classList.add("is-invalid");
+      }
+    });
+  });
+});
+</script>
+
+<script>
+    document.title = document.title + " | Pedidos Farmacia";
+</script>
+
+{% endblock %}

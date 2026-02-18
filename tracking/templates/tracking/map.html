@@ -16,7 +16,13 @@
 {% endblock %}
 
 {% block main_container %}
-    <div id="map"></div>
+    <div class="mb-2 text-end">
+    <button id="btn-center-map" class="btn btn-sm btn-info text-white shadow-sm">
+        <i class="fa-solid fa-crosshairs me-1"></i> Centrar en el vehículo
+    </button>
+</div>
+
+<div id="map" style="height: 650px; border-radius: 12px; z-index: 1;" class="shadow-sm border"></div>
 
     <div class="card info-card shadow border-0 rounded-4">
         <div class="card-body">
@@ -91,8 +97,7 @@
 
 {% block extra_js %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <style>
+
         /* ESTILO PARA LAS ETIQUETAS (NOMBRES) */
         .my-labels {
             background-color: white !important;
@@ -111,6 +116,8 @@
     </style>
 
     <script>
+
+
         // 1. Inicializar Mapa
         var map = L.map('map').setView([-34.9214, -57.9545], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -122,6 +129,25 @@
         
         // Grupo para el auto-zoom
         var featureGroup = L.featureGroup().addTo(map);
+        let autoFollow = true;
+        map.on('dragstart', function() {
+            autoFollow = false;
+            console.log("Seguimiento automático desactivado por el usuario.");
+        });
+
+        document.getElementById('btn-center-map').addEventListener('click', function() {
+        // 3. Volvemos a activar el seguimiento automático
+            autoFollow = true; 
+            console.log("Seguimiento automático RE-activado.");
+
+            if (window.lastKnownLatLng) {
+                // Usamos flyTo para una animación suave de regreso al camión
+                map.flyTo(window.lastKnownLatLng, 15, {
+                    animate: true,
+                    duration: 1.5 
+                });
+            }
+        });
 
         function createIcon(ignition) {
             // Verde si está encendido, Gris si está apagado
@@ -134,67 +160,80 @@
             });
         }
 
-        function updateFleet() {
-            fetch("{% url 'api_telemetry_all' %}")
-                .then(response => response.json())
-                .then(data => {
-                    var devices = data.devices;
+    function updateFleet() {
+        const deviceId = parseInt("{{ device_id }}");
+        const deviceName = "{{ device_name }}"; 
+        const fetchUrl = "{% url 'api_telemetry' device_id %}";
+        
+        fetch(fetchUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.warn('No hay datos o el dispositivo no fue encontrado:', data.error);
+                    return;
+                }
 
-                    devices.forEach(device => {
-                        // --- CORRECCIÓN AQUÍ: Usamos los nombres correctos del JSON ---
-                        var id = device.device_id;       // Antes era device.id
-                        var name = device.device_name;   // Antes era device.name
-                        var lat = device.lat;
-                        var lon = device.lon;
-                        var ign = device.ignition;
+                // --- 1. ACTUALIZAR EL MAPA ---
+                var lat = data.lat;
+                var lon = data.lon;
+                var ign = data.ignition;
+                var newLatLng = new L.LatLng(lat, lon);
 
-                        var newLatLng = new L.LatLng(lat, lon);
+                if (autoFollow) {
+                    // panTo es ideal porque hace un paneo suave si la distancia es corta
+                    map.panTo(newLatLng, {animate: true, duration: 0.5});
+                }
 
-                        // A. SI YA EXISTE -> ACTUALIZAR
-                        if (fleetMarkers[id]) {
-                            fleetMarkers[id].setLatLng(newLatLng);
-                            fleetMarkers[id].setIcon(createIcon(ign));
-                        } 
-                        // B. SI ES NUEVO -> CREAR
-                        else {
-                            var marker = L.marker(newLatLng, {icon: createIcon(ign)})
-                                .addTo(map);
-                            
-                            // ETIQUETA PERMANENTE (NOMBRE)
-                            marker.bindTooltip(name, {
-                                permanent: true,    // SIEMPRE VISIBLE
-                                direction: 'top', 
-                                className: 'my-labels', // Clase CSS definida arriba
-                                offset: [0, -12]
-                            });
-
-                            // POPUP (CLIC)
-                            marker.bindPopup(`
-                                <div class="text-center">
-                                    <strong>${name}</strong><br>
-                                    <span class="badge ${ign ? 'bg-success' : 'bg-secondary'}">${ign ? 'ON' : 'OFF'}</span><br>
-                                    <a href="/tracking/map/${id}/" class="btn btn-sm btn-primary mt-2" style="font-size: 0.7rem;">Ver Detalles</a>
-                                </div>
-                            `);
-
-                            // Guardar en memoria
-                            fleetMarkers[id] = marker;
-                            featureGroup.addLayer(marker);
-                        }
+                if (fleetMarkers[deviceId]) {
+                    fleetMarkers[deviceId].setLatLng(newLatLng);
+                    fleetMarkers[deviceId].setIcon(createIcon(ign));
+                } else {
+                    var marker = L.marker(newLatLng, {icon: createIcon(ign)}).addTo(map);
+                    
+                    marker.bindTooltip(deviceName, {
+                        permanent: true, direction: 'top', className: 'my-labels', offset: [0, -12]
                     });
 
-                    // Auto-Zoom (Solo la primera vez que detecta flota)
-                    if (devices.length > 0 && !window.zoomedOnce) {
-                        try {
-                            map.fitBounds(featureGroup.getBounds(), {padding: [50, 50]});
-                            window.zoomedOnce = true;
-                        } catch(e) {}
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
+                    marker.bindPopup(`
+                        <div class="text-center">
+                            <strong>${deviceName}</strong><br>
+                            <span class="badge ${ign ? 'bg-success' : 'bg-secondary'}">${ign ? 'ON' : 'OFF'}</span><br>
+                            <a href="/tracking/map/${deviceId}/" class="btn btn-sm btn-primary mt-2" style="font-size: 0.7rem;">Ver Detalles</a>
+                        </div>
+                    `);
 
-        // Ejecutar inmediatamente y repetir cada 2 segundos para fluidez
+                    fleetMarkers[deviceId] = marker;
+                    featureGroup.addLayer(marker);
+                }
+
+                if (!window.zoomedOnce) {
+                    try {
+                        map.fitBounds(featureGroup.getBounds(), {padding: [50, 50]});
+                        window.zoomedOnce = true;
+                    } catch(e) {}
+                }
+
+                // --- 2. ACTUALIZAR LA TARJETA HTML ---
+                
+                // Actualizar textos numéricos (usamos Math.round para emular el floatformat:0 de Django)
+                document.getElementById('val-speed').textContent = Math.round(data.speed);
+                document.getElementById('val-fuel').textContent = Math.round(data.fuel_level);
+                document.getElementById('val-battery').textContent = data.battery_voltage;
+                document.getElementById('val-odometer').textContent = Math.round(data.odometer);
+                document.getElementById('val-updated').textContent = data.last_update;
+
+                // Actualizar el estado de ignición (ON/OFF)
+                const statusBadge = document.getElementById('status-badge');
+                if (ign) {
+                    statusBadge.innerHTML = '<span class="badge bg-success"><i class="fa-solid fa-key me-1"></i> ON</span>';
+                } else {
+                    statusBadge.innerHTML = '<span class="badge bg-secondary"><i class="fa-solid fa-power-off me-1"></i> OFF</span>';
+                }
+            })
+            .catch(error => console.error('Error fetching telemetry:', error));
+    }
+
+
         updateFleet();
         setInterval(updateFleet, 2000);
 

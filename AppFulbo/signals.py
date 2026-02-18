@@ -27,7 +27,9 @@ from django.urls import reverse
 
 
 @receiver(post_save, sender=SolicitudUnionLiga)
-def crear_notificacion_nueva_solicitud(sender, instance, created, **kwargs):
+def crear_notificacion_nueva_solicitud(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     if created:
         liga = instance.liga
         # Generar la URL usando el name del path y el ID de la conversación
@@ -42,7 +44,9 @@ def crear_notificacion_nueva_solicitud(sender, instance, created, **kwargs):
             )
             
 @receiver(post_save, sender=PuntajePartido)
-def crear_puntuacion_pendiente(sender, instance, created, **kwargs):
+def crear_puntuacion_pendiente(sender, instance, created, raw=False, **kwargs):
+    if raw:
+        return
     if created:
         
         PuntuacionPendiente.objects.create(

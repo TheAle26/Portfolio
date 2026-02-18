@@ -1,0 +1,209 @@
+{% extends "accounts/base.html" %} {% load crispy_forms_tags %} {% block content %}
+<div class="mx-auto" style="max-width: 500px">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h1 class="h5 mb-3 text-center">{{ titulo }}</h1>
+      <form method="post" novalidate enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Renderiza la mayoría de los campos con Crispy -->  
+        {% for field in form %}
+          {% if field.name != 'latitud' and field.name != 'longitud' %}
+            {{ field|as_crispy_field }}
+          {% endif %}
+        {% endfor %}
+
+        <!-- RENDERIZA LOS CAMPOS OCULTOS -->
+        {{ form.latitud }}
+        {{ form.longitud }}
+        <div class="text-center mt-3" style="margin-bottom: 20px;">
+          <a href="{% url 'tyc' %}" target="_blank" rel="noopener noreferrer" id="tyc">
+              Ver terminos y condiciones
+          </a>
+        </div>
+
+        <button class="btn btn-primary w-100" type="submit">
+          Crear cuenta
+        </button>
+      </form>
+      
+      <div class="text-center mt-3">
+        <a href="{% url 'registro_selector' %}" class="btn btn-secondary w-50 mt-2" >Volver a elegir tipo</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.title = document.title + " | {{ titulo }}";
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Función que filtra el input
+    function filterNameInput(event) {
+        // 'this' se refiere al campo (nombre o apellido)
+        const input = event.target;
+        
+        // Reemplaza cualquier carácter que NO sea (^) una letra (a-z, A-Z) o un espacio (\s)
+        // con una cadena vacía ('').
+        input.value = input.value.replace(/[^a-zA-Z\s]/g, '');
+    }
+
+    // 1. Encontrar los campos por su ID (el ID que genera Crispy Forms)
+    const nombreInput = document.getElementById('id_nombre');
+    const apellidoInput = document.getElementById('id_apellido');
+
+    // 2. Aplicar el filtro a ambos campos
+    if (nombreInput) {
+        nombreInput.addEventListener('input', filterNameInput);
+    }
+    if (apellidoInput) {
+        apellidoInput.addEventListener('input', filterNameInput);
+    }
+});
+</script>
+
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJjJoiU22eLqz-02a6dYUdKQbGazSlwoc&libraries=places&callback=initAutocomplete"
+  async
+  defer
+></script>
+
+<!-- API GOOGLE MAPS -->
+<script>
+  function initAutocomplete() {
+    // 1. Selecciona el campo de dirección
+    // Usamos el ID que definimos en el formulario: 'id_direccion_autocomplete'
+    const addressInput = document.getElementById("id_direccion_autocomplete");
+
+    // 2. Crea el objeto de autocompletado
+    const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+      componentRestrictions: { country: "ar" }, // Restringe a Argentina
+      fields: ["address_components", "geometry", "icon", "name"], // Pide la geometría
+    });
+
+    // 3. Añade un listener para cuando el usuario selecciona una dirección
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+
+      if (!place.geometry || !place.geometry.location) {
+        // El usuario escribió algo que no está en Google
+        console.warn("Dirección no encontrada en Google Maps.");
+        return;
+      }
+
+      // 4. Obtiene la latitud y longitud
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+
+      // 5. Puebla los campos ocultos del formulario
+      // Crispy-forms les da los IDs 'id_latitud' y 'id_longitud'
+      document.getElementById("id_latitud").value = lat.toFixed(6);
+      document.getElementById("id_longitud").value = lng.toFixed(6);
+
+      console.log("Dirección seleccionada:", place.name);
+      console.log("Latitud:", lat.toFixed(6));
+      console.log("Longitud:", lng.toFixed(6));
+    });
+  }
+</script>
+
+<script>
+  // Formatea CUIT en tiempo real: XX-XXXXXXXX-X
+  function formatCUITInput(el) {
+    if (!el) return;
+    el.addEventListener('input', function (e) {
+      const cursorPos = el.selectionStart;
+      // Mantener solo dígitos
+      let digits = el.value.replace(/\D/g, '').slice(0, 11);
+      let formatted = '';
+      if (digits.length <= 2) {
+        formatted = digits;
+      } else if (digits.length <= 10) {
+        formatted = digits.slice(0,2) + '-' + digits.slice(2);
+      } else {
+        formatted = digits.slice(0,2) + '-' + digits.slice(2,10) + '-' + digits.slice(10);
+      }
+      el.value = formatted;
+
+      // ajustar posición del cursor al final (evita complejidades de offsets)
+      el.selectionStart = el.selectionEnd = el.value.length;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const cuitInput = document.getElementById('id_cuit') || document.querySelector('input[name="cuit"]');
+    formatCUITInput(cuitInput);
+  });
+</script>
+
+<script>
+  // Enforce digits-only on CBU input and optionally set a maxlength
+  function enforceDigitsOnly(el, maxLength) {
+    if (!el) return;
+    // set maxlength attribute so the browser also limits input length
+    if (maxLength) el.setAttribute('maxlength', maxLength);
+    el.addEventListener('input', function () {
+      // keep only digits and trim to maxLength
+      const digits = el.value.replace(/\D/g, '').slice(0, maxLength || undefined);
+      el.value = digits;
+      // move cursor to the end to avoid complex offset handling
+      el.selectionStart = el.selectionEnd = el.value.length;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const cbuInput = document.getElementById('id_cbu') || document.querySelector('input[name="cbu"]');
+    // CBU debe tener exactamente 22 dígitos; limitamos a 22 en el campo
+    enforceDigitsOnly(cbuInput, 22);
+  });
+</script>
+
+<script>
+    document.title = document.title + " | Registro";
+</script>
+
+{% endblock %}
+
+{% block extra_js_bottom %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const vehiculoEl = document.querySelector('select[name="vehiculo"]') || document.getElementById('id_vehiculo');
+  const patenteEl = document.querySelector('input[name="patente"]') || document.getElementById('id_patente');
+  if (!vehiculoEl || !patenteEl) return;
+
+  // intenta encontrar el contenedor del campo para ocultarlo visualmente
+  const patenteWrapper = patenteEl.closest('.mb-3') || patenteEl.closest('.form-group') || patenteEl.parentElement;
+
+  function showPatente(show) {
+    if (show) {
+      patenteEl.disabled = false;
+      patenteEl.required = true;
+      if (patenteWrapper) patenteWrapper.style.display = '';
+    } else {
+      patenteEl.value = '';
+      patenteEl.disabled = true;
+      patenteEl.required = false;
+      if (patenteWrapper) patenteWrapper.style.display = 'none';
+    }
+  }
+
+  function update() {
+    const v = String(vehiculoEl.value).toLowerCase();
+    // mostrar patente SOLO si es auto o moto
+    showPatente(v === 'auto' || v === 'moto');
+  }
+
+  // inicializar y escuchar cambios
+  update();
+  vehiculoEl.addEventListener('change', update);
+});
+</script>
+{% endblock %}

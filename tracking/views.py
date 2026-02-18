@@ -10,7 +10,7 @@ from django.http import JsonResponse
 FLESPI_TOKEN = 'exQOwyhjfgtXiZV5sBu3WCdhpm0A1HWdLfCGy1dLRBT6mle1lv5roOMvSAlWgbnL'
 
 
-@login_required(login_url='tracking_login')
+
 def obtain_users_devices(user):
     """
     Helper function to get devices assigned to a user.
@@ -28,18 +28,18 @@ def data_dashboard(request):
     reports = DailyReport.objects.filter(device__in=devices).order_by('imei', '-date')
     return render(request, 'tracking/device_map_list.html', {'devices': devices, 'reports': reports})
 
-@login_required(login_url='tracking_login')
+
 def landing_page(request):
     return render(request, 'tracking/landing.html')
 
+
 @login_required(login_url='tracking_login')
 def device_inventory(request):
-    """
-    Shows the TABLE list of devices (Inventory).
-    """
-    devices = obtain_users_devices(request.user)
-    return render(request, 'tracking/device_inventory.html', {'devices': devices})
-
+    devices = request.user.assigned_devices.all().prefetch_related('telemetries')
+    
+    return render(request, 'tracking/device_inventory.html', {
+        'devices': devices
+    })
 
 
 @login_required(login_url='tracking_login')
@@ -88,7 +88,8 @@ def live_map(request, device_id=None):
         context['battery_voltage'] = last_telemetry.battery_voltage
     else:
         context['error'] = _("No historical data available yet.")
-
+        
+    context['device_id'] = device.id
     return render(request, 'tracking/map.html', context)
 
 
@@ -109,6 +110,8 @@ def get_device_telemetry(request, device_id):
         if last:
             return JsonResponse({
                 'success': True,
+                'device_id': device.id,         
+                'device_name': device.name,
                 'lat': last.latitude,
                 'lon': last.longitude,
                 'speed': last.speed,

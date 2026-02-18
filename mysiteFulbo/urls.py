@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from portal import views as portal_views # Importamos la vista del portal
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,6 +29,10 @@ urlpatterns = [
     #el portal
     path('', portal_views.index, name='home'),
     path('i18n/', include('django.conf.urls.i18n')),
+    
+    path("FarmaGo/accounts/", include("apps.accounts.urls")),
+    path("FarmaGo/orders/", include("apps.orders.urls")),
+    path("FarmaGo", TemplateView.as_view(template_name="accounts/home.html"), name="home"),
 
 ]
 if settings.DEBUG:

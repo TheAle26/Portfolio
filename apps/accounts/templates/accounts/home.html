@@ -1,0 +1,42 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="text-center py-4">
+  <img src="{% static 'img/logo.png' %}" alt="FarmaGo" class="mb-4" style="max-width:180px;">
+  <h1 class="mb-3">Bienvenido a FarmaGo</h1>
+  <p class="lead mb-4">
+    FarmaGo es una plataforma que conecta clientes, farmacias y repartidores
+    para que tus medicamentos lleguen de forma rápida y segura.
+  </p>
+  <div class="d-flex justify-content-center gap-3 flex-wrap">
+    {% if user.is_authenticated %}
+      <a href="{% url 'panel_principal' %}" class="btn btn-primary">Panel principal</a>
+      <a href="/accounts/profile/" class="btn btn-outline-secondary">Ir a mi perfil</a>
+      <form action="{% url 'logout' %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary">Salir</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn btn-primary">Ingresar</a>
+      <a href="{% url 'registro_selector' %}" class="btn btn-outline-secondary">Registrarse</a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_footer %}
+<footer class="bg-white border-top mt-5">
+  <div class="container py-4 text-center">
+    <img src="{% static 'img/logo.png' %}" alt="FarmaGo" style="max-height:40px;" class="mb-2">
+    <p class="mb-1 small text-muted">
+      © {{ now|date:"Y" }} FarmaGo — Todos los derechos reservados
+    </p>
+    <p class="mb-0 small">
+      📧 <a href="mailto:contacto@farmago.com">contacto@farmago.com</a> &nbsp;|&nbsp;
+      ☎ +54 221 123 4567
+    </p>
+  </div>
+</footer>
+{% endblock %}

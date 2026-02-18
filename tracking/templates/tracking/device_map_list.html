@@ -59,7 +59,7 @@
 
 {% block main_container %}
     <div class="dashboard-wrapper">
-        <div id="map"></div>
+        <div id="map" style="height: 650px; border-radius: 12px; z-index: 1;" class="shadow-sm border"></div>
 
         <div class="sidebar-list">
             <div class="p-3 bg-light border-bottom">
@@ -156,43 +156,44 @@
                 .then(response => response.json())
                 .then(data => {
                     var devices = data.devices;
-                    
-                    // DEBUG: Ver en consola cuántos recibimos
-                    console.log("Recibidos:", devices.length, "dispositivos.");
 
                     devices.forEach(device => {
-                        // Usamos lat/lon directos. Si se ven superpuestos, usa addJitter(device.lat, device.lon)
-                        // Por ahora lo dejamos directo para precisión.
-                        var newLatLng = new L.LatLng(device.lat, device.lon);
+                        // USAMOS LAS VARIABLES CORRECTAS DEL JSON
+                        var id = device.device_id;
+                        var name = device.device_name;
+                        var lat = device.lat;
+                        var lon = device.lon;
+                        var ign = device.ignition;
+
+                        var newLatLng = new L.LatLng(lat, lon);
 
                         // A. ACTUALIZAR EXISTENTE
-                        if (fleetMarkers[device.id]) {
-                            fleetMarkers[device.id].setLatLng(newLatLng);
-                            fleetMarkers[device.id].setIcon(createIcon(device.online));
+                        if (fleetMarkers[id]) {
+                            fleetMarkers[id].setLatLng(newLatLng);
+                            fleetMarkers[id].setIcon(createIcon(ign));
                         } 
                         // B. CREAR NUEVO
                         else {
-                            var marker = L.marker(newLatLng, {icon: createIcon(device.online)})
+                            var marker = L.marker(newLatLng, {icon: createIcon(ign)})
                                 .addTo(map);
                             
-                            // ETIQUETA PERMANENTE (NOMBRE ARRIBA)
-                            marker.bindTooltip(device.name, {
-                                permanent: true,      // <--- ESTO ES LA CLAVE
+                            marker.bindTooltip(name, {
+                                permanent: true,
                                 direction: 'top', 
                                 className: 'device-label',
                                 offset: [0, -10],
                                 opacity: 1
                             });
 
-                            // POPUP AL CLIC (DETALLES)
                             marker.bindPopup(`
                                 <div class="text-center">
-                                    <strong>${device.name}</strong><br>
-                                    <a href="/tracking/map/${device.id}/" class="btn btn-sm btn-primary mt-2">Ver Detalles</a>
+                                    <strong>${name}</strong><br>
+                                    <span class="badge ${ign ? 'bg-success' : 'bg-secondary'}">${ign ? 'ON' : 'OFF'}</span><br>
+                                    <a href="/tracking/map/${id}/" class="btn btn-sm btn-primary mt-2">Ver Detalles</a>
                                 </div>
                             `);
 
-                            fleetMarkers[device.id] = marker;
+                            fleetMarkers[id] = marker;
                             featureGroup.addLayer(marker);
                         }
                     });
@@ -202,7 +203,7 @@
                         try {
                             map.fitBounds(featureGroup.getBounds(), {padding: [50, 50]});
                             window.zoomedOnce = true;
-                        } catch(e) { console.log("Esperando coordenadas válidas para zoom..."); }
+                        } catch(e) { console.log("Esperando coordenadas..."); }
                     }
                 })
                 .catch(error => console.error('Error:', error));

@@ -1,332 +1,408 @@
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alejo Vincent | Portfolio IT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <title>Alejo Vincent | Backend Developer & IT Engineer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root {
-            /* Paleta de colores "Tech / Server" */
-            --primary: #0284c7; /* Celeste Tecnológico */
-            --dark-bg: #0f172a; /* Azul noche (tipo terminal) */
-            --card-bg: #ffffff;
-            --text-main: #334155;
-            --text-light: #64748b;
-            --success: #10b981; /* Verde para "Online" */
-        }
-
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f1f5f9;
-            color: var(--text-main);
-            margin: 0;
-            line-height: 1.6;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* HEADER: Perfil Profesional */
-        header {
-            background: linear-gradient(135deg, var(--dark-bg) 0%, #1e3a8a 100%);
-            color: white;
-            padding: 80px 20px 100px; /* Extra padding bottom para el efecto curveado */
-            text-align: center;
+        .pulse-dot {
             position: relative;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
         }
 
-        /* Efecto de ola/curva abajo del header */
-        header::after {
-            content: "";
+        .pulse-dot::before {
+            content: '';
             position: absolute;
-            bottom: 0;
-            left: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 100%;
-            height: 50px;
-            background-color: #f1f5f9;
-            clip-path: ellipse(60% 100% at 50% 100%);
+            height: 100%;
+            border-radius: 50%;
+            background-color: #10b981;
+            animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        header h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 3.5rem;
-            margin: 0;
-            letter-spacing: -1px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        .pulse-dot-blue {
+            background-color: #3b82f6;
         }
 
-        header .role {
-            font-size: 1.5rem;
-            color: var(--primary);
-            font-weight: 700;
-            margin: 10px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .pulse-dot-blue::before {
+            background-color: #3b82f6;
         }
 
-        header .sub-role {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 300;
-            max-width: 600px;
-            margin: 10px auto;
+        @keyframes pulse-ring {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(2.5);
+            }
         }
 
-        /* BARRA DE TECNOLOGÍAS */
-        .tech-stack {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 30px;
-            z-index: 10;
-            position: relative;
+        .project-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-accent-green {
+            border-left: 4px solid #10b981;
+        }
+
+        .card-accent-blue {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .card-accent-red {
+            border-left: 4px solid #ef4444;
+        }
+
+        .card-accent-gray {
+            border-left: 4px solid #6b7280;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-outline-light:hover {
+            transform: translateY(-2px);
         }
 
         .tech-badge {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 50px;
-            color: white;
-            font-size: 0.9rem;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin: 4px;
+        }
+
+        .hero-section {
+            min-height: 85vh;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: transform 0.2s;
         }
-        
-        .tech-badge:hover { transform: scale(1.05); background: rgba(255,255,255,0.2); }
 
-        /* CONTENEDOR PRINCIPAL */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        .timeline-item {
+            border-left: 2px solid #334155;
+            padding-left: 24px;
+            margin-bottom: 32px;
             position: relative;
-            top: -40px; /* Sube sobre el header */
         }
 
-        /* GRID DE TARJETAS */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #3b82f6;
         }
 
-        /* DISEÑO DE TARJETA */
-        .card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            display: flex;
-            flex-direction: column;
-            text-decoration: none;
-            color: inherit;
-            border-top: 5px solid transparent;
-        }
-
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Header de la tarjeta con Icono */
-        .card-header {
-            padding: 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .card-icon {
-            width: 50px;
-            height: 50px;
+        .live-badge {
+            background-color: rgba(16, 185, 129, 0.15);
+            border: 1px solid #10b981;
+            color: #10b981;
+            padding: 4px 12px;
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-        }
-
-        .card-title h3 { margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif; }
-        .card-title span { font-size: 0.8rem; text-transform: uppercase; font-weight: 700; opacity: 0.7; }
-
-        /* Cuerpo de la tarjeta */
-        .card-body {
-            padding: 25px;
-            flex-grow: 1;
-        }
-        
-        .card-body p { margin-top: 0; color: var(--text-light); }
-
-        /* Status Badge (Online/Live) */
-        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #ecfdf5;
-            color: #059669;
-            padding: 5px 10px;
-            border-radius: 20px;
+        }
+
+        .here-badge {
+            background-color: rgba(59, 130, 246, 0.15);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-        .dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* Footer de tarjeta */
-        .card-footer {
-            padding: 15px 25px;
-            background: #f8fafc;
-            border-top: 1px solid #f0f0f0;
             font-weight: 600;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
+            display: inline-flex;
             align-items: center;
+            gap: 6px;
         }
 
-        /* COLORES ESPECÍFICOS POR TARJETA */
-        
-        /* App Fulbo (Django) */
-        .card-django { border-top-color: #092e20; } /* Verde oscuro Django */
-        .card-django .card-icon { background-color: #092e20; color: white; }
-        .card-django .card-footer { color: #092e20; }
 
-        /* Server (Raspberry) */
-        .card-server { border-top-color: #C51A4A; } /* Frambuesa */
-        .card-server .card-icon { background-color: #C51A4A; color: white; }
-        .card-server .card-footer { color: #C51A4A; }
+        /* Estilos para proyectos académicos (Violeta) */
+        .card-accent-purple {
+            border-left: 4px solid #a855f7; /* Violeta vibrante */
+        }
 
-        /* IoT (Teltonika) */
-        .card-iot { border-top-color: #0284c7; } /* Azul */
-        .card-iot .card-icon { background-color: #0284c7; color: white; }
-        .card-iot .card-footer { color: #0284c7; }
+        .bg-purple {
+            background-color: #a855f7 !important;
+            color: white;
+        }
 
-        /* Admin */
-        .card-admin { border-top-color: #475569; }
-        .card-admin .card-icon { background-color: #475569; color: white; }
+        .academic-badge {
+            background-color: rgba(168, 85, 247, 0.15);
+            border: 1px solid #a855f7;
+            color: #a855f7;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
 
     </style>
 </head>
 <body>
-
-    <header>
-        <h1>Alejo Vincent</h1>
-        <div class="role">Backend Developer & IT Engineer</div>
-        <div class="sub-role">
-            Ingeniero Civil migrando al mundo del código.<br>
-            Especialista en Python, Django e Infraestructura Linux.
-        </div>
-
-        <div class="tech-stack">
-            <div class="tech-badge"><i class="fab fa-python"></i> Python</div>
-            <div class="tech-badge"><i class="fas fa-server"></i> Django</div>
-            <div class="tech-badge"><i class="fab fa-java"></i> Java</div>
-            <div class="tech-badge"><i class="fab fa-linux"></i> Linux / Bash</div>
-            <div class="tech-badge"><i class="fab fa-c"></i> C</div>
-            <div class="tech-badge"><i class="fab fa-raspberry-pi"></i> Raspberry Pi</div>
-            <div class="tech-badge"><i class="fas fa-database"></i> SQL</div>
-            <div class="tech-badge"><i class="fab fa-git-alt"></i> Git</div>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="grid">
-
-            <a href="/AppFulbo/inicio" class="card card-django">
-                <div class="card-header">
-                    <div class="card-icon"><i class="fas fa-futbol"></i></div>
-                    <div class="card-title">
-                        <span>Full Stack Project</span>
-                        <h3>FulboApp</h3>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="status-badge"><span class="dot"></span> Live Deployment</div>
-                    <p>
-                        Sistema integral de gestión deportiva. Desarrollado en <strong>Django</strong> con base de datos PostgreSQL.
-                        <br><br>
-                        <em>Este proyecto está hosteado y corriendo actualmente en el servidor local (tarjeta de al lado).</em>
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-10 mx-auto text-center">
+                    <h1 class="display-3 fw-bold mb-3">Alejo Vincent</h1>
+                    <h2 class="h4 text-muted mb-4">Backend Developer & IT Engineer</h2>
+                    <p class="lead mb-4 mx-auto" style="max-width: 800px;">
+                        Advanced Computer Engineering student with a strong focus on Backend development. Civil Engineer transitioning into the world of code. 
+                        Specialist in Python, Django, and Linux Infrastructure. I combine a strong analytical background with hands-on experience 
+                        developing and deploying web applications.
                     </p>
-                </div>
-                <div class="card-footer">
-                    Ir a la App <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-
-            <div class="card card-server">
-                <div class="card-header">
-                    <div class="card-icon"><i class="fas fa-server"></i></div>
-                    <div class="card-title">
-                        <span>Infraestructura & DevOps</span>
-                        <h3>Home Server (Raspberry Pi)</h3>
+                    <div class="mb-4">
+                        <a href="#projects" class="btn btn-primary btn-lg me-3 mb-2">
+                            <i class="fas fa-code me-2"></i>View Projects
+                        </a>
+                        <a href="mailto:alejo.vincent26@gmail.com" class="btn btn-outline-light btn-lg mb-2">
+                            <i class="fas fa-envelope me-2"></i>Contact
+                        </a>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="status-badge"><span class="dot"></span> Online (Tú estás aquí)</div>
-                    <p>
-                        Servidor Linux configurado desde cero. Manejo de seguridad SSH, DNS Dinámico (No-IP) y Gunicorn/Nginx.
-                        <br><br>
-                        <strong>Función:</strong> Hostear este Portfolio y servir la <em>FulboApp</em> al mundo.
-                    </p>
-                </div>
-                <div class="card-footer">
-                    Infraestructura Local <i class="fas fa-check"></i>
+                    <div class="mt-5">
+                        <span class="tech-badge"><i class="fab fa-python me-2"></i>Python</span>
+                        <span class="tech-badge"><i class="fas fa-server me-2"></i>Django</span>
+                        <span class="tech-badge"><i class="fab fa-java me-2"></i>Java</span>
+                        <span class="tech-badge"><i class="fab fa-linux me-2"></i>Linux / Bash</span>
+                        <span class="tech-badge"><i class="fas fa-code me-2"></i>C</span>
+                        <span class="tech-badge"><i class="fab fa-docker me-2"></i>Docker</span>
+                        <span class="tech-badge"><i class="fab fa-raspberry-pi me-2"></i>Raspberry Pi</span>
+                        <span class="tech-badge"><i class="fas fa-database me-2"></i>SQL</span>
+                        <span class="tech-badge"><i class="fab fa-git-alt me-2"></i>Git</span>
+                    </div>
                 </div>
             </div>
-
-            <a href="/tracking/" class="card card-iot">
-                <div class="card-header">
-                    <div class="card-icon"><i class="fas fa-satellite-dish"></i></div>
-                    <div class="card-title">
-                        <span>Hardware & Protocolos</span>
-                        <h3>Rastreo IoT</h3>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p>
-                        Integración de hardware telemático (Teltonika FMC150). Decodificación de tramas TCP/UDP y visualización en tiempo real vía Flespi Platform.
-                    </p>
-                </div>
-                <div class="card-footer">
-                    Ver Dashboard <i class="fas fa-external-link-alt"></i>
-                </div>
-            </a>
-
-            <a href="/admin/" class="card card-admin">
-                <div class="card-header">
-                    <div class="card-icon"><i class="fas fa-cogs"></i></div>
-                    <div class="card-title">
-                        <span>Sistema</span>
-                        <h3>Django Admin</h3>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p>Acceso restringido para mantenimiento de base de datos y usuarios.</p>
-                </div>
-                <div class="card-footer">
-                    Acceder <i class="fas fa-lock"></i>
-                </div>
-            </a>
-
         </div>
-    </div>
+    </section>
 
-    <footer style="text-align: center; padding: 40px; color: #64748b; font-size: 0.9rem;">
-        <p>&copy; 2026 Alejo Vincent. Desarrollado en Django, servido desde Raspberry Pi.</p>
-        <div style="font-size: 1.5rem; margin-top: 10px;">
-            <a href="#" style="color: #0f172a; margin: 0 10px;"><i class="fab fa-linkedin"></i></a>
-            <a href="#" style="color: #0f172a; margin: 0 10px;"><i class="fab fa-github"></i></a>
+    <!-- Projects Ecosystem Section -->
+    <section id="projects" class="py-5">
+        <div class="container">
+            <h2 class="display-5 fw-bold text-center mb-5">Ecosystem & Projects</h2>
+            <div class="row g-4">
+                <!-- FulboApp Card -->
+                <div class="col-lg-6">
+                    <div class="project-card card-accent-green p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h3 class="h4 mb-0">FulboApp</h3>
+                            <span class="live-badge">
+                                <span class="pulse-dot"></span>
+                                Live Deployment
+                            </span>
+                        </div>
+                        <h5 class="text-muted mb-3">Comprehensive Sports Management System</h5>
+                        <p class="mb-4">
+                            Developed in Django with PostgreSQL. <em>This project is currently hosted and running on the local server.</em>
+                        </p>
+                        <div class="mb-4">
+                            <span class="badge bg-success me-2">Python/Django</span>
+                            <span class="badge bg-success me-2">PostgreSQL</span>
+                            <span class="badge bg-success">Bootstrap 5</span>
+                        </div>
+                        <a href="/AppFulbo/inicio" class="btn btn-outline-light">
+                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- IoT Tracking Card -->
+                <div class="col-lg-6">
+                    <div class="project-card card-accent-blue p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h3 class="h4 mb-0">IoT Tracking</h3>
+                            <span class="live-badge">
+                                <span class="pulse-dot"></span>
+                                Live Deployment
+                            </span>
+                        </div>
+                        <h5 class="text-muted mb-3">Real-Time Telemetry Dashboard</h5>
+                        <p class="mb-4">
+                            Integration of telematics hardware (Teltonika FMC150). TCP/UDP frame decoding and visualization via Flespi Platform for logistics fleets. 
+                            <em>Currently hosted on the local server.</em>
+                        </p>
+                        <div class="mb-4">
+                            <span class="badge bg-info me-2">Teltonika FMC150</span>
+                            <span class="badge bg-info me-2">Flespi</span>
+                            <span class="badge bg-info">TCP/UDP</span>
+                        </div>
+                        <a href="/tracking" class="btn btn-outline-light">
+                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="project-card card-accent-purple p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h3 class="h4 mb-0">FarmaGo</h3>
+                            <span class="academic-badge">
+                                <i class="fas fa-graduation-cap"></i>
+                                Academic Project
+                            </span>
+                        </div>
+                        <h5 class="text-muted mb-3">Multi-Role Delivery Platform</h5>
+                        <p class="mb-4">
+                            Advanced Django system managing three distinct user roles (Clients, Pharmacies, Drivers). Features a <strong>Custom User Model</strong> (Email Auth), strict Regex data validation, and an admin verification workflow for partners.
+                        </p>
+                        <div class="mb-4">
+                            <span class="badge bg-purple me-2">Role-Based Auth</span>
+                            <span class="badge bg-purple me-2">Custom User Model</span>
+                            <span class="badge bg-purple">Regex Validation</span>
+                        </div>
+                        <a href="/FarmaGo" class="btn btn-outline-light">
+                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Home Server Card -->
+                <div class="col-lg-6">
+                    <div class="project-card card-accent-red p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h3 class="h4 mb-0">Home Server</h3>
+                            <span class="here-badge">
+                                <span class="pulse-dot pulse-dot-blue"></span>
+                                You're here
+                            </span>
+                        </div>
+                        <h5 class="text-muted mb-3">Infrastructure & DevOps (Raspberry Pi)</h5>
+                        <p class="mb-4">
+                            Linux server configured from scratch. SSH security management, Dynamic DNS (No-IP), and Gunicorn/Nginx. 
+                            In charge of hosting this portfolio and serving FulboApp to the world.
+                        </p>
+                        <div class="mb-4">
+                            <span class="badge bg-danger me-2">Linux / Bash</span>
+                            <span class="badge bg-danger me-2">Nginx / Gunicorn</span>
+                            <span class="badge bg-danger">No-IP</span>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <!-- Django Admin Card -->
+                <div class="col-lg-6">
+                    <div class="project-card card-accent-gray p-4">
+                        <h3 class="h4 mb-3">Django Admin</h3>
+                        <h5 class="text-muted mb-3">System Management</h5>
+                        <p class="mb-4">
+                            Restricted access to Django's native administration panel for database maintenance, record CRUD operations, and user management.
+                        </p>
+                        <div class="mb-4">
+                            <span class="badge bg-secondary me-2">Admin Panel</span>
+                            <span class="badge bg-secondary">Auth</span>
+                        </div>
+                        <a href="/admin/" class="btn btn-outline-light">
+                            <i class="fas fa-lock me-2"></i>Access
+                        </a>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience & Education Section -->
+    <section class="py-5 bg-dark bg-opacity-25">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <h2 class="display-6 fw-bold mb-4">Education</h2>
+                    <div class="timeline-item">
+                        <h4 class="h5 mb-2">B.S. in Computer Engineering</h4>
+                        <p class="text-muted mb-2">National University of La Plata (UNLP)</p>
+                        <p class="text-muted mb-2"><small>Mar 2024 – Present</small></p>
+                        <p class="mb-0">GPA: 8.72/10 | Progress: ~70% completed</p>
+                    </div>
+                    <div class="timeline-item">
+                        <h4 class="h5 mb-2">B.S. in Civil Engineering</h4>
+                        <p class="text-muted mb-2">National University of La Plata (UNLP)</p>
+                        <p class="text-muted mb-2"><small>Mar 2018 – May 2023</small></p>
+                        <p class="mb-0">GPA: 8.48/10 | Graduated</p>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h2 class="display-6 fw-bold mb-4">Experience</h2>
+                    <div class="timeline-item">
+                        <h4 class="h5 mb-2">Technical Office</h4>
+                        <p class="text-muted mb-2">Ocsa S.A. – Pelque S.A. UT</p>
+                        <p class="text-muted mb-2"><small>Mar 2023 – Mar 2024 | La Plata, Argentina</small></p>
+                        <ul class="mb-0">
+                            <li>Oversaw project planning, budgeting, and cost control for large-scale infrastructure projects</li>
+                            <li>Coordinated with subcontractors, ensuring adherence to deadlines and technical specifications</li>
+                            <li>Performed data analysis for price updates, progress certifications, and reporting to senior management</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-5 text-center border-top border-secondary">
+        <div class="container">
+            <p class="mb-3">© 2026 Alejo Vincent. Developed in Django, served from Raspberry Pi.</p>
+            <div>
+                <a href="https://www.linkedin.com/in/alejo-vincent-37aa63220/" target="_blank" class="text-light me-4 fs-4">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="https://github.com/TheAle26" target="_blank" class="text-light fs-4">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

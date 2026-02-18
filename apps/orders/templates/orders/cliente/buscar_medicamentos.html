@@ -1,0 +1,156 @@
+{% extends 'orders/base.html' %} 
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Buscar Medicamentos</h2>
+
+    <form method="get" action="{% url 'buscar_medicamentos' %}" class="mb-4">
+        <div class="row g-3 align-items-center">
+            
+            <div class="col-md-6">
+                <input type="text" name="q" class="form-control" placeholder="Nombre o principio activo..." value="{{ query }}">
+            </div>
+
+            <div class="col-md-4">
+                <select name="obra_social_id" class="form-select">
+                    <option value="">Filtrar por Obra Social (Todas)</option>
+                    {% for os in obras_sociales %}
+                        <option value="{{ os.id }}" 
+                                {% if selected_obra_social == os.id %}selected{% endif %}>
+                            {{ os.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            </div>
+        </div>
+    </form>
+
+    <hr>
+
+    {% if medicamentos_stock %}
+        <div class="list-group">
+            
+            {% for stock in medicamentos_stock %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ stock.medicamento.nombre_comercial }}</strong> - 
+                        <span class="text-success fw-bold">${{ stock.precio }}</span>
+                        
+                        <p class="text-muted small mb-0">
+                            Principio Activo: {{ stock.medicamento.principio_activo }} <br>
+                            Vendido por: <strong>{{ stock.farmacia.nombre }}</strong> <br>
+                            {% if stock.medicamento.requiere_receta %}
+                            
+                                <strong class="text-primary " >Receta Necesaria</strong>
+                            
+                             {% endif %}
+                        </p>
+                    </div>
+                    
+                    <form action="{% url 'buscar_medicamentos' %}?{{ request.GET.urlencode }}" method="post">
+                        {% csrf_token %}
+
+                        <input type="number" 
+                                               name="cantidad" 
+                                               class="form-control form-control-sm" 
+                                               value="1" 
+                                               min="1" 
+                                               max="{{ stock.stock_actual }}"
+                                               style="width: 80px;">
+                        
+                        <input type="hidden" name="stock_id" value="{{ stock.id }}">
+                        
+                        <button type="submit" class="btn btn-info btn-sm">
+                            Agregar al Carrito
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif query or selected_obra_social %}
+        <div class="alert alert-warning">No se encontraron medicamentos para su búsqueda o filtros.</div>
+    {% else %}
+        <div class="alert alert-info">Utilice la barra de búsqueda y los filtros para encontrar medicamentos.</div>
+    {% endif %}
+</div>
+<script>
+    document.title = document.title + " | Buscar Medicamentos";
+</script>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    const cantidadInputs = document.querySelectorAll('input[name="cantidad"]');
+
+    cantidadInputs.forEach(input => {
+        
+        const maxStock = parseInt(input.getAttribute('max'), 10);
+        const minStock = parseInt(input.getAttribute('min'), 10);
+
+        // --- 1. LÓGICA DE VALIDACIÓN (Muestra el mensaje mientras escribes) ---
+        function handleInputValidation() {
+            // No validamos si está vacío mientras escribe
+            if (input.value === '') {
+                input.setCustomValidity('');
+                return;
+            }
+
+            const currentValue = parseInt(input.value, 10);
+
+            if (currentValue > maxStock) {
+                input.setCustomValidity('Cantidad supera el stock (' + maxStock + ').');
+            } else if (currentValue < minStock) {
+                 input.setCustomValidity('La cantidad debe ser al menos ' + minStock + '.');
+            } else {
+                input.setCustomValidity(''); // Limpiar el mensaje si es válido
+            }
+        }
+
+        // --- 2. LÓGICA DE CORRECCIÓN (Resetea a 1 si es inválido al salir) ---
+        function handleBlurCorrection() {
+            let currentValue = parseInt(input.value, 10);
+
+            // Si está vacío (NaN) O es menor que el mínimo
+            if (isNaN(currentValue) || currentValue < minStock) {
+                input.value = minStock; // Resetea a '1'
+            }
+            
+            // Si es mayor que el máximo
+            if (currentValue > maxStock) {
+                input.setCustomValidity('Cantidad supera el stock (' + maxStock + ').');
+            } else {
+                // Si es válido, limpiamos
+                input.setCustomValidity('');
+            }
+            
+            // Asegurarse de que el mensaje de error se limpie después de corregir
+            input.setCustomValidity('');
+        }
+
+        // Asignar los "escuchadores"
+        input.addEventListener('input', handleInputValidation);
+        input.addEventListener('blur', handleBlurCorrection); // <-- Se activa al salir
+        
+        // --- 3. LÓGICA PARA LA TECLA 'ENTER' (Se mantiene) ---
+        input.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                const parentForm = this.closest('form');
+                if (parentForm) {
+                    const submitButton = parentForm.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.click(); 
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock extra_js %}

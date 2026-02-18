@@ -1,0 +1,42 @@
+{% extends "orders/base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h1 class="h5 mb-3">Pedidos disponibles</h1>
+
+  <div class="mb-3">
+    <a href="{% url 'repartidor_panel' %}" class="btn btn-secondary">Volver al panel</a>
+  </div>
+
+  {% if pedidos %}
+    {% for p in pedidos %}
+      <div class="card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-start">
+          <div>
+            <strong>Pedido #{{ p.id }}</strong>
+            <div class="text-muted">Farmacia: {% if p.farmacia %}{{ p.farmacia.nombre }}{% else %}--{% endif %}</div>
+            <div class="text-muted">Direccion Farmacia: {% if p.farmacia %}{{ p.farmacia.direccion }}{% else %}--{% endif %}</div>
+            <div class="text-muted">Cliente: {% if p.cliente %}{{ p.cliente.user.email }}{% else %}--{% endif %}</div>
+            <div class="text-muted">Direccion Entrega: {% if p.direccion %}{{ p.direccion }}{% elif p.direccion_entrega %}{{ p.direccion_entrega }}{% else %}--{% endif %}</div>
+            <div class="text-muted">Creado: {{ p.creado|date:"d/m/Y H:i" }}</div>
+            <div class="small mt-2">Total: ${{ p.total }}</div>
+          </div>
+
+          <div class="text-end">
+            {% if p.estado == 'ACEPTADO' %}
+              <form method="post" action="{% url 'repartidor_aceptar' p.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary mb-2">Aceptar Pedido</button>
+              </form>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ p.estado }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">No hay pedidos aceptados por las farmacias en este momento.</p>
+  {% endif %}
+
+</div>
+{% endblock %}

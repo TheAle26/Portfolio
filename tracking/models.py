@@ -1,6 +1,6 @@
 # tracking/models.py
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from decimal import Decimal
 
 # 1. COMPANY
@@ -37,21 +37,33 @@ class Device(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='devices')
     
     # CAMBIO IMPORTANTE: related_name='assigned_devices' (Inglés)
-    allowed_users = models.ManyToManyField(User, related_name='assigned_devices', blank=True)
+    allowed_users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='assigned_devices', blank=True)
     
     # NUEVO: Tipo de combustible
     fuel_type = models.ForeignKey(FuelType, on_delete=models.SET_NULL, null=True, blank=True, related_name='devices')
     
     # Estado
-    is_online = models.BooleanField(default=False)
+    #is_online = models.BooleanField(default=False)
     last_update = models.DateTimeField(null=True, blank=True)
+    
+    def get_last_telemetry(self):
+        # Cacheamos el resultado para no pegarle a la DB varias veces en la misma fila
+        if not hasattr(self, '_last_telemetry'):
+            self._last_telemetry = self.telemetries.order_by('-timestamp').first()
+        return self._last_telemetry
+
+    @property
+    def current_ignition(self):
+        last = self.get_last_telemetry()
+        return last.ignition if last else None
+    
 
     def __str__(self):
         return f"{self.name} ({self.imei})"
 
 # 4. EMPLOYEE (Opcional, si lo usas)
 class Employee(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     can_assign = models.BooleanField(default=False)
 

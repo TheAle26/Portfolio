@@ -2,7 +2,9 @@ from django.db import models
 from django.conf import settings 
 from apps.accounts.models import Farmacia,Repartidor,Cliente
 import random 
-
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.db.models import Sum
 
 
 class Medicamento(models.Model):
@@ -54,8 +56,9 @@ class Medicamento(models.Model):
 
 
 class StockMedicamento(models.Model):
-    farmacia = models.ForeignKey(
-        Farmacia, 
+
+    farmacia = models.ForeignKey(   
+        'accounts.Farmacia',  # Referencia por string
         on_delete=models.CASCADE, 
         related_name='stock_items'
     )
@@ -111,20 +114,22 @@ class Pedido(models.Model):
     
     
     # El cliente SÍ es el User base
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name="pedidos_cliente")
+    cliente = models.ForeignKey(
+        'accounts.Cliente',  # <--- CAMBIO AQUÍ
+        on_delete=models.CASCADE, 
+        related_name="pedidos_cliente"
+    )
     
-
     farmacia = models.ForeignKey(
-        Farmacia,  # <-- Vinculado al perfil Farmacia
+        'accounts.Farmacia', # <--- CAMBIO AQUÍ
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
         related_name="pedidos_farmacia"
     )
-    
- 
+
     repartidor = models.ForeignKey(
-        Repartidor, # <-- Vinculado al perfil Repartidor
+        'accounts.Repartidor', # <--- CAMBIO AQUÍ
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
@@ -240,3 +245,18 @@ class DetallePedido(models.Model):
     
     
 
+@receiver(post_save, sender=DetallePedido)
+@receiver(post_delete, sender=DetallePedido)
+def actualizar_total_pedido(sender, instance, **kwargs):
+    """
+    Cada vez que se agrega, modifica o elimina un ítem, 
+    se recalcula el total del pedido padre.
+    """
+    pedido = instance.pedido
+    # Sumar todos los subtotales de los items asociados
+    nuevo_total = pedido.items.aggregate(total=Sum('subtotal'))['total'] or 0
+    
+    # Solo guardar si cambió para evitar recursión infinita innecesaria
+    if pedido.total != nuevo_total:
+        pedido.total = nuevo_total
+        pedido.save(update_fields=['total'])

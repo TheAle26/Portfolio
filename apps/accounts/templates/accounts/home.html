@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="text-center py-4">
-  <img src="{% static 'img/logo.png' %}" alt="FarmaGo" class="mb-4" style="max-width:180px;">
+  <img src="{% static 'accounts/img/logo.ico' %}" alt="FarmaGo" class="mb-4" style="max-width:180px;">
   <h1 class="mb-3">Bienvenido a FarmaGo</h1>
   <p class="lead mb-4">
     FarmaGo es una plataforma que conecta clientes, farmacias y repartidores
@@ -12,7 +12,7 @@
   <div class="d-flex justify-content-center gap-3 flex-wrap">
     {% if user.is_authenticated %}
       <a href="{% url 'panel_principal' %}" class="btn btn-primary">Panel principal</a>
-      <a href="/accounts/profile/" class="btn btn-outline-secondary">Ir a mi perfil</a>
+      
       <form action="{% url 'logout' %}" method="post" class="d-inline">
         {% csrf_token %}
         <button type="submit" class="btn btn-outline-secondary">Salir</button>
@@ -29,7 +29,7 @@
 {% block extra_footer %}
 <footer class="bg-white border-top mt-5">
   <div class="container py-4 text-center">
-    <img src="{% static 'img/logo.png' %}" alt="FarmaGo" style="max-height:40px;" class="mb-2">
+    <img src="{% static 'accounts/img/logo.png' %}" alt="FarmaGo" style="max-height:40px;" class="mb-2">
     <p class="mb-1 small text-muted">
       © {{ now|date:"Y" }} FarmaGo — Todos los derechos reservados
     </p>

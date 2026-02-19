@@ -82,4 +82,4 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"Error general en el worker: {e}"))
 
             # 4. Esperar 10 segundos antes de la próxima ronda
-            time.sleep(10)
+            time.sleep(5)

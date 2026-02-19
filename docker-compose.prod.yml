@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 1. LA BASE DE DATOS
   db:
     image: postgres:15
     volumes:
@@ -15,20 +14,12 @@ services:
     ports:
       - "5432:5432"
 
-  # 2. TU PROYECTO DJANGO (Modo Desarrollo)
   web:
     build: .
-    # TRUCO 1: Entramos como root para que los volúmenes no den error de permisos
-    user: "root" 
-    # TRUCO 2: Ignoramos el Gunicorn de producción y usamos el servidor de desarrollo
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py poblar_db &&
-             python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/app  # <-- Tus volúmenes intactos para programar en vivo
-    ports:
-      - "8000:8000"
+      - static_volume:/app/staticfiles  # Django guarda los estáticos aquí
+    expose:
+      - "8000"  # Usamos expose en lugar de ports para que solo Nginx pueda hablarle, no el exterior
     depends_on:
       - db
     env_file:
@@ -37,13 +28,19 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
 
-  # 3. EL WORKER
+  frontend-proxy:
+    image: nginx:latest
+    ports:
+      - "80:80"  # Puerto estándar de internet
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/static:ro  # Nginx LEE los estáticos desde el mismo volumen
+    depends_on:
+      - web
+
   worker:
     build: .
-    user: "root" # Mismo truco de permisos
     command: python manage.py sync_flespi 
-    volumes:
-      - .:/app
     depends_on:
       - db
       - web
@@ -53,7 +50,6 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
 
-  # 4. GRAFANA
   grafana:
     image: grafana/grafana-oss
     ports:
@@ -65,24 +61,19 @@ services:
     depends_on:
       - db
 
-  # 5. GENERADOR DE DATOS
   generador_datos:
     build: .
-    user: "root" # Mismo truco de permisos
     command: >
       sh -c "python manage.py poblar_base && 
              python manage.py simular_viaje 123456789012345 & 
              python manage.py simular_viaje 987654321098765 & 
              wait"
-    volumes:
-      - .:/app
     depends_on:
       - db
       - web
     env_file:
       - .env
-      
-
 
 volumes:
   postgres_data:
+  static_volume:

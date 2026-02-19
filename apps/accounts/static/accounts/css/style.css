@@ -1,0 +1,203 @@
+/* Esto asegura que la Toast tenga un ancho completo en móviles (hasta 576px) */
+@media (max-width: 576px) {
+    .toast-container {
+        /* Fija la toast al borde inferior izquierdo */
+        left: 0 !important; 
+        right: 0 !important;
+        /* Asegura que no haya padding lateral para que ocupe todo el ancho */
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .toast {
+        /* Hace que la toast ocupe el 100% del ancho del contenedor */
+        width: 100% !important; 
+        border-radius: 0; /* Opcional: elimina las esquinas redondeadas */
+    }
+}
+
+/* 1. Define tus colores personalizados de FarmaGo en la raíz */ /*  */
+:root {
+  --farmago-primary: #23A5A9;
+  --farmago-dark-primary: #1F9498;
+  --farmago-light-primary: #DCF7F9;
+  --farmago-secondary: #0A716F;
+  --farmago-dark-secondary: #074B4A;
+  --farmago-blue1: #0E34A0;
+  --farmago-dark-blue1: #0A2571;
+  --farmago-blue2: #091540;
+  --farmago-dark-blue2: #050C24;
+  --farmago-light-gray: #F8FFE5;
+  --farmago-dark-gray: #424242;
+}
+
+/* 2. Sobrescribe las variables de color de Bootstrap */
+:root {
+  /* Color Primario (Botones, links, navbar) */
+  --bs-primary: var(--farmago-primary);
+  --bs-primary-rgb: 77, 182, 172; /* Versión RGB del teal para opacidad */
+
+  /* Color de fondo claro */
+  --bs-light: var(--farmago-light-gray);
+  --bs-light-rgb: 224, 224, 224;
+
+  /* Color del texto principal */
+  --bs-body-color: var(--farmago-dark-gray);
+  
+}
+
+/* BOTONES */
+.btn-primary {
+  /* estado normal */
+  --bs-btn-bg: var(--farmago-primary);
+  --bs-btn-border-color: var(--farmago-primary);
+  --bs-btn-color: #fff;
+
+  /* hover */
+  --bs-btn-hover-bg: var(--farmago-dark-primary);
+  --bs-btn-hover-border-color: var(--farmago-dark-primary);
+  --bs-btn-hover-color: #fff;
+
+  /* active / pressed */
+  --bs-btn-active-bg: var(--farmago-dark-primary);
+  --bs-btn-active-border-color: var(--farmago-dark-primary);
+  --bs-btn-active-color: #fff;
+
+  /* focus ring (opcional, para que combine) */
+  --bs-btn-focus-shadow-rgb: 38, 187, 192; /* rgb de #26BBC0 */
+}
+
+.btn-info {
+  /* estado normal */
+  --bs-btn-bg: var(--farmago-secondary);
+  --bs-btn-border-color: var(--farmago-secondary);
+  --bs-btn-color: #fff;
+
+  /* hover */
+  --bs-btn-hover-bg: var(--farmago-dark-secondary);
+  --bs-btn-hover-border-color: var(--farmago-dark-secondary);
+  --bs-btn-hover-color: #fff;
+
+  /* active / pressed */
+  --bs-btn-active-bg: var(--farmago-dark-secondary);
+  --bs-btn-active-border-color: var(--farmago-dark-secondary);
+  --bs-btn-active-color: #fff;
+
+  /* focus ring (opcional, para que combine) */
+  --bs-btn-focus-shadow-rgb: 38, 187, 192; /* rgb de #26BBC0 */
+}
+
+.btn-outline-primary {
+  /* estado normal */
+  --bs-btn-border-color: var(--farmago-secondary);
+  --bs-btn-color: var(--farmago-secondary);
+
+  /* hover */
+  --bs-btn-hover-bg: var(--farmago-dark-primary);
+  --bs-btn-hover-border-color: var(--farmago-dark-primary);
+  --bs-btn-hover-color: #fff;
+
+  /* active / pressed */
+  --bs-btn-active-bg: var(--farmago-dark-secondary);
+  --bs-btn-active-border-color: var(--farmago-dark-secondary);
+  --bs-btn-active-color: #fff;
+
+  /* focus ring (opcional, para que combine) */
+  --bs-btn-focus-shadow-rgb: 38, 187, 192; /* rgb de #26BBC0 */
+}
+
+.btn-outline-secondary {
+  /* estado normal */
+  --bs-btn-border-color: var(--farmago-secondary);
+  --bs-btn-color: var(--farmago-secondary);
+
+  /* hover */
+  --bs-btn-hover-bg: var(--farmago-secondary);
+  --bs-btn-hover-border-color: var(--farmago-secondary);
+  --bs-btn-hover-color: #fff;
+
+  /* active / pressed */
+  --bs-btn-active-bg: var(--farmago-dark-secondary);
+  --bs-btn-active-border-color: var(--farmago-dark-secondary);
+  --bs-btn-active-color: #fff;
+
+  /* focus ring (opcional, para que combine) */
+  --bs-btn-focus-shadow-rgb: 38, 187, 192; /* rgb de #26BBC0 */
+}
+
+/* ALERTAS */
+.alert-info {
+  background-color: var(--farmago-light-primary);
+  color: var(--farmago-secondary);
+}
+
+
+/* TIPOGRAFÍA Y CARTAS */
+body {
+  font-family: 'Roboto', sans-serif; /* Elegir una tipografía más moderna */
+}
+
+.card {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Añadir sombras sutiles */
+  border: none;
+}
+
+
+
+/*Inventario Farmacia*/
+#tabla-inventario thead,
+#tabla-inventario thead th {
+  background-color: var(--farmago-light-primary) !important;
+  color: var(--farmago-dark-gray);
+}
+
+.table-hover#tabla-inventario > tbody > tr:hover > * {
+  background-color: var(--farmago-light-primary) !important;
+}
+
+/*TYC*/
+#tyc {
+  color: var(--farmago-secondary) !important;
+}
+#tyc:hover {
+  color: var(--farmago-dark-secondary) !important; /* opcional: efecto hover */
+}
+
+/* Botón Carrito*/
+.cart-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--farmago-secondary);
+  border-radius: 8px;
+  padding: 4px 10px;
+  text-decoration: none;
+  color: var(--farmago-secondary);
+  background-color: #fff;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.cart-button:hover {
+  background-color: var(--farmago-light-primary);
+  border-color: #aaa;
+  text-decoration: none;
+}
+
+.cart-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--farmago-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-left: 4px;
+}
+
+.cart-text {
+  font-size: 0.9rem;
+  margin-left: 4px;
+}

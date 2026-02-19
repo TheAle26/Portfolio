@@ -8,6 +8,7 @@ from .models import Cliente, Farmacia, ObraSocial, Repartidor
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
 import re
+import uuid
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -20,7 +21,26 @@ def validate_file_size(value):
 class BaseRegistroForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ["email"]  #settings.AUTH_USER_MODELtiene email como USERNAME_FIELD
+        fields = ["email"]
+
+    def save(self, commit=True):
+        # 1. Obtenemos la instancia sin guardar
+        user = super().save(commit=False)
+        
+        # 2. Generamos el username basado en el email
+        base_username = user.email.split('@')[0]
+        
+        # 3. Verificamos si existe y agregamos sufijo único si es necesario
+        if User.objects.filter(username=base_username).exists():
+            unique_suffix = str(uuid.uuid4())[:8]
+            user.username = f"{base_username}_{unique_suffix}"
+        else:
+            user.username = base_username
+
+        # 4. Guardamos
+        if commit:
+            user.save()
+        return user
 
 
 class RegistroClienteForm(BaseRegistroForm):
@@ -91,6 +111,14 @@ class RegistroFarmaciaForm(BaseRegistroForm):
         max_digits=9, 
         decimal_places=6
     )
+    
+    class Meta(BaseRegistroForm.Meta):
+        fields = BaseRegistroForm.Meta.fields + [
+            "password1", "password2", 
+            "nombre", "direccion", "cuit", "cbu", 
+            "obras_sociales", "documentacion", "acepta_tyc",
+            "latitud", "longitud"
+        ]
 
     def clean_cuit(self):
         cuit = self.cleaned_data.get('cuit')

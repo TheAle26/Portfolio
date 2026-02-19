@@ -68,4 +68,4 @@ class Command(BaseCommand):
 
             # 5. Esperar 5 segundos antes del siguiente punto
             # (El mapa se actualiza cada 10s, así que generamos datos más rápido que el mapa)
-            time.sleep(1)
+            time.sleep(10)

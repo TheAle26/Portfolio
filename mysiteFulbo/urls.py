@@ -32,7 +32,7 @@ urlpatterns = [
     
     path("FarmaGo/accounts/", include("apps.accounts.urls")),
     path("FarmaGo/orders/", include("apps.orders.urls")),
-    path("FarmaGo", TemplateView.as_view(template_name="accounts/home.html"), name="home"),
+    path("FarmaGo", TemplateView.as_view(template_name="accounts/home.html"), name="FarmaGohome"),
 
 ]
 if settings.DEBUG:

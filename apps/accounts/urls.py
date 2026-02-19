@@ -7,7 +7,7 @@ from . import views
 urlpatterns = [
     path("panel/", views.panel_principal, name="panel_redireccion"),
     path("login/", views.login_view, name="login"),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", views.logout_view, name="logout"),
     path("registro/", views.registro_selector, name="registro_selector"),
     path("registro/cliente/", views.registro_cliente, name="registro_cliente"),
     path("registro/farmacia/", views.registro_farmacia, name="registro_farmacia"),

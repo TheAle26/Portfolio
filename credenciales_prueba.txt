@@ -1,0 +1,18 @@
+=== CREDENCIALES DE ACCESO (DEMO) ===
+
+ROL: ADMIN
+Email: admin@farmago.com
+Clave: admin123
+------------------------------
+ROL: CLIENTE
+Email: cliente@farmago.com
+Clave: cliente123
+------------------------------
+ROL: FARMACIA
+Email: farmacia@farmago.com
+Clave: farmacia123
+------------------------------
+ROL: REPARTIDOR
+Email: repartidor@farmago.com
+Clave: repartidor123
+------------------------------

@@ -15,7 +15,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import os
 
-@login_required
+@login_required(login_url='login')
 def panel_principal(request):
     if es_cliente(request.user):
         return redirect("cliente_panel")
@@ -35,7 +35,7 @@ class MedicamentoDetailView(DetailView):
 
 # ---------- CLIENTE ----------
 
-@login_required
+@login_required(login_url='login')
 def cliente_panel(request):
     if not es_cliente(request.user): return HttpResponseForbidden("Solo clientes")
     # Ordenar por estado según la prioridad deseada y luego por fecha de creación
@@ -89,7 +89,7 @@ def _recalculate_cart_totals(carrito_sesion):
     carrito_sesion['total_general'] = str(total_general)
     return carrito_sesion
 
-@login_required
+@login_required(login_url='login')
 def _add_to_cart_logic(request, stock_id, cantidad):
     """
     Función auxiliar para agregar un item al carrito de la sesión.
@@ -147,7 +147,7 @@ def _add_to_cart_logic(request, stock_id, cantidad):
 # y que esta no tenga return, simplemente ponga el mensajito de agregado
 
 
-@login_required
+@login_required(login_url='login')
 def update_cart_item(request, stock_id_str):
     """
     Actualiza la cantidad de un ítem en el carrito.
@@ -201,7 +201,7 @@ def update_cart_item(request, stock_id_str):
         
     return redirect('ver_carrito')
 
-@login_required
+@login_required(login_url='login')
 def remove_cart_item(request, stock_id_str):
     """
     Elimina un ítem del carrito, sin importar la cantidad.
@@ -229,7 +229,7 @@ def remove_cart_item(request, stock_id_str):
 
     return redirect('ver_carrito')
 
-@login_required
+@login_required(login_url='login')
 def ver_carrito(request):
     carrito_session = request.session.get('carrito', {'farmacias': {}})
     default_direccion = ""
@@ -287,7 +287,7 @@ def ver_carrito(request):
 
 # orders/views.py
 
-@login_required
+@login_required(login_url='login')
 @transaction.atomic
 def finalizar_compra_view(request):
     
@@ -381,7 +381,7 @@ def finalizar_compra_view(request):
         messages.error(request, str(e))
         return redirect('ver_carrito')
     
-@login_required
+@login_required(login_url='login')
 def buscar_medicamentos(request):
     
     # --- Lógica de "Agregar al Carrito" (POST) ---
@@ -464,7 +464,7 @@ def cliente_ver_pedido(request, pedido_id):
 
 
 # ---------- FARMACIA ----------
-@login_required
+@login_required(login_url='login')
 def farmacia_panel(request):
     if not es_farmacia(request.user): 
         return HttpResponseForbidden("Solo farmacias")
@@ -473,7 +473,7 @@ def farmacia_panel(request):
     return render(request, "orders/farmacia/farmacia_panel.html")
 
 
-@login_required
+@login_required(login_url='login')
 def farmacia_pedidos_entrantes(request):
     """Vista dedicada para que la farmacia vea sus pedidos (entrantes).
     Muestra todos los pedidos de la farmacia, priorizando los pendientes.
@@ -495,7 +495,7 @@ def farmacia_pedidos_entrantes(request):
     # Pasa la lista completa y ordenada a la plantilla
     return render(request, "orders/farmacia/pedidos_entrantes.html", {"pedidos": pedidos_ordenados})
 
-@login_required
+@login_required(login_url='login')
 def farmacia_aceptar(request, pedido_id):
     if not es_farmacia(request.user): 
         return HttpResponseForbidden("Solo farmacias")
@@ -554,7 +554,7 @@ def farmacia_aceptar(request, pedido_id):
     messages.success(request, "Se aceptó el pedido exitosamente.")
     return redirect("farmacia_pedidos")
 
-@login_required
+@login_required(login_url='login')
 def farmacia_rechazar(request, pedido_id):
     if not es_farmacia(request.user): 
         return HttpResponseForbidden("Solo farmacias")
@@ -587,7 +587,7 @@ def farmacia_rechazar(request, pedido_id):
     messages.success(request, f"Se rechazo el pedido exitosamente.")
     return redirect("farmacia_pedidos")
 
-@login_required
+@login_required(login_url='login')
 def farmacia_gestionar_inventario(request):
     if not es_farmacia(request.user): 
         return HttpResponseForbidden("Solo farmacias")
@@ -635,7 +635,7 @@ def farmacia_gestionar_inventario(request):
     }
     return render(request, "orders/farmacia/inventario.html", context)
 
-@login_required
+@login_required(login_url='login')
 def farmacia_editar_stock(request, stock_id):
     if not es_farmacia(request.user): 
         return HttpResponseForbidden("Solo farmacias")
@@ -667,7 +667,7 @@ def farmacia_editar_stock(request, stock_id):
     return redirect('gestionar_inventario')
 
 # ---------- REPARTIDOR ----------
-@login_required
+@login_required(login_url='login')
 def repartidor_panel(request):
     if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
     disponibles = Pedido.objects.filter(estado="ACEPTADO", repartidor__isnull=True)
@@ -683,7 +683,7 @@ def repartidor_panel(request):
 
     return render(request, "orders/repartidor/panel.html", {"disponibles": disponibles, "mis": mis, "pedido_activo": pedido_activo})
 
-@login_required
+@login_required(login_url='login')
 def repartidor_tomar(request, pedido_id):
     if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
     p = get_object_or_404(Pedido, id=pedido_id, estado="ACEPTADO", repartidor__isnull=True)
@@ -693,7 +693,7 @@ def repartidor_tomar(request, pedido_id):
     p.save()
     return redirect("repartidor_panel")
 
-@login_required
+@login_required(login_url='login')
 def repartidor_entregado(request, pedido_id):
     if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
     p = get_object_or_404(Pedido, id=pedido_id, repartidor=request.user.repartidor, estado="EN_CAMINO")
@@ -750,7 +750,7 @@ def repartidor_aceptar(request, pedido_id):
     messages.success(request, f"Has aceptado el pedido #{pedido.id}.")
     return redirect("repartidor_panel")
 
-@login_required
+@login_required(login_url='login')
 def repartidor_ver_pedido_actual(request):
     if not es_repartidor(request.user):
         return HttpResponseForbidden("Solo repartidores")
@@ -780,7 +780,7 @@ def repartidor_ver_pedido_actual(request):
     return render(request, 'orders/repartidor/ver_pedido_actual.html', context)
 
 
-@login_required
+@login_required(login_url='login')
 def repartidor_entregar_pedido(request, pedido_id):
     """Marca el pedido como ENTREGADO y libera al repartidor.
 
@@ -822,7 +822,7 @@ def repartidor_entregar_pedido(request, pedido_id):
 #---------------------pedido----------------
 
 
-@login_required
+@login_required(login_url='login')
 def crear_pedido(request):
     form = PedidoForm(request.POST or None)
     if request.method == "POST" and form.is_valid():

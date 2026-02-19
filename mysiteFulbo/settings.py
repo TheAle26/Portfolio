@@ -37,7 +37,7 @@ if DJANGO_ENV == 'production':
     CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
     
     # Rutas estáticas de producción
-    STATIC_ROOT = '/var/www/Fulbo/static'
+    STATIC_ROOT = '/static/'
     STATICFILES_DIRS = []
 
 else:
@@ -142,6 +142,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 LOGIN_URL = '/AppFulbo/login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

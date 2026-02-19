@@ -38,6 +38,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/static:ro
       - media_volume:/media:ro  # <-- 2. Nginx LEE las fotos desde acá
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - web
 

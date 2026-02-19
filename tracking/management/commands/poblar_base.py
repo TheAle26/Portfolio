@@ -29,11 +29,11 @@ class Command(BaseCommand):
             self.stdout.write("Usuario Admin ya existe. Omitiendo...")
 
         # Empleado (Alejo)
-        alejo_user, created = User.objects.get_or_create(username='alejo')
+        alejo_user, created = User.objects.get_or_create(username='test',defaults={'email': 'test@test.com'})
         if created:
-            alejo_user.set_password('alejo123')
+            alejo_user.set_password('test123')
             alejo_user.save()
-            self.stdout.write(self.style.SUCCESS("Usuario Alejo creado: alejo / alejo123"))
+            self.stdout.write(self.style.SUCCESS("User Ale creado: test / test123"))
         else:
             self.stdout.write("Usuario Alejo ya existe. Omitiendo...")
 

@@ -37,8 +37,10 @@ if DJANGO_ENV == 'production':
     CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
     
     # Rutas estáticas de producción
-    STATIC_ROOT = '/static/'
-    STATICFILES_DIRS = []
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'AppFulbo/static'),
+    ]
 
 else:
     # --- DESARROLLO (Tu PC / Docker Local) ---

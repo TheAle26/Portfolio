@@ -9,7 +9,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Jugador # Asumiendo que Jugador está en el mismo apps.py
 
-
+User = get_user_model()
 
 class UserRegisterForm(UserCreationForm):
     # Campos obligatorios adicionales
@@ -29,10 +29,9 @@ class UserRegisterForm(UserCreationForm):
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )
 
-    class Meta(UserCreationForm.Meta):
+    class Meta: 
         model = User
-        # Quitamos password1 y password2 de aquí porque UserCreationForm ya los maneja internamente
-        fields = UserCreationForm.Meta.fields + ('first_name', 'last_name', 'email')
+        fields = ("username", "first_name", "last_name", "email")
 
     # --- 1. AQUÍ ESTÁ LA MAGIA PARA EL EMAIL ÚNICO ---
     def clean_email(self):
@@ -44,7 +43,7 @@ class UserRegisterForm(UserCreationForm):
 
     # --- 2. GUARDADO PERSONALIZADO (Para guardar foto y fecha) ---
     def save(self, commit=True):
-        # Primero guardamos el usuario (UserCreationForm se encarga del hash de la contraseña)
+        
         user = super().save(commit=False)
         
         user.email = self.cleaned_data['email']
@@ -69,7 +68,7 @@ class UserRegisterForm(UserCreationForm):
 
         return user
     
-User = get_user_model()
+
 
 class UserEditForm(forms.ModelForm):
     # Campos extra

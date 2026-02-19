@@ -9,7 +9,8 @@ from .models import Liga, Jugador,PuntajePartido,Partido, PuntuacionPendiente#,M
 from django.contrib import messages
 from django.db.models import Sum
 import itertools
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model 
+User = get_user_model()
 import itertools
 from .models import Liga, Jugador
 from .forms import UserRegisterForm
@@ -19,18 +20,16 @@ def inicio(request):
 
 def register(request):
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST, request.FILES)
-
+        # Agregamos request.FILES para que la foto de perfil llegue al formulario
+        form = UserRegisterForm(request.POST, request.FILES) 
         if form.is_valid():
             user = form.save()
+            # Especificar el backend ayuda a evitar errores de sesión con modelos personalizados
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-
-            messages.success(request, f'¡Bienvenido, {user.username}! Tu cuenta ha sido creada.')
+            messages.success(request, f'¡Bienvenido, {user.username}!')
             return redirect('AppFulbo_inicio')
-
     else:
         form = UserRegisterForm()
-
     return render(request, "registro/register.html", {"formulario": form})
 
 def login_request(request):

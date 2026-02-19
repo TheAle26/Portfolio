@@ -23,6 +23,7 @@ services:
     # TRUCO 2: Ignoramos el Gunicorn de producción y usamos el servidor de desarrollo
     command: >
       sh -c "python manage.py migrate &&
+            python manage.py poblar_base && 
              python manage.py poblar_db &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
@@ -70,7 +71,7 @@ services:
     build: .
     user: "root" # Mismo truco de permisos
     command: >
-      sh -c "python manage.py poblar_base && 
+      sh -c "
              python manage.py simular_viaje 123456789012345 & 
              python manage.py simular_viaje 987654321098765 & 
              wait"

@@ -38,7 +38,7 @@ class Command(BaseCommand):
             self.stdout.write("Usuario Alejo ya existe. Omitiendo...")
 
         # 2. CREAR EMPRESA
-        empresa, created = Company.objects.get_or_create(name="Logistica La Plata S.A.")
+        empresa, created = Company.objects.get_or_create(name="La Plata S.A. Cars")
         if created:
             self.stdout.write(f"Empresa creada: {empresa.name}")
         

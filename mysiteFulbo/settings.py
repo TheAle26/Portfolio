@@ -41,6 +41,12 @@ if DJANGO_ENV == 'production':
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'AppFulbo/static'),
     ]
+    
+    # --- SEGURIDAD HTTPS ---
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 else:
     # --- DESARROLLO (Tu PC / Docker Local) ---
@@ -54,6 +60,14 @@ else:
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'AppFulbo/static'),
     ]
+
+
+# --- ARCHIVOS ESTÁTICOS Y MULTIMEDIA ---
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # --- BASE DE DATOS (COMÚN PARA DOCKER: POSTGRESQL) ---
 # Al usar Docker, tanto en prod como en dev usaremos la misma arquitectura de DB
@@ -140,11 +154,7 @@ TIME_ZONE = 'America/Argentina/Buenos_Aires' # Ajustado a tu zona horaria real
 USE_I18N = True
 USE_TZ = True
 
-# --- ARCHIVOS ESTÁTICOS Y MULTIMEDIA ---
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 LOGIN_URL = '/AppFulbo/login'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

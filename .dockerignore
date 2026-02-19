@@ -2,3 +2,9 @@
 .env*
 __pycache__/
 .venv/
+venv/
+.git/
+staticfiles/
+mediafiles/
+*.sqlite3
+.vscode/

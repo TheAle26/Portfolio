@@ -35,7 +35,10 @@ if DJANGO_ENV == 'production':
         'fulboapp.zapto.org',
         'vincentalejo.myddns.me',
     ]
-    CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
+    CSRF_TRUSTED_ORIGINS = [
+        'http://vincentalejo.myddns.me', 
+        'https://vincentalejo.myddns.me'
+    ]
     
     # Rutas estáticas de producción
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

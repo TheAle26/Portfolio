@@ -33,6 +33,7 @@ if DJANGO_ENV == 'production':
         '192.168.0.240',
         '190.189.49.129',
         'fulboapp.zapto.org',
+        'vincentalejo.myddns.me',
     ]
     CSRF_TRUSTED_ORIGINS = ['https://fulboapp.zapto.org']
     

@@ -125,7 +125,7 @@ class RegistroFarmaciaForm(BaseRegistroForm):
         if not cuit:
             return cuit
 
-        # Normalizar la entrada: aceptar dígitos sueltos y formatear con guiones si vienen 11 dígitos
+        
         digits = re.sub(r'\D', '', cuit)
         if len(digits) == 11:
             cuit = f"{digits[:2]}-{digits[2:10]}-{digits[10]}"

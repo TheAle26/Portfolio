@@ -1,4 +1,6 @@
-{% extends "accounts/base.html" %} {% load crispy_forms_tags %} {% block content %}
+{% extends "accounts/base.html" %} 
+{% load crispy_forms_tags %} 
+{% block content %}
 <div class="mx-auto" style="max-width: 500px">
   <div class="card shadow-sm">
     <div class="card-body">
@@ -16,6 +18,7 @@
         <!-- RENDERIZA LOS CAMPOS OCULTOS -->
         {{ form.latitud }}
         {{ form.longitud }}
+
         <div class="text-center mt-3" style="margin-bottom: 20px;">
           <a href="{% url 'tyc' %}" target="_blank" rel="noopener noreferrer" id="tyc">
               Ver terminos y condiciones
@@ -71,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <script
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJjJoiU22eLqz-02a6dYUdKQbGazSlwoc&libraries=places&callback=initAutocomplete"
+  src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initAutocomplete"
   async
   defer
 ></script>

@@ -153,8 +153,8 @@ LANGUAGES = [
     ('en', _('English')), 
     ('es', _('Spanish')), 
 ]
-LANGUAGE_CODE = 'es-ar' # Unificado (tenías en-us y es-arg duplicados)
-TIME_ZONE = 'America/Argentina/Buenos_Aires' # Ajustado a tu zona horaria real
+LANGUAGE_CODE = 'es-ar' 
+TIME_ZONE = 'America/Argentina/Buenos_Aires' 
 USE_I18N = True
 USE_TZ = True
 

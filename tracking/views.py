@@ -5,9 +5,9 @@ from django.contrib import messages
 from django.utils.translation import gettext as _ 
 from .models import Device , Telemetry, DailyReport
 from django.http import JsonResponse 
+from dotenv import load_dotenv 
 
-# SECURITY NOTE: In production, keep this secret!
-FLESPI_TOKEN = 'exQOwyhjfgtXiZV5sBu3WCdhpm0A1HWdLfCGy1dLRBT6mle1lv5roOMvSAlWgbnL'
+load_dotenv() 
 
 
 

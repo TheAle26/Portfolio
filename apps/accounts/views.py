@@ -9,6 +9,10 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from apps.orders.utils import es_cliente, es_farmacia, es_repartidor
 from django.http import HttpResponseForbidden
+import os
+from dotenv import load_dotenv 
+load_dotenv()
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 
 
 class CustomLoginView(LoginView):
@@ -103,7 +107,7 @@ def registro_farmacia(request):
         messages.success(request, "Cuenta de farmacia creada.")
         #messages.success(request, "Cuenta de farmacia creada. Quedará pendiente de validación por un administrador.")
         return redirect("login")       
-    return render(request, "accounts/registro_form.html", {"form": form, "titulo": "Registro Farmacia"})
+    return render(request, "accounts/registro_form.html", {"form": form, "titulo": "Registro Farmacia", "GOOGLE_MAPS_API_KEY": GOOGLE_MAPS_API_KEY})
 
 def registro_repartidor(request):
     form = RegistroRepartidorForm(request.POST or None, request.FILES or None)

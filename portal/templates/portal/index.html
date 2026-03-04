@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -202,10 +203,21 @@
                         <a href="#projects" class="btn btn-primary btn-lg me-3 mb-2">
                             <i class="fas fa-code me-2"></i>View Projects
                         </a>
+
                         <a href="mailto:alejo.vincent26@gmail.com" class="btn btn-outline-light btn-lg mb-2">
                             <i class="fas fa-envelope me-2"></i>Contact
                         </a>
+
+                        <a href="{% static 'archivos/Vincent Alejo CV EN.pdf' %}" download="CV Vincent Alejo EN.pdf" class="btn btn-outline-light btn-lg mb-2">
+                            <i class="fas fa-download me-2"></i>English CV
+                        </a>
+
+                        <a href="{% static 'archivos/Vincent Alejo CV ES.pdf' %}" download="CV Vincent Alejo ES.pdf" class="btn btn-primary btn-lg me-3 mb-2">
+                            <i class="fas fa-download me-2"></i>CV Español
+                        </a>
+
                     </div>
+
                     <div class="mt-5">
                         <span class="tech-badge"><i class="fab fa-python me-2"></i>Python</span>
                         <span class="tech-badge"><i class="fas fa-server me-2"></i>Django</span>

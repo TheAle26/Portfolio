@@ -66,7 +66,7 @@ class Command(BaseCommand):
         camion, camion_creado = Device.objects.get_or_create(
             imei="123456789012345",
             defaults={
-                'name': "Camión Scania 450",
+                'name': "Ford F-150",
                 'device_type': "truck",
                 'company': empresa,
                 'fuel_type': diesel,
@@ -80,7 +80,7 @@ class Command(BaseCommand):
         auto, auto_creado = Device.objects.get_or_create(
             imei="987654321098765",
             defaults={
-                'name': "Flota Gol Trend",
+                'name': "Gol Trend",
                 'device_type': "car",
                 'company': empresa,
                 'fuel_type': nafta,

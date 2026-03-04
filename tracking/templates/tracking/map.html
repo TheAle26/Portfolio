@@ -12,6 +12,22 @@
             width: 300px; background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(5px);
         }
+
+         .my-labels {
+            background-color: white !important;
+            border: 1px solid #333 !important;
+            color: black !important;
+            font-weight: 800 !important;
+            font-size: 12px !important;
+            padding: 2px 5px !important;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
+            opacity: 1 !important;
+        }
+        /* Eliminar la flechita del tooltip */
+        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
+            display: none !important;
+        }
+
     </style>
 {% endblock %}
 
@@ -98,22 +114,6 @@
 {% block extra_js %}
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        /* ESTILO PARA LAS ETIQUETAS (NOMBRES) */
-        .my-labels {
-            background-color: white !important;
-            border: 1px solid #333 !important;
-            color: black !important;
-            font-weight: 800 !important;
-            font-size: 12px !important;
-            padding: 2px 5px !important;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.4) !important;
-            opacity: 1 !important;
-        }
-        /* Eliminar la flechita del tooltip */
-        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before, .leaflet-tooltip-left:before, .leaflet-tooltip-right:before {
-            display: none !important;
-        }
-    </style>
 
     <script>
 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escanear producto - ChangoMás Tracker</title>
+    <style>
+        :root { --azul: #0071ce; --amarillo: #ffc220; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #111; color: #fff;
+            min-height: 100vh; display: flex; flex-direction: column;
+        }
+        header {
+            background: var(--azul); padding: 12px 18px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        header h1 { font-size: 1.1rem; }
+        header h1 span { color: var(--amarillo); }
+        header a {
+            margin-left: auto; color: #fff; text-decoration: none;
+            background: rgba(255,255,255,.18); padding: 7px 14px; border-radius: 18px;
+            font-size: .85rem;
+        }
+        .viewport {
+            position: relative; flex-grow: 1;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden; background: #000;
+            min-height: 300px;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+        .frame {
+            position: relative; z-index: 1;
+            width: min(75vw, 340px); height: 170px;
+            border: 3px solid var(--amarillo); border-radius: 12px;
+            box-shadow: 0 0 0 100vmax rgba(0,0,0,.45);
+        }
+        .frame::after {
+            content: ''; position: absolute; left: 6%; right: 6%; top: 50%;
+            height: 2px; background: rgba(255, 60, 60, .85);
+            animation: scanline 1.6s ease-in-out infinite alternate;
+        }
+        @keyframes scanline { from { transform: translateY(-55px); } to { transform: translateY(55px); } }
+        .status {
+            position: absolute; bottom: 14px; left: 0; right: 0; z-index: 2;
+            text-align: center; font-size: .9rem; color: #ddd; padding: 0 16px;
+        }
+        .manual {
+            background: #1c1c1c; padding: 16px 18px 24px;
+            display: flex; flex-direction: column; gap: 10px; align-items: center;
+        }
+        .manual p { font-size: .85rem; color: #aaa; }
+        .manual form { display: flex; gap: 8px; width: 100%; max-width: 420px; }
+        .manual input {
+            flex-grow: 1; padding: 11px 14px; border-radius: 22px; border: none;
+            font-size: 1rem; text-align: center;
+        }
+        .manual button {
+            background: var(--amarillo); border: none; border-radius: 22px;
+            padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: .95rem;
+        }
+        .error { color: #ff9c9c; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📷 Escanear <span>código de barras</span></h1>
+        <a href="{% url 'changomas:product_list' %}">🛒 Catálogo</a>
+    </header>
+
+    <div class="viewport">
+        <video id="video" autoplay muted playsinline></video>
+        <div class="frame"></div>
+        <div class="status" id="status">Iniciando cámara...</div>
+    </div>
+
+    <div class="manual">
+        <p>¿No anda la cámara? Ingresá el código de barras a mano:</p>
+        <form id="manual-form">
+            <input id="manual-code" type="text" inputmode="numeric" autocomplete="off"
+                   placeholder="Ej: 7790580146115" maxlength="64">
+            <button type="submit">Buscar</button>
+        </form>
+    </div>
+
+    <script>
+    (function () {
+        var DETAIL_URL = "{% url 'changomas:product_detail' 'CODE' %}";
+        var statusEl = document.getElementById('status');
+        var video = document.getElementById('video');
+        var found = false;
+        var activeStream = null;
+        var detectionStarted = false;
+
+        function goTo(code) {
+            code = String(code || '').trim().slice(0, 64);
+            if (!code || found) return;
+            found = true;
+            statusEl.textContent = 'Código detectado: ' + code;
+            if (activeStream) {
+                // apagamos la cámara antes de navegar
+                activeStream.getTracks().forEach(function (t) { t.stop(); });
+            }
+            window.location.href = DETAIL_URL.replace('CODE', encodeURIComponent(code));
+        }
+
+        document.getElementById('manual-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            goTo(document.getElementById('manual-code').value);
+        });
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            statusEl.innerHTML = '<span class="error">Este navegador no permite usar la cámara ' +
+                '(se necesita HTTPS). Podés ingresar el código a mano.</span>';
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }, audio: false
+        }).then(function (stream) {
+            activeStream = stream;
+            video.srcObject = stream;
+            statusEl.textContent = 'Apuntá al código de barras del producto';
+            startDetection();
+        }).catch(function () {
+            statusEl.innerHTML = '<span class="error">No se pudo acceder a la cámara. ' +
+                'Revisá los permisos o ingresá el código a mano.</span>';
+        });
+
+        function startDetection() {
+            if ('BarcodeDetector' in window) {
+                var detector = new window.BarcodeDetector({
+                    formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+                });
+                var scanNative = function () {
+                    if (found) return;
+                    detector.detect(video).then(function (codes) {
+                        if (codes.length && codes[0].rawValue) {
+                            goTo(codes[0].rawValue);
+                        } else {
+                            setTimeout(scanNative, 180);
+                        }
+                    }).catch(function () { setTimeout(scanNative, 400); });
+                };
+                var startNative = function () {
+                    if (detectionStarted) return;  // evita dos loops en paralelo
+                    detectionStarted = true;
+                    scanNative();
+                };
+                video.addEventListener('loadeddata', startNative);
+                if (video.readyState >= 2) startNative();
+                return;
+            }
+            // Fallback (ej. Safari de iOS): librería ZXing desde CDN
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+            // SRI: si el CDN o el paquete se comprometen, el navegador rechaza el script
+            script.integrity = 'sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
+            script.crossOrigin = 'anonymous';
+            script.onload = function () {
+                try {
+                    var reader = new window.ZXing.BrowserMultiFormatReader();
+                    var loop = function () {
+                        if (found) return;
+                        reader.decodeOnceFromVideoElement(video).then(function (result) {
+                            goTo(result.getText());
+                        }).catch(function () { setTimeout(loop, 300); });
+                    };
+                    loop();
+                } catch (err) {
+                    statusEl.innerHTML = '<span class="error">No se pudo iniciar el detector. ' +
+                        'Ingresá el código a mano.</span>';
+                }
+            };
+            script.onerror = function () {
+                statusEl.innerHTML = '<span class="error">Tu navegador no soporta detección de ' +
+                    'códigos y no se pudo cargar el detector alternativo. Ingresá el código a mano.</span>';
+            };
+            document.head.appendChild(script);
+        }
+    })();
+    </script>
+</body>
+</html>

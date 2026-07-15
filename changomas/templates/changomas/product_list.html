@@ -1,0 +1,210 @@
+{% load changomas_extras %}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChangoMás Tracker</title>
+    <style>
+        :root {
+            --rojo: #d52b1e;
+            --azul: #0071ce;
+            --verde: #2e7d32;
+            --gris-fondo: #f4f4f4;
+            --gris-texto: #555;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--gris-fondo); color: #222; }
+
+        header {
+            background: var(--azul);
+            color: #fff;
+            padding: 14px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+        }
+        header h1 { font-size: 1.3rem; font-weight: 700; }
+        header h1 span { color: #ffc220; }
+        header .total { font-size: .85rem; opacity: .9; }
+        header .scan-link {
+            color: #fff; text-decoration: none; font-size: .85rem; font-weight: 700;
+            background: rgba(255,255,255,.18); padding: 7px 14px; border-radius: 18px;
+        }
+        header .scan-link:hover { background: rgba(255,255,255,.3); }
+
+        form.filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-left: auto;
+        }
+        form.filters input[type=text], form.filters select {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: .9rem;
+            min-width: 200px;
+        }
+        form.filters button {
+            background: #ffc220;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 14px;
+            padding: 20px;
+            max-width: 1500px;
+            margin: 0 auto;
+        }
+        .card {
+            color: inherit;
+            text-decoration: none;
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+        .badge-off {
+            position: absolute;
+            top: 10px; left: 10px;
+            background: var(--rojo);
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .badge-promo {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: var(--verde);
+            color: #fff;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 4px;
+            max-width: 55%;
+            z-index: 1;
+        }
+        .card img {
+            width: 100%;
+            height: 140px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+        .card .no-img {
+            width: 100%; height: 140px;
+            display: flex; align-items: center; justify-content: center;
+            color: #bbb; font-size: .8rem; margin-bottom: 8px;
+        }
+        .card .brand { font-size: .7rem; text-transform: uppercase; color: var(--gris-texto); letter-spacing: .5px; }
+        .card .name { font-size: .88rem; line-height: 1.25; margin: 2px 0 8px; flex-grow: 1; }
+        .card .list-price { font-size: .78rem; color: #999; text-decoration: line-through; }
+        .card .price { font-size: 1.25rem; font-weight: 800; color: #222; }
+        .card .promo-line { font-size: .78rem; color: var(--verde); font-weight: 700; margin-top: 2px; }
+        .card .ref { font-size: .65rem; color: #aaa; margin-top: 6px; }
+        .card .stale { font-size: .68rem; color: #c77700; margin-top: 4px; }
+
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; padding: 10px 0 30px; font-size: .9rem;
+        }
+        .pagination a {
+            background: var(--azul); color: #fff; text-decoration: none;
+            padding: 7px 14px; border-radius: 18px;
+        }
+        .pagination a:hover { background: #005ba1; }
+
+        .empty { text-align: center; padding: 60px 20px; color: var(--gris-texto); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Chango<span>Más</span> Tracker</h1>
+        <div class="total">{{ total }} productos</div>
+        <a class="scan-link" href="{% url 'changomas:scan' %}">📷 Escanear</a>
+        <form class="filters" method="get">
+            <input type="text" name="q" value="{{ query }}" placeholder="Buscar producto...">
+            <select name="cat">
+                <option value="">Todas las categorías</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if cat == category %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Buscar</button>
+        </form>
+    </header>
+
+    {% if page.object_list %}
+    <div class="grid">
+        {% for product in page %}
+        <a class="card" href="{% url 'changomas:product_detail' product.reference_code %}">
+            {% if product.today %}
+                {% if product.today.discount_percent %}
+                    <span class="badge-off">-{{ product.today.discount_percent }}%</span>
+                {% endif %}
+                {% if product.today.promo_text %}
+                    <span class="badge-promo">{{ product.today.promo_text }}</span>
+                {% endif %}
+            {% endif %}
+
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
+            {% else %}
+                <div class="no-img">Sin imagen</div>
+            {% endif %}
+
+            <div class="brand">{{ product.brand }}</div>
+            <div class="name">{{ product.name }}</div>
+
+            {% if product.today %}
+                {% if product.today.list_price and product.today.discount_percent %}
+                    <div class="list-price">$ {{ product.today.list_price|precio }}</div>
+                {% endif %}
+                <div class="price">$ {{ product.today.price|precio }}</div>
+                {% if product.today.promo_price %}
+                    <div class="promo-line">
+                        Precio promo: $ {{ product.today.promo_price|precio }} c/u
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="price">—</div>
+            {% endif %}
+
+            <div class="ref">Ref: {{ product.reference_code }}</div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">&laquo; Anterior</a>
+        {% endif %}
+        <span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+            <a href="?page={{ page.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">Siguiente &raquo;</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <h2>No hay productos guardados todavía</h2>
+        <p>Corré <code>python manage.py scrape_masonline</code> para poblar la base.</p>
+    </div>
+    {% endif %}
+</body>
+</html>

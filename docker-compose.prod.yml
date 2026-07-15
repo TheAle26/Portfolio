@@ -58,17 +58,20 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
 
-  grafana:
-    image: grafana/grafana-oss
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-    depends_on:
-      - db
+  # Grafana desactivado por ahora (no se usa). Tenía acceso anónimo habilitado
+  # y el puerto 3000 publicado, así que conviene no levantarlo mientras no haga
+  # falta. Para reactivarlo, descomentá este bloque.
+  # grafana:
+  #   image: grafana/grafana-oss
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ALLOW_EMBEDDING=true
+  #     - GF_AUTH_ANONYMOUS_ENABLED=true
+  #     - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+  #   depends_on:
+  #     - db
 
   generador_datos:
     build: .

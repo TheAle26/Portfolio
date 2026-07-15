@@ -54,17 +54,17 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
 
-  # 4. GRAFANA
-  grafana:
-    image: grafana/grafana-oss
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ALLOW_EMBEDDING=true
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
-    depends_on:
-      - db
+  # 4. GRAFANA (desactivado por ahora, no se usa. Descomentar para reactivar)
+  # grafana:
+  #   image: grafana/grafana-oss
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ALLOW_EMBEDDING=true
+  #     - GF_AUTH_ANONYMOUS_ENABLED=true
+  #     - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+  #   depends_on:
+  #     - db
 
   # 5. GENERADOR DE DATOS
   generador_datos:

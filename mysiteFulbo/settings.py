@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext_lazy as _
 
 # Carga las variables del archivo .env
@@ -27,6 +28,14 @@ DEFAULT_FROM_EMAIL = 'Alejo Vincent <thedarckalejoxo@gmail.com>'
 if DJANGO_ENV == 'production':
     # --- PRODUCCIÓN (Raspberry Pi / Servidor) ---
     DEBUG = False
+
+    # En producción NO se admite la clave por defecto: el .env de la Pi debe
+    # definir SECRET_KEY con un valor real. Si falta, cortamos el arranque.
+    if not os.environ.get('SECRET_KEY'):
+        raise ImproperlyConfigured(
+            "SECRET_KEY no está definida. Agregala al archivo .env de producción."
+        )
+
     ALLOWED_HOSTS = [
         'localhost',
         '127.0.0.1',
@@ -51,6 +60,9 @@ if DJANGO_ENV == 'production':
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    # HSTS: el navegador recuerda que este dominio es solo-HTTPS
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 else:
     # --- DESARROLLO (Tu PC / Docker Local) ---
@@ -98,6 +110,7 @@ INSTALLED_APPS = [
     'AppFulbo',
     'portal',
     'tracking',
+    'changomas',
     # Librerías
     'crispy_forms',
     'crispy_bootstrap4', 

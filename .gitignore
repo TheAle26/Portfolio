@@ -2,3 +2,13 @@
 .env
 db.sqlite3
 *.sqlite3
+
+# Bytecode de Python (se regenera solo)
+__pycache__/
+*.pyc
+
+# Secretos y datos sensibles: nunca deben ir al repo (menos si es público)
+credenciales_prueba.txt
+backup_datos.json
+*.dump
+*.sql

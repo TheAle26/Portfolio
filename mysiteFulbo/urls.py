@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('AppFulbo/', include('AppFulbo.urls')),
     path('tracking/', include('tracking.urls')),
+    path('changomas/', include('changomas.urls')),
     #el portal
     path('', portal_views.index, name='home'),
     path('i18n/', include('django.conf.urls.i18n')),

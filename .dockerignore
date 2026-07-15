@@ -8,3 +8,7 @@ staticfiles/
 mediafiles/
 *.sqlite3
 .vscode/
+credenciales_prueba.txt
+backup_datos.json
+*.dump
+*.sql

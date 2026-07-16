@@ -1,8 +1,8 @@
-{% load static %}
-{% load i18n %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,6 +43,7 @@
 
 {# Usamos clases flex de Bootstrap para el sticky footer #}
 <body class="d-flex flex-column min-vh-100">
+    {% include 'includes/language_toggle.html' %}
 
     {# Navbar con clases utilitarias #}
     <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-tech shadow-sm">
@@ -81,23 +82,6 @@
                                 </div>
                             {% endif %}
                 <ul class="navbar-nav ms-auto align-items-center gap-2">
-                    {# SELECTOR DE IDIOMA #}
-                    <li class="nav-item">
-                        <form action="{% url 'set_language' %}" method="post">
-                            {% csrf_token %}
-                            <input name="next" type="hidden" value="{{ redirect_to }}">
-                            <select name="language" class="form-select form-select-sm form-select-transparent" onchange="this.form.submit()">
-                                {% get_current_language as LANGUAGE_CODE %}
-                                {% get_available_languages as LANGUAGES %}
-                                {% for lang_code, lang_name in LANGUAGES %}
-                                    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %} selected {% endif %}>
-                                        {{ lang_code|upper }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </form>
-                    </li>
-
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown">

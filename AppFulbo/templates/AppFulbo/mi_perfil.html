@@ -1,19 +1,19 @@
 {% extends 'AppFulbo/base.html' %}
-{% load static %}
+{% load static i18n %}
 {% block content %}
 <div class="container mt-4">
-    <h2>Mi Perfil</h2>
+    <h2>{% translate "Mi Perfil" %}</h2>
 
     <!-- Foto y datos básicos -->
     <div class="row mb-4">
         <div class="col-md-3 text-center">
             {% if user.profile.foto_perfil %}
-                <img src="{{ user.profile.foto_perfil.url }}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Foto de perfil">
+                <img src="{{ user.profile.foto_perfil.url }}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="{% translate 'Foto de perfil' %}">
             {% else %}
-                <img src="{% static 'default.jpg' %}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="Sin foto de perfil">
+                <img src="{% static 'default.jpg' %}" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" alt="{% translate 'Sin foto de perfil' %}">
             {% endif %}
             <a href="{% url 'AppFulbo_edit_profile' %}" class="btn btn-sm btn-outline-secondary">
-                Cambiar foto
+                {% translate "Cambiar foto" %}
             </a>
         </div>
         <div class="col-md-9">
@@ -21,11 +21,11 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ user.username }}</h5>
                     <p class="card-text">
-                        <strong>Nombre:</strong> {{ user.first_name }}<br>
-                        <strong>Apellido:</strong> {{ user.last_name }}<br>
+                        <strong>{% translate "Nombre:" %}</strong> {{ user.first_name }}<br>
+                        <strong>{% translate "Apellido:" %}</strong> {{ user.last_name }}<br>
                         <strong>Email:</strong> {{ user.email }}<br>
-                        <strong>Fecha de nacimiento:</strong> {{ user.profile.fecha_nacimiento|date:"d/m/Y" }}<br>
-                        <strong>Fecha de registro:</strong> {{ user.date_joined|date:"d/m/Y" }}
+                        <strong>{% translate "Fecha de nacimiento:" %}</strong> {{ user.profile.fecha_nacimiento|date:"d/m/Y" }}<br>
+                        <strong>{% translate "Fecha de registro:" %}</strong> {{ user.date_joined|date:"d/m/Y" }}
                     </p>
                 </div>
             </div>
@@ -34,20 +34,20 @@
 
     <!-- Botón de edición -->
     <a href="{% url 'AppFulbo_edit_profile' %}" class="btn btn-warning">
-        <i class="fa-solid fa-pencil"></i> Editar perfil
+        <i class="fa-solid fa-pencil"></i> {% translate "Editar perfil" %}
     </a>
 
     <hr>
 
     <!-- Ligas -->
-    <h3>Mis Ligas y Puntajes</h3>
+    <h3>{% translate "Mis ligas y puntajes" %}</h3>
     {% if jugadores %}
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Liga</th>
-                <th>Jugador</th>
-                <th>Puntaje Total</th>
+                <th>{% translate "Liga" %}</th>
+                <th>{% translate "Jugador" %}</th>
+                <th>{% translate "Puntaje total" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -61,7 +61,7 @@
         </tbody>
     </table>
     {% else %}
-        <p>No tienes ligas asociadas.</p>
+        <p>{% translate "No tenés ligas asociadas." %}</p>
     {% endif %}
 </div>
 {% endblock %}

@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import *
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 
 from django.db import models
 from django.db.models.signals import post_save
@@ -14,17 +15,17 @@ User = get_user_model()
 class UserRegisterForm(UserCreationForm):
     # Campos obligatorios adicionales
     email = forms.EmailField(required=True, label='Email')
-    first_name = forms.CharField(required=True, label="Nombre")
-    last_name = forms.CharField(required=True, label="Apellido")
+    first_name = forms.CharField(required=True, label=_("Nombre"))
+    last_name = forms.CharField(required=True, label=_("Apellido"))
 
     # Campos del Perfil (Profile) que no están en User
     fecha_nacimiento = forms.DateField(
-        label="Fecha de nacimiento",
+        label=_("Fecha de nacimiento"),
         required=False,
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
     foto_perfil = forms.ImageField(
-        label="Foto de perfil (opcional)",
+        label=_("Foto de perfil (opcional)"),
         required=False, 
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )
@@ -38,7 +39,7 @@ class UserRegisterForm(UserCreationForm):
         email = self.cleaned_data.get('email')
         # iexact busca sin importar mayúsculas/minúsculas
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("Este email ya está registrado. Prueba con otro.")
+            raise forms.ValidationError(_("Este email ya está registrado. Probá con otro."))
         return email
 
     # --- 2. GUARDADO PERSONALIZADO (Para guardar foto y fecha) ---
@@ -72,25 +73,25 @@ class UserRegisterForm(UserCreationForm):
 
 class UserEditForm(forms.ModelForm):
     # Campos extra
-    password1 = forms.CharField(label='Nueva Contraseña', widget=forms.PasswordInput, required=False)
-    password2 = forms.CharField(label='Repetir Nueva Contraseña', widget=forms.PasswordInput, required=False)
+    password1 = forms.CharField(label=_("Nueva contraseña"), widget=forms.PasswordInput, required=False)
+    password2 = forms.CharField(label=_("Repetir nueva contraseña"), widget=forms.PasswordInput, required=False)
     password1 = forms.CharField(
-        label='Nueva Contraseña',
+        label=_("Nueva contraseña"),
         required=False,
         widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'})
     )
     password2 = forms.CharField(
-        label='Repetir Nueva Contraseña',
+        label=_("Repetir nueva contraseña"),
         required=False,
         widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'})
     )
     fecha_nacimiento = forms.DateField(
-        label="Fecha de nacimiento",
+        label=_("Fecha de nacimiento"),
         required=False,
         widget=forms.DateInput(attrs={'type': 'date'})
     )
     foto_perfil = forms.ImageField(
-    label="Foto de perfil",
+    label=_("Foto de perfil"),
     required=False,
     widget=forms.FileInput  # Esto evita el checkbox "Limpiar"
 )
@@ -117,7 +118,7 @@ class UserEditForm(forms.ModelForm):
         # Solo validamos si ambos campos están completos
         if p1 and p2:
             if p1 != p2:
-                raise forms.ValidationError("Las contraseñas no coinciden.")
+                raise forms.ValidationError(_("Las contraseñas no coinciden."))
         # Si vino solo uno (o ninguno), lo ignoramos y permitimos el guardado
         return cleaned_data
 
@@ -165,29 +166,29 @@ class JugadorForm(forms.ModelForm): # Esta clase se usará para crear y modifica
         if self.instance and self.instance.pk: # Si estamos modificando un jugador existente
             query = query.exclude(pk=self.instance.pk)
         if query.exists():
-            raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
+            raise forms.ValidationError(_("Este apodo ya está en uso en esta liga. Elegí otro."))
         return apodo
 
 class CrearYAsociarJugadorForm(forms.Form):
     username_usuario = forms.CharField(
-        label="Nombre de Usuario existente",
-        help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
+        label=_("Nombre de usuario existente"),
+        help_text=_("Ingresá el nombre de usuario de la cuenta a asociar. Debe existir y no tener otro jugador asociado en esta liga."),
         widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_username_usuario'})
     )
     apodo = forms.CharField(
         max_length=50,
-        label="Apodo del Jugador",
-        help_text="El apodo debe ser único en esta liga.",
+        label=_("Apodo del jugador"),
+        help_text=_("El apodo debe ser único en esta liga."),
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
     posicion = forms.ChoiceField(
         choices=Jugador.OPCIONES, 
-        label="Posición",
+        label=_("Posición"),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     numero = forms.IntegerField(
         required=False,
-        label="Número de Camiseta",
+        label=_("Número de camiseta"),
         min_value=1,
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
@@ -201,7 +202,7 @@ class CrearYAsociarJugadorForm(forms.Form):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise forms.ValidationError("No se encontró ningún usuario con este nombre de usuario.")
+            raise forms.ValidationError(_("No se encontró ningún usuario con ese nombre."))
         
         # Si el usuario ya tiene un jugador en esta liga, lanzar error
         if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
@@ -212,14 +213,14 @@ class CrearYAsociarJugadorForm(forms.Form):
     def clean_apodo(self):
         apodo = self.cleaned_data['apodo']
         if self.liga and Jugador.objects.filter(liga=self.liga, apodo__iexact=apodo).exists():
-            raise forms.ValidationError("Este apodo ya está en uso en esta liga. Por favor, elige otro.")
+            raise forms.ValidationError(_("Este apodo ya está en uso en esta liga. Elegí otro."))
         return apodo
     
 
 class AsociarUsuarioForm(forms.Form):
     username_usuario = forms.CharField(
-        label="Nombre de Usuario para Asociar",
-        help_text="Introduce el nombre de usuario de la cuenta a asociar. El usuario debe existir y no tener un jugador ya asociado en esta liga.",
+        label=_("Nombre de usuario para asociar"),
+        help_text=_("Ingresá el nombre de usuario de la cuenta a asociar. Debe existir y no tener otro jugador asociado en esta liga."),
         widget=forms.TextInput(attrs={'class': 'form-control'}) # Ya no necesitamos forzar el ID aquí, Django lo hará
     )
 
@@ -234,10 +235,10 @@ class AsociarUsuarioForm(forms.Form):
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise forms.ValidationError("El usuario no existe.")
+            raise forms.ValidationError(_("El usuario no existe."))
 
         if self.liga and Jugador.objects.filter(liga=self.liga, usuario=user).exists():
-            raise forms.ValidationError("Este usuario ya tiene un perfil de jugador en esta liga.")
+            raise forms.ValidationError(_("Este usuario ya tiene un perfil de jugador en esta liga."))
 
         return user  # importante: devolver el objeto User
         
@@ -296,7 +297,7 @@ class PartidoForm(forms.ModelForm):
                 queryset=None,  # Se define más abajo
                 widget=forms.CheckboxSelectMultiple,
                 required=False,
-                label="Jugadores que participaron"
+                label=_("Jugadores que participaron")
             )
             if league:
                 self.fields['jugadores'].queryset = league.jugadores.all()
@@ -313,7 +314,7 @@ class SimularPartidoForm(forms.Form):
         queryset=None,  # Lo definiremos en __init__
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        label="Jugadores que participaron"
+        label=_("Jugadores que participaron")
     )
     def __init__(self, *args, **kwargs):
         # Esperamos recibir la instancia de la liga (league) para filtrar los jugadores.

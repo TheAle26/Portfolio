@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from apps.orders.utils import es_cliente, es_farmacia, es_repartidor
 from django.http import HttpResponseForbidden
+from django.utils.translation import gettext as _
 import os
 from dotenv import load_dotenv 
 load_dotenv()
@@ -35,7 +36,7 @@ class CustomLoginView(LoginView):
                 return redirect("farmacia_panel").url
             else:
                 logout(self.request) 
-                messages.error(self.request, "¡Acceso denegado! Tu perfil de Farmacia aún no ha sido validado por el administrador.")
+                messages.error(self.request, _("Acceso denegado: tu perfil de farmacia todavía no fue validado."))
                 return redirect("login").url 
         
         
@@ -45,7 +46,7 @@ class CustomLoginView(LoginView):
                 return redirect("repartidor_panel").url
             else:
                 logout(self.request) 
-                messages.error(self.request, "¡Acceso denegado! Tu perfil de Repartidor aún no ha sido validado por el administrador.")
+                messages.error(self.request, _("Acceso denegado: tu perfil de repartidor todavía no fue validado."))
                 return redirect("login").url
         
         
@@ -57,7 +58,7 @@ logout_view = LogoutView.as_view()
 
 def logout_view(request):
     logout(request)
-    messages.info(request, "Has cerrado sesión.")
+    messages.info(request, _("Cerraste sesión."))
     return redirect("FarmaGohome")
 
 def registro_selector(request):
@@ -80,10 +81,10 @@ def registro_cliente(request):
             telefono=form.cleaned_data["telefono"],
             terms_cond=form.cleaned_data["terms_cond"], 
         )
-        messages.success(request, "Cuenta de cliente creada.")
+        messages.success(request, _("Cuenta de cliente creada."))
         login(request, user)  # opcional: auto-login
         return redirect("cliente_panel")
-    return render(request, "accounts/registro_form.html", {"form": form, "titulo": "Registro Cliente"})
+    return render(request, "accounts/registro_form.html", {"form": form, "titulo": _("Registro de cliente")})
 
 def registro_farmacia(request):
     form = RegistroFarmaciaForm(request.POST or None, request.FILES or None)
@@ -104,10 +105,10 @@ def registro_farmacia(request):
         )
         farmacia.obras_sociales.set(obras_sociales_seleccionadas)
         login(request, user)
-        messages.success(request, "Cuenta de farmacia creada.")
+        messages.success(request, _("Cuenta de farmacia creada."))
         #messages.success(request, "Cuenta de farmacia creada. Quedará pendiente de validación por un administrador.")
         return redirect("login")       
-    return render(request, "accounts/registro_form.html", {"form": form, "titulo": "Registro Farmacia", "GOOGLE_MAPS_API_KEY": GOOGLE_MAPS_API_KEY})
+    return render(request, "accounts/registro_form.html", {"form": form, "titulo": _("Registro de farmacia"), "GOOGLE_MAPS_API_KEY": GOOGLE_MAPS_API_KEY})
 
 def registro_repartidor(request):
     form = RegistroRepartidorForm(request.POST or None, request.FILES or None)
@@ -123,10 +124,10 @@ def registro_repartidor(request):
             valido = True, # Para facilitar pruebas, se setea como válido directamente. Cambiar a False para requerir validación manual.
         )
         login(request, user)
-        messages.success(request, "Cuenta de repartidor creada.")
+        messages.success(request, _("Cuenta de repartidor creada."))
         #messages.success(request, "Cuenta de repartidor creada. Quedará pendiente de validación por un administrador.")
         return redirect("login")
-    return render(request, "accounts/registro_form.html", {"form": form, "titulo": "Registro Repartidor"})
+    return render(request, "accounts/registro_form.html", {"form": form, "titulo": _("Registro de repartidor")})
 
 
 

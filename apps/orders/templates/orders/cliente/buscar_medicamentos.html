@@ -1,19 +1,20 @@
 {% extends 'orders/base.html' %} 
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Buscar Medicamentos</h2>
+    <h2>{% translate "Buscar medicamentos" %}</h2>
 
     <form method="get" action="{% url 'buscar_medicamentos' %}" class="mb-4">
         <div class="row g-3 align-items-center">
             
             <div class="col-md-6">
-                <input type="text" name="q" class="form-control" placeholder="Nombre o principio activo..." value="{{ query }}">
+                <input type="text" name="q" class="form-control" placeholder="{% translate 'Nombre o principio activo...' %}" value="{{ query }}">
             </div>
 
             <div class="col-md-4">
                 <select name="obra_social_id" class="form-select">
-                    <option value="">Filtrar por Obra Social (Todas)</option>
+                    <option value="">{% translate "Filtrar por obra social (todas)" %}</option>
                     {% for os in obras_sociales %}
                         <option value="{{ os.id }}" 
                                 {% if selected_obra_social == os.id %}selected{% endif %}>
@@ -24,7 +25,7 @@
             </div>
 
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+                <button type="submit" class="btn btn-primary w-100">{% translate "Buscar" %}</button>
             </div>
         </div>
     </form>
@@ -45,7 +46,7 @@
                             Vendido por: <strong>{{ stock.farmacia.nombre }}</strong> <br>
                             {% if stock.medicamento.requiere_receta %}
                             
-                                <strong class="text-primary " >Receta Necesaria</strong>
+                                <strong class="text-primary " >{% translate "Requiere receta" %}</strong>
                             
                              {% endif %}
                         </p>
@@ -72,9 +73,9 @@
             {% endfor %}
         </div>
     {% elif query or selected_obra_social %}
-        <div class="alert alert-warning">No se encontraron medicamentos para su búsqueda o filtros.</div>
+        <div class="alert alert-warning">{% translate "No se encontraron medicamentos para la búsqueda o los filtros seleccionados." %}</div>
     {% else %}
-        <div class="alert alert-info">Utilice la barra de búsqueda y los filtros para encontrar medicamentos.</div>
+        <div class="alert alert-info">{% translate "Usá la búsqueda y los filtros para encontrar medicamentos." %}</div>
     {% endif %}
 </div>
 <script>

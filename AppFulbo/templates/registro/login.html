@@ -1,18 +1,18 @@
 {% extends 'AppFulbo/base.html' %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
 {% block content %}
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <div class="card shadow-lg p-4 mb-5 bg-body rounded" style="width: 100%; max-width: 450px;">
         
         <div class="card-body text-center">
-            <h2 class="card-title mb-4 fw-bold text-primary">¡Hola de nuevo!</h2>
-            <p class="text-muted mb-4">Ingresa tus datos para gestionar tu Liga</p>
+            <h2 class="card-title mb-4 fw-bold text-primary">{% translate "¡Hola de nuevo!" %}</h2>
+            <p class="text-muted mb-4">{% translate "Ingresá tus datos para gestionar tu liga" %}</p>
 
             {% if mensaje %}
             <div class="alert alert-warning alert-dismissible fade show" role="alert">
                 {{ mensaje }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% translate 'Cerrar' %}"></button>
             </div>
             {% endif %}
 
@@ -23,23 +23,23 @@
 
                 <div class="d-grid gap-2 mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        Iniciar Sesión
+                        {% translate "Iniciar sesión" %}
                     </button>
                 </div>
             </form>
 
             <div class="mt-4 d-flex justify-content-between align-items-center font-monospace small">
                 <a href="{% url 'AppFulbo_password_reset' %}" class="text-decoration-none text-muted">
-                    ¿Olvidaste tu clave?
+                    {% translate "¿Olvidaste tu contraseña?" %}
                 </a>
             </div> 
 
             <hr class="my-4">
 
             <div>
-                <p class="mb-2 text-muted">¿Aún no tienes cuenta?</p>
+                <p class="mb-2 text-muted">{% translate "¿Todavía no tenés una cuenta?" %}</p>
                 <a href="{% url 'AppFulbo_register' %}" class="btn btn-outline-success w-100">
-                    ¡Crea tu cuenta gratis!
+                    {% translate "¡Creá tu cuenta gratis!" %}
                 </a>
             </div>
 

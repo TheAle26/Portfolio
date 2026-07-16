@@ -1,6 +1,6 @@
 {# AppFulbo/templates/AppFulbo/gestionar_partidos.html #}
 {% extends 'AppFulbo/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}{{ titulo }}{% endblock %}
 
@@ -11,16 +11,16 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>{{ titulo }}</h2>
         <a href="{% url 'crear_partido' liga.id %}" class="btn btn-primary d-inline-flex align-items-center">
-            <i class="fas fa-plus-circle me-2"></i> Nuevo Partido
+            <i class="fas fa-plus-circle me-2"></i> {% translate "Nuevo partido" %}
         </a>
         <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary d-inline-flex align-items-center">
-            <i class="fas fa-arrow-left me-2"></i> Volver a la Liga
+            <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a la liga" %}
         </a>
     </div>
     </div>
 
     <div class="mb-3">
-        <input type="text" id="buscarPartidoGestion" class="form-control" placeholder="Buscar por fecha, cancha o jugadores...">
+        <input type="text" id="buscarPartidoGestion" class="form-control" placeholder="{% translate 'Buscar por fecha, cancha o jugadores...' %}">
     </div>
 
     {% if partidos %}
@@ -29,10 +29,10 @@
             <thead class="table-dark">
                 <tr>
                     {# Modificamos los TH para que sean clicables y tengan data-sort #}
-                    <th class="sortable" data-sort-by="fecha">Fecha <span class="sort-icon"></span></th>
-                    <th class="sortable" data-sort-by="cancha">Cancha <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="fecha">{% translate "Fecha" %} <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="cancha">{% translate "Cancha" %} <span class="sort-icon"></span></th>
 
-                    <th class="text-center">Acciones</th> {# Acciones no será ordenable #}
+                    <th class="text-center">{% translate "Acciones" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,15 +50,15 @@
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
                             {# Botón para expandir/colapsar detalles #}
-                            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ partido.id }}" aria-expanded="false" aria-controls="collapse{{ partido.id }}" title="Ver Detalles">
+                            <button class="btn btn-sm btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ partido.id }}" aria-expanded="false" aria-controls="collapse{{ partido.id }}" title="{% translate 'Ver detalles' %}">
                                 <i class="fas fa-eye"></i>
                             </button>
                             {# Botón para editar (modificar_partido) #}
-                            <a href="{% url 'modificar_partido' liga.id partido.id %}" class="btn btn-sm btn-info" title="Modificar">
+                            <a href="{% url 'modificar_partido' liga.id partido.id %}" class="btn btn-sm btn-info" title="{% translate 'Modificar' %}">
                                 <i class="fas fa-edit"></i>
                             </a>
                             {# Botón para eliminar (eliminar_partido) #}
-                            <a href="{% url 'eliminar_partido' liga.id partido.id %}" class="btn btn-sm btn-danger" title="Eliminar" onclick="return confirm('¿Estás seguro de que quieres eliminar este partido? Esta acción es irreversible.');">
+                            <a href="{% url 'eliminar_partido' liga.id partido.id %}" class="btn btn-sm btn-danger" title="{% translate 'Eliminar' %}" onclick="return confirm('{% translate '¿Querés eliminar este partido? Esta acción es irreversible.' %}');">
                                 <i class="fas fa-trash-alt"></i>
                             </a>
                         </div>
@@ -68,26 +68,26 @@
                 <tr id="collapse{{ partido.id }}" class="collapse accordion-collapse detalle-partido-row">
                     <td colspan="4">
                         <div class="p-3 bg-light border-start border-3 border-secondary">
-                            <h6>Jugadores Participantes:</h6>
+                            <h6>{% translate "Jugadores participantes:" %}</h6>
                             {% if partido.puntajes_partidos.all %}
                                 <ul class="list-group list-group-flush mt-2">
                                     {% for puntaje_partido in partido.puntajes_partidos.all %}
                                         <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
                                             {{ puntaje_partido.jugador.apodo }} 
                                             {% if puntaje_partido.puntaje is not None and puntaje_partido.puntaje != 0.0 %}
-                                                <span class="badge bg-success rounded-pill">Puntaje: {{ puntaje_partido.puntaje|floatformat:1 }}</span>
+                                                <span class="badge bg-success rounded-pill">{% translate "Puntaje" %}: {{ puntaje_partido.puntaje|floatformat:1 }}</span>
                                             {% else %}
-                                                <span class="badge bg-warning rounded-pill text-dark">Pendiente</span>
+                                                <span class="badge bg-warning rounded-pill text-dark">{% translate "Pendiente" %}</span>
                                             {% endif %}
                                         </li>
                                     {% endfor %}
                                 </ul>
                             {% else %}
-                                <p class="text-muted mt-2">No hay jugadores registrados para este partido.</p>
+                                <p class="text-muted mt-2">{% translate "No hay jugadores registrados para este partido." %}</p>
                             {% endif %}
                             <div class="mt-3">
                                 <a href="{% url 'ver_partido' partido.id %}" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center">
-                                    <i class="fas fa-info-circle me-2"></i> Ir a Detalles del Partido
+                                    <i class="fas fa-info-circle me-2"></i> {% translate "Ir a detalles del partido" %}
                                 </a>
                             </div>
                         </div>
@@ -100,7 +100,7 @@
     </div>
     {% else %}
         <div class="alert alert-info" role="alert">
-            No hay partidos registrados en esta liga. ¡Anímate a crear uno!
+            {% translate "No hay partidos registrados en esta liga. ¡Animate a crear uno!" %}
         </div>
     {% endif %}
 

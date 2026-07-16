@@ -1,10 +1,11 @@
 {% extends "orders/base.html" %}
+{% load i18n %}
 {% block content %}
 <div class="container mt-4">
-  <h1 class="h5 mb-3">Pedidos disponibles</h1>
+  <h1 class="h5 mb-3">{% translate "Pedidos disponibles" %}</h1>
 
   <div class="mb-3">
-    <a href="{% url 'repartidor_panel' %}" class="btn btn-secondary">Volver al panel</a>
+    <a href="{% url 'repartidor_panel' %}" class="btn btn-secondary">{% translate "Volver al panel" %}</a>
   </div>
 
   {% if pedidos %}
@@ -25,7 +26,7 @@
             {% if p.estado == 'ACEPTADO' %}
               <form method="post" action="{% url 'repartidor_aceptar' p.id %}" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary mb-2">Aceptar Pedido</button>
+                <button type="submit" class="btn btn-primary mb-2">{% translate "Aceptar pedido" %}</button>
               </form>
             {% else %}
               <span class="badge text-bg-secondary">{{ p.estado }}</span>
@@ -35,7 +36,7 @@
       </div>
     {% endfor %}
   {% else %}
-    <p class="text-muted">No hay pedidos aceptados por las farmacias en este momento.</p>
+    <p class="text-muted">{% translate "No hay pedidos aceptados por las farmacias en este momento." %}</p>
   {% endif %}
 
 </div>

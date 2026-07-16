@@ -43,6 +43,12 @@ Plataforma de delivery con control estricto de accesos.
 Sistema integral de gestión deportiva amateur.
 * Desarrollado en Django, enfocado en el modelado de datos relacionales robustos y la experiencia de usuario a través de paneles de administración protegidos.
 
+### 4. 🛒 Tracker de precios de supermercados
+Seguimiento diario de catálogo, disponibilidad, promociones e historial de 30 días para **ChangoMás, Carrefour y Disco**, consumiendo sus catálogos públicos de VTEX.
+* **API REST:** endpoints de solo lectura en `/api/v1/supermarkets/stores/` y `/api/v1/supermarkets/products/`.
+* **Preparado para comparación:** cada publicación queda aislada por supermercado y conserva el EAN como identificador compartido.
+* **Actualización:** `python manage.py scrape_supermarkets` releva las tres cadenas; `--store carrefour` permite ejecutar una sola.
+
 ---
 
 ## 📬 Contacto

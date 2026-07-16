@@ -1,19 +1,52 @@
 from django.db import models
 
 
+class Supermarket(models.Model):
+    """Cadena relevada por el tracker.
+
+    El slug es estable y se usa tanto en las URLs como en la API. La
+    configuracion tecnica de VTEX vive en ``scraper.py``; este modelo guarda
+    solamente los datos publicos que necesita la UI.
+    """
+
+    slug = models.SlugField(max_length=32, primary_key=True)
+    name = models.CharField(max_length=80)
+    base_url = models.URLField(max_length=300)
+    primary_color = models.CharField(max_length=7, default='#0071ce')
+    accent_color = models.CharField(max_length=7, default='#ffc220')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     """
-    Un producto del catálogo de MasOnline (ChangoMás).
-    El código de referencia único es el EAN si existe; si no, la
-    referencia de VTEX (con prefijo 'vtex-') para poder buscar por ambos.
+    Una publicación de producto dentro de un supermercado.
+    El código de referencia es único por cadena: usa el EAN cuando existe
+    y, en caso contrario, la referencia VTEX con prefijo ``vtex-``.
     """
+    supermarket = models.ForeignKey(
+        Supermarket,
+        on_delete=models.PROTECT,
+        related_name='products',
+        default='changomas',
+    )
     reference_code = models.CharField(
-        max_length=64, unique=True, db_index=True,
+        max_length=64, db_index=True,
         help_text="EAN del producto o, si no tiene, 'vtex-<productId>'.",
     )
     ean = models.CharField(max_length=32, blank=True, default='', db_index=True)
-    vtex_product_id = models.CharField(max_length=32, unique=True)
+    vtex_product_id = models.CharField(max_length=32, db_index=True)
+    vtex_sku_id = models.CharField(
+        max_length=32, blank=True, null=True, default=None, db_index=True,
+    )
     product_reference = models.CharField(max_length=64, blank=True, default='', db_index=True)
+    measurement_unit = models.CharField(max_length=16, blank=True, default='')
+    unit_multiplier = models.DecimalField(max_digits=12, decimal_places=4, default=1)
     name = models.CharField(max_length=300, db_index=True)
     brand = models.CharField(max_length=150, blank=True, default='')
     category = models.CharField(max_length=300, blank=True, default='', db_index=True)
@@ -25,9 +58,26 @@ class Product(models.Model):
 
     class Meta:
         ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['supermarket', 'reference_code'],
+                name='unique_reference_per_supermarket',
+            ),
+            models.UniqueConstraint(
+                fields=['supermarket', 'vtex_sku_id'],
+                name='unique_vtex_sku_per_supermarket',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['supermarket', 'ean'], name='product_store_ean_idx'),
+            models.Index(
+                fields=['supermarket', 'vtex_product_id'],
+                name='product_store_vtex_idx',
+            ),
+        ]
 
     def __str__(self):
-        return f"{self.name} ({self.reference_code})"
+        return f"{self.supermarket.name}: {self.name} ({self.reference_code})"
 
     @property
     def latest_price(self):

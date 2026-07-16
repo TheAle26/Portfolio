@@ -1,6 +1,6 @@
 {# AppFulbo/templates/AppFulbo/gestionar_jugadores_liga.html #}
 {% extends 'AppFulbo/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}Gestión de Jugadores - {{ liga.nombre_liga }}{% endblock %}
 
@@ -9,20 +9,20 @@
 
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Jugadores en {{ liga.nombre_liga }}</h2>
+        <h2>{% blocktranslate with league=liga.nombre_liga %}Gestión de jugadores en {{ league }}{% endblocktranslate %}</h2>
     <a href="{% url 'agregar_jugador' liga.id %}" class="btn btn-primary d-inline-flex align-items-center"> {# <-- ¡CORRECCIÓN AQUÍ! #}
-        <i class="fas fa-plus-circle me-2"></i> Nuevo Jugador
+        <i class="fas fa-plus-circle me-2"></i> {% translate "Nuevo jugador" %}
     </a>
 
         <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary d-inline-flex align-items-center">
-            <i class="fas fa-arrow-left me-2"></i> Volver a la Liga
+            <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a la liga" %}
         </a>
 
 </div>
     </div>
 
     <div class="mb-3">
-        <input type="text" id="buscarJugadorGestion" class="form-control" placeholder="Buscar por apodo, posición o estado...">
+        <input type="text" id="buscarJugadorGestion" class="form-control" placeholder="{% translate 'Buscar por apodo, posición o estado...' %}">
     </div>
 
     <div class="table-responsive">
@@ -30,12 +30,12 @@
             <thead class="table-dark">
                 <tr>
                     {# Modificamos los TH para que sean clicables y tengan data-sort #}
-                    <th class="sortable" data-sort-by="apodo">Apodo <span class="sort-icon"></span></th>
-                    <th class="sortable" data-sort-by="usuario">Usuario Asociado <span class="sort-icon"></span></th>
-                    <th class="sortable" data-sort-by="posicion">Posición <span class="sort-icon"></span></th>
-                    <th class="sortable" data-sort-by="numero">Número <span class="sort-icon"></span></th>
-                    <th class="sortable" data-sort-by="estado">Estado <span class="sort-icon"></span></th>
-                    <th class="text-center">Acciones</th> {# Acciones no será ordenable #}
+                    <th class="sortable" data-sort-by="apodo">{% translate "Apodo" %} <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="usuario">{% translate "Usuario asociado" %} <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="posicion">{% translate "Posición" %} <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="numero">{% translate "Número" %} <span class="sort-icon"></span></th>
+                    <th class="sortable" data-sort-by="estado">{% translate "Estado" %} <span class="sort-icon"></span></th>
+                    <th class="text-center">{% translate "Acciones" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,19 +55,19 @@
                         {% if jugador.usuario %}
                             <span class="badge bg-success">{{ jugador.usuario.username }}</span>
                         {% else %}
-                            <span class="badge bg-warning text-dark">Sin Asociar</span>
+                            <span class="badge bg-warning text-dark">{% translate "Sin asociar" %}</span>
                         {% endif %}
                     </td>
                     <td>{{ jugador.get_posicion_display }}</td>
                     <td>{{ jugador.numero|default:"-" }}</td>
-                    <td><span class="badge bg-success">Activo</span></td>
+                    <td><span class="badge bg-success">{% translate "Activo" %}</span></td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="{% url 'modificar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-info" title="Modificar">
+                            <a href="{% url 'modificar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-info" title="{% translate 'Modificar' %}">
                                 <i class="fas fa-edit"></i>
                             </a>
                             {% if not jugador.usuario %}
-                                <a href="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}" class="btn btn-sm btn-warning" title="Asociar Usuario">
+                                <a href="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}" class="btn btn-sm btn-warning" title="{% translate 'Asociar usuario' %}">
                                     <i class="fas fa-user-plus"></i>
                                 </a>
                             {% endif %}
@@ -81,7 +81,7 @@
 
                 {% if jugadores_inactivos %}
                     <tr>
-                        <td colspan="6" class="text-center bg-light text-muted fw-bold py-2">Jugadores Inactivos</td>
+                        <td colspan="6" class="text-center bg-light text-muted fw-bold py-2">{% translate "Jugadores inactivos" %}</td>
                     </tr>
                 {% endif %}
 
@@ -92,18 +92,18 @@
                         {% if jugador.usuario %}
                             <span class="badge bg-secondary">{{ jugador.usuario.username }}</span>
                         {% else %}
-                            <span class="badge bg-dark">Sin Asociar</span>
+                            <span class="badge bg-dark">{% translate "Sin asociar" %}</span>
                         {% endif %}
                     </td>
                     <td>{{ jugador.get_posicion_display }}</td>
                     <td>{{ jugador.numero|default:"-" }}</td>
-                    <td><span class="badge bg-danger">Inactivo</span></td>
+                    <td><span class="badge bg-danger">{% translate "Inactivo" %}</span></td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-2">
                             <a href="{% url 'reactivar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-success" title="Reactivar" onclick="return confirm('¿Estás seguro de que quieres reactivar a {{ jugador.apodo }}?');">
-                                <i class="fas fa-user-check me-1"></i> Reactivar
+                                <i class="fas fa-user-check me-1"></i> {% translate "Reactivar" %}
                             </a>
-                            <a href="{% url 'modificar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-info" title="Modificar"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'modificar_jugador' liga.id jugador.id %}" class="btn btn-sm btn-info" title="{% translate 'Modificar' %}"><i class="fas fa-edit"></i></a>
                         </div>
                     </td>
                 </tr>
@@ -111,7 +111,7 @@
                 
                 {% if not jugadores_activos and not jugadores_inactivos %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay jugadores registrados en esta liga.</td>
+                        <td colspan="6" class="text-center text-muted">{% translate "No hay jugadores registrados en esta liga." %}</td>
                     </tr>
                 {% endif %}
             </tbody>

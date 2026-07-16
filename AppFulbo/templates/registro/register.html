@@ -1,4 +1,5 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 
 {% block content %}
  
@@ -9,7 +10,7 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ formulario|crispy }}
-    <button type="submit" class="btn btn-success">Registrarse</button>
+    <button type="submit" class="btn btn-success">{% translate "Registrarse" %}</button>
 </form>
 
 {% endblock %}

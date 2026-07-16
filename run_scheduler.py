@@ -13,13 +13,14 @@ from tracking.management.commands.generate_daily_report import Command as Report
 
 logger = logging.getLogger(__name__)
 
-def scrapear_masonline():
-    logger.info("⏰ [SCHEDULER] Iniciando tarea programada: Scrape de precios MasOnline")
+def scrapear_supermercados():
+    logger.info("⏰ [SCHEDULER] Iniciando scrape de ChangoMás, Carrefour y Disco")
     try:
-        call_command('scrape_masonline')
-        logger.info("✅ [SCHEDULER] Scrape de MasOnline finalizado con éxito.")
+        call_command('scrape_supermarkets')
+        logger.info("✅ [SCHEDULER] Scrape de supermercados finalizado con éxito.")
     except Exception as e:
-        logger.error(f"❌ [SCHEDULER] Error en el scrape de MasOnline: {str(e)}")
+        logger.exception(f"❌ [SCHEDULER] Error en el scrape de supermercados: {str(e)}")
+        raise
 
 def generar_reporte_diario():
     
@@ -49,15 +50,15 @@ if __name__ == '__main__':
 
     # Scrape diario de precios de MasOnline a las 3:00 AM (después del reporte)
     scheduler.add_job(
-        scrapear_masonline,
+        scrapear_supermercados,
         trigger=CronTrigger(hour=3, minute=0),
-        id='scrape_masonline',
-        name='Scrape de precios de MasOnline (ChangoMás)',
+        id='scrape_supermarkets',
+        name='Scrape de ChangoMás, Carrefour y Disco',
         replace_existing=True,
         misfire_grace_time=3600,
     )
 
-    logger.info("🚀 [SCHEDULER] Motor de tareas iniciado. Jobs: reporte diario (00:25) y scrape MasOnline (03:00).")
+    logger.info("🚀 [SCHEDULER] Jobs: reporte diario (00:25) y supermercados (03:00).")
     
     try:
         scheduler.start()

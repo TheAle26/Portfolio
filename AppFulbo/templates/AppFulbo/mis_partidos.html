@@ -1,21 +1,22 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Mis Partidos Jugados</h2>
+    <h2>{% translate "Mis partidos jugados" %}</h2>
 
     <div class="mb-3">
-        <input type="text" id="buscarPartidoInput" class="form-control" placeholder="Buscar por fecha, cancha o liga...">
+        <input type="text" id="buscarPartidoInput" class="form-control" placeholder="{% translate 'Buscar por fecha, cancha o liga...' %}">
     </div>
 
     <table class="table table-striped" id="tablaPartidos">
         <thead>
             <tr>
-                <th class="sortable" data-sort-by="fecha">Fecha <span class="sort-icon"></span></th>
-                <th class="sortable" data-sort-by="cancha">Cancha <span class="sort-icon"></span></th>
-                <th class="sortable" data-sort-by="liga">Liga <span class="sort-icon"></span></th>
-                <th class="sortable" data-sort-by="mi_puntaje">Mi Puntaje <span class="sort-icon"></span></th>
-                <th>Ir a Detalle</th> {# No es ordenable #}
+                <th class="sortable" data-sort-by="fecha">{% translate "Fecha" %} <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="cancha">{% translate "Cancha" %} <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="liga">{% translate "Liga" %} <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="mi_puntaje">{% translate "Mi puntaje" %} <span class="sort-icon"></span></th>
+                <th>{% translate "Ir al detalle" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -35,13 +36,13 @@
                 <td>{{ puntaje.puntaje|default:"N/A" }}</td>
                 <td>
                     <a href="{% url 'ver_partido' puntaje.partido.id %}" class="btn btn-sm btn-outline-info d-inline-flex align-items-center">
-                        <i class="fas fa-info-circle me-1"></i> Detalles
+                        <i class="fas fa-info-circle me-1"></i> {% translate "Detalles" %}
                     </a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5">No has jugado ningún partido.</td>
+                <td colspan="5">{% translate "No jugaste ningún partido." %}</td>
             </tr>
             {% endfor %}
         </tbody>

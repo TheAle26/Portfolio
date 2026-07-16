@@ -1,9 +1,9 @@
 {% extends 'AppFulbo/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="container mt-4 contenedor-blanco p-4 rounded shadow">
-    <h2>Editar Perfil</h2>
+    <h2>{% translate "Editar perfil" %}</h2>
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.non_field_errors }}
@@ -22,7 +22,7 @@
         </div>
         {% if user.profile.foto_perfil %}
     <div class="mb-3">
-              <label>Foto actual:</label><br>
+              <label>{% translate "Foto actual:" %}</label><br>
               <img src="{{ user.profile.foto_perfil.url }}" class="img-thumbnail" style="max-width: 150px;"><br>
               {{ form.eliminar_foto }} {{ form.eliminar_foto.label_tag }}
           </div>
@@ -34,7 +34,7 @@
 
         
         <hr>
-        <h4>Cambiar Contraseña (opcional)</h4>
+        <h4>{% translate "Cambiar contraseña (opcional)" %}</h4>
         <div class="mb-3">
             {{ form.password1.label_tag }} {{ form.password1 }}
         </div>
@@ -42,8 +42,8 @@
             {{ form.password2.label_tag }} {{ form.password2 }}
         </div>
 
-        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-        <a href="{% url 'inicio' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">{% translate "Guardar cambios" %}</button>
+        <a href="{% url 'inicio' %}" class="btn btn-secondary">{% translate "Cancelar" %}</a>
     </form>
 </div>
 {% endblock %}

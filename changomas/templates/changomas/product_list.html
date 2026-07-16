@@ -1,13 +1,14 @@
-{% load changomas_extras %}<!DOCTYPE html>
-<html lang="es">
+{% load changomas_extras i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChangoMás Tracker</title>
+    <title>{{ supermarket.name }} Tracker</title>
     <style>
         :root {
             --rojo: #d52b1e;
-            --azul: #0071ce;
+            --azul: {{ supermarket.primary_color }};
+            --amarillo: {{ supermarket.accent_color }};
             --verde: #2e7d32;
             --gris-fondo: #f4f4f4;
             --gris-texto: #555;
@@ -25,7 +26,7 @@
             gap: 16px;
         }
         header h1 { font-size: 1.3rem; font-weight: 700; }
-        header h1 span { color: #ffc220; }
+        header h1 span { color: var(--amarillo); }
         header .total { font-size: .85rem; opacity: .9; }
         header .scan-link {
             color: #fff; text-decoration: none; font-size: .85rem; font-weight: 700;
@@ -47,7 +48,7 @@
             min-width: 200px;
         }
         form.filters button {
-            background: #ffc220;
+            background: var(--amarillo);
             border: none;
             border-radius: 20px;
             padding: 8px 18px;
@@ -131,29 +132,46 @@
         .pagination a:hover { background: #005ba1; }
 
         .empty { text-align: center; padding: 60px 20px; color: var(--gris-texto); }
+        .stores {
+            display: flex; gap: 8px; padding: 12px 20px; overflow-x: auto;
+            background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+        .stores a {
+            color: #333; text-decoration: none; font-weight: 700; font-size: .85rem;
+            padding: 7px 14px; border-radius: 18px; white-space: nowrap;
+            border: 1px solid #ddd;
+        }
+        .stores a.active { color: #fff; background: var(--azul); border-color: var(--azul); }
     </style>
 </head>
 <body>
+    {% include 'includes/language_toggle.html' %}
+    <nav class="stores" aria-label="{% translate 'Supermercados' %}">
+        {% for store in supermarkets %}
+            <a href="{% url 'changomas:store_product_list' store.slug %}"
+               class="{% if store.slug == supermarket.slug %}active{% endif %}">{{ store.name }}</a>
+        {% endfor %}
+    </nav>
     <header>
-        <h1>Chango<span>Más</span> Tracker</h1>
-        <div class="total">{{ total }} productos</div>
-        <a class="scan-link" href="{% url 'changomas:scan' %}">📷 Escanear</a>
+        <h1>{{ supermarket.name }} <span>Tracker</span></h1>
+        <div class="total">{% blocktranslate count counter=total %}{{ counter }} producto{% plural %}{{ counter }} productos{% endblocktranslate %}</div>
+        <a class="scan-link" href="{% url 'changomas:store_scan' supermarket.slug %}">📷 {% translate "Escanear" %}</a>
         <form class="filters" method="get">
-            <input type="text" name="q" value="{{ query }}" placeholder="Buscar producto...">
+            <input type="text" name="q" value="{{ query }}" placeholder="{% translate 'Buscar producto...' %}">
             <select name="cat">
-                <option value="">Todas las categorías</option>
+                <option value="">{% translate "Todas las categorías" %}</option>
                 {% for cat in categories %}
                     <option value="{{ cat }}" {% if cat == category %}selected{% endif %}>{{ cat }}</option>
                 {% endfor %}
             </select>
-            <button type="submit">Buscar</button>
+            <button type="submit">{% translate "Buscar" %}</button>
         </form>
     </header>
 
     {% if page.object_list %}
     <div class="grid">
         {% for product in page %}
-        <a class="card" href="{% url 'changomas:product_detail' product.reference_code %}">
+        <a class="card" href="{% url 'changomas:store_product_detail' supermarket.slug product.reference_code %}">
             {% if product.today %}
                 {% if product.today.discount_percent %}
                     <span class="badge-off">-{{ product.today.discount_percent }}%</span>
@@ -166,7 +184,7 @@
             {% if product.image_url %}
                 <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
             {% else %}
-                <div class="no-img">Sin imagen</div>
+                <div class="no-img">{% translate "Sin imagen" %}</div>
             {% endif %}
 
             <div class="brand">{{ product.brand }}</div>
@@ -179,31 +197,31 @@
                 <div class="price">$ {{ product.today.price|precio }}</div>
                 {% if product.today.promo_price %}
                     <div class="promo-line">
-                        Precio promo: $ {{ product.today.promo_price|precio }} c/u
+                        {% translate "Precio promo" %}: $ {{ product.today.promo_price|precio }} {% translate "c/u" %}
                     </div>
                 {% endif %}
             {% else %}
                 <div class="price">—</div>
             {% endif %}
 
-            <div class="ref">Ref: {{ product.reference_code }}</div>
+            <div class="ref">{% translate "Ref" %}: {{ product.reference_code }}</div>
         </a>
         {% endfor %}
     </div>
 
     <div class="pagination">
         {% if page.has_previous %}
-            <a href="?page={{ page.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">&laquo; Anterior</a>
+            <a href="?page={{ page.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">&laquo; {% translate "Anterior" %}</a>
         {% endif %}
-        <span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+        <span>{% blocktranslate with current=page.number total_pages=page.paginator.num_pages %}Página {{ current }} de {{ total_pages }}{% endblocktranslate %}</span>
         {% if page.has_next %}
-            <a href="?page={{ page.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">Siguiente &raquo;</a>
+            <a href="?page={{ page.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if category %}&cat={{ category|urlencode }}{% endif %}">{% translate "Siguiente" %} &raquo;</a>
         {% endif %}
     </div>
     {% else %}
     <div class="empty">
-        <h2>No hay productos guardados todavía</h2>
-        <p>Corré <code>python manage.py scrape_masonline</code> para poblar la base.</p>
+        <h2>{% translate "No hay productos guardados todavía" %}</h2>
+        <p>{% blocktranslate trimmed %}Ejecutá <code>python manage.py scrape_supermarkets</code> para poblar la base.{% endblocktranslate %}</p>
     </div>
     {% endif %}
 </body>

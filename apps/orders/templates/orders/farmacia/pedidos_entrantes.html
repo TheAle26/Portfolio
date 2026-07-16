@@ -1,11 +1,12 @@
 {% extends "orders/base.html" %}
+{% load i18n %}
 {% block content %}
 <div class="container mt-4">
     <h1 class="h5 mb-3">Pedidos entrantes - {{ user.farmacia.nombre }}</h1>
 
     <div class="mb-3">
-        <a href="{% url 'farmacia_panel' %}" class="btn btn-secondary">Volver al panel</a>
-        <a href="{% url 'gestionar_inventario' %}" class="btn btn-info">Gestionar Inventario</a>
+        <a href="{% url 'farmacia_panel' %}" class="btn btn-secondary">{% translate "Volver al panel" %}</a>
+        <a href="{% url 'gestionar_inventario' %}" class="btn btn-info">{% translate "Gestionar inventario" %}</a>
     </div>
 
     <hr>
@@ -19,14 +20,14 @@
                             <strong>Pedido #{{ p.id }}</strong>
                             <div class="text-muted">Cliente: {% if p.cliente %}{{ p.cliente.user.email }}{% else %}--{% endif %}</div>
                             <div class="text-muted">Creado: {{ p.creado|date:"d/m/Y H:i" }}</div>
-                            <div class="text-muted">Codigo: <strong> {{ p.codigo_seguridad }}</strong></div>
+                            <div class="text-muted">{% translate "Código" %}: <strong> {{ p.codigo_seguridad }}</strong></div>
                         
                             <div class="mt-2">Estado: 
                                 <span class="badge bg-secondary">{{ p.get_estado_display }}</span> 
                                 {% if p.estado == 'RECHAZADO' %}
                                     {% if p.motivo_rechazo %}
                                         <text class="small mt-1 text-muted">
-                                            <strong>&nbsp Motivo:</strong> {{ p.motivo_rechazo_legible }}
+                                            <strong>&nbsp {% translate "Motivo:" %}</strong> {{ p.motivo_rechazo_legible }}
                                             {% if p.comentario_rechazo %}
                                                 ({{ p.comentario_rechazo }})
                                             {% endif %}
@@ -36,11 +37,11 @@
                             </div>
                         </div>
                         <div class="d-flex flex-column align-items-end gap-2">
-                            <div>Total: <strong>${{ p.total }}</strong></div>
+                            <div>{% translate "Total" %}: <strong>${{ p.total }}</strong></div>
                             {% if p.estado == 'PENDIENTE' %}
                                 <form action="{% url 'farmacia_aceptar' p.id %}" method="post" class="form-aceptar" id="form-aceptar-{{ p.id }}">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-success btn-sm btn-aceptar" disabled>Aceptar</button>
+                                    <button type="submit" class="btn btn-success btn-sm btn-aceptar" disabled>{% translate "Aceptar" %}</button>
                                 </form>
                                 <button class="btn btn-danger btn-sm"
                                         type="button"
@@ -56,25 +57,25 @@
                                     {% csrf_token %}
                                     <div class="row g-2 align-items-end">
                                         <div class="col-sm-5">
-                                        <label class="form-label mb-1">Motivo</label>
+                                        <label class="form-label mb-1">{% translate "Motivo" %}</label>
                                         <select name="motivo" class="form-select form-select-sm motivo-select" required>
-                                            <option value="" selected disabled>Seleccioná un motivo…</option>
-                                            <option value="SIN_STOCK">Sin stock</option>
-                                            <option value="RECETA_INVALIDA">Receta inválida</option>
-                                            <option value="FUERA_DE_COBERTURA">Fuera de cobertura/entrega</option>
-                                            <option value="DATOS_INCOMPLETOS">Datos incompletos/ilegibles</option>
-                                            <option value="OTRO">Otro</option>
+                                            <option value="" selected disabled>{% translate "Seleccioná un motivo…" %}</option>
+                                            <option value="SIN_STOCK">{% translate "Sin stock" %}</option>
+                                            <option value="RECETA_INVALIDA">{% translate "Receta inválida" %}</option>
+                                            <option value="FUERA_DE_COBERTURA">{% translate "Fuera de cobertura o entrega" %}</option>
+                                            <option value="DATOS_INCOMPLETOS">{% translate "Datos incompletos o ilegibles" %}</option>
+                                            <option value="OTRO">{% translate "Otro" %}</option>
                                         </select>
                                         </div>
                                         <div class="col-sm-7">
-                                        <label class="form-label mb-1">Detalle (requerido si elegís “Otro”)</label>
+                                        <label class="form-label mb-1">{% translate "Detalle (requerido si elegís “Otro”)" %}</label>
                                         <textarea name="comentario"
                                                     rows="2"
                                                     class="form-control form-control-sm comentario-input"
-                                                    placeholder="Especificá el motivo…"></textarea>
+                                                    placeholder="{% translate 'Especificá el motivo…' %}"></textarea>
                                         </div>
                                         <div class="col-12">
-                                        <button class="btn btn-outline-danger btn-sm" type="submit">Confirmar rechazo</button>
+                                        <button class="btn btn-outline-danger btn-sm" type="submit">{% translate "Confirmar rechazo" %}</button>
                                         </div>
                                     </div>
                                     </form>
@@ -89,7 +90,7 @@
 
                     {% if p.items.all %}
                         <hr>
-                        <h6 class="mb-2">Artículos</h6>
+                        <h6 class="mb-2">{% translate "Artículos" %}</h6>
                         <ul class="list-group">
                             {% for item in p.items.all %}
                                 <li class="list-group-item d-flex justify-content-between align-items-start flex-column">
@@ -98,7 +99,7 @@
                                             <strong>{{ item.medicamento.nombre_comercial }}</strong>
                                             <div class="small text-muted">Cantidad: {{ item.cantidad }} · Precio unitario: ${{ item.precio_unitario_snapshot }}</div>
                                             {% if item.receta_adjunta %}
-                                                <div class="small"><a href="{{ item.receta_adjunta.url }}" target="_blank">Ver receta adjunta</a></div>
+                                                <div class="small"><a href="{{ item.receta_adjunta.url }}" target="_blank">{% translate "Ver receta adjunta" %}</a></div>
                                             {% endif %}
                                         </div>
                                         <div>
@@ -118,7 +119,7 @@
                                                 <label class="form-check-label small" for="chk_{{ item.id }}">
                                                     Confirmo la receta de <strong>{{ item.medicamento.nombre_comercial }}</strong>
                                                     {% if not item.receta_adjunta %}
-                                                        — <span class="text-danger">No hay receta adjunta</span>
+                                                        — <span class="text-danger">{% translate "No hay receta adjunta" %}</span>
                                                     {% endif %}
                                                 </label>
                                             </div>
@@ -132,7 +133,7 @@
             </div>
         {% endfor %}
     {% else %}
-        <p class="text-muted">No hay pedidos para mostrar.</p>
+        <p class="text-muted">{% translate "No hay pedidos para mostrar." %}</p>
     {% endif %}
 
 </div>

@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escanear producto - ChangoMás Tracker</title>
+    <title>{% translate "Escanear producto" %} - {{ supermarket.name }} Tracker</title>
     <style>
-        :root { --azul: #0071ce; --amarillo: #ffc220; }
+        :root { --azul: {{ supermarket.primary_color }}; --amarillo: {{ supermarket.accent_color }}; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Roboto, Arial, sans-serif;
@@ -64,29 +64,36 @@
     </style>
 </head>
 <body>
+    {% include 'includes/language_toggle.html' %}
     <header>
-        <h1>📷 Escanear <span>código de barras</span></h1>
-        <a href="{% url 'changomas:product_list' %}">🛒 Catálogo</a>
+        <h1>📷 {% translate "Escanear" %} <span>{% translate "código de barras" %}</span></h1>
+        <a href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {{ supermarket.name }}</a>
     </header>
 
     <div class="viewport">
         <video id="video" autoplay muted playsinline></video>
         <div class="frame"></div>
-        <div class="status" id="status">Iniciando cámara...</div>
+        <div class="status" id="status">{% translate "Iniciando cámara..." %}</div>
     </div>
 
     <div class="manual">
-        <p>¿No anda la cámara? Ingresá el código de barras a mano:</p>
+        <p>{% translate "¿No funciona la cámara? Ingresá el código de barras manualmente:" %}</p>
         <form id="manual-form">
             <input id="manual-code" type="text" inputmode="numeric" autocomplete="off"
                    placeholder="Ej: 7790580146115" maxlength="64">
-            <button type="submit">Buscar</button>
+            <button type="submit">{% translate "Buscar" %}</button>
         </form>
     </div>
 
+    {% translate "Código detectado:" as detected_label %}
+    {% translate "Este navegador no permite usar la cámara (se necesita HTTPS). Podés ingresar el código manualmente." as camera_unsupported %}
+    {% translate "Apuntá al código de barras del producto" as point_camera %}
+    {% translate "No se pudo acceder a la cámara. Revisá los permisos o ingresá el código manualmente." as camera_denied %}
+    {% translate "No se pudo iniciar el detector. Ingresá el código manualmente." as detector_failed %}
+    {% translate "Tu navegador no soporta la detección de códigos y no se pudo cargar el detector alternativo. Ingresá el código manualmente." as detector_unsupported %}
     <script>
     (function () {
-        var DETAIL_URL = "{% url 'changomas:product_detail' 'CODE' %}";
+        var DETAIL_URL = "{% url 'changomas:store_product_detail' supermarket.slug 'CODE' %}";
         var statusEl = document.getElementById('status');
         var video = document.getElementById('video');
         var found = false;
@@ -97,7 +104,7 @@
             code = String(code || '').trim().slice(0, 64);
             if (!code || found) return;
             found = true;
-            statusEl.textContent = 'Código detectado: ' + code;
+            statusEl.textContent = '{{ detected_label|escapejs }} ' + code;
             if (activeStream) {
                 // apagamos la cámara antes de navegar
                 activeStream.getTracks().forEach(function (t) { t.stop(); });
@@ -111,8 +118,7 @@
         });
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            statusEl.innerHTML = '<span class="error">Este navegador no permite usar la cámara ' +
-                '(se necesita HTTPS). Podés ingresar el código a mano.</span>';
+            statusEl.innerHTML = '<span class="error">{{ camera_unsupported|escapejs }}</span>';
             return;
         }
 
@@ -121,11 +127,10 @@
         }).then(function (stream) {
             activeStream = stream;
             video.srcObject = stream;
-            statusEl.textContent = 'Apuntá al código de barras del producto';
+            statusEl.textContent = '{{ point_camera|escapejs }}';
             startDetection();
         }).catch(function () {
-            statusEl.innerHTML = '<span class="error">No se pudo acceder a la cámara. ' +
-                'Revisá los permisos o ingresá el código a mano.</span>';
+            statusEl.innerHTML = '<span class="error">{{ camera_denied|escapejs }}</span>';
         });
 
         function startDetection() {
@@ -169,13 +174,11 @@
                     };
                     loop();
                 } catch (err) {
-                    statusEl.innerHTML = '<span class="error">No se pudo iniciar el detector. ' +
-                        'Ingresá el código a mano.</span>';
+                    statusEl.innerHTML = '<span class="error">{{ detector_failed|escapejs }}</span>';
                 }
             };
             script.onerror = function () {
-                statusEl.innerHTML = '<span class="error">Tu navegador no soporta detección de ' +
-                    'códigos y no se pudo cargar el detector alternativo. Ingresá el código a mano.</span>';
+                statusEl.innerHTML = '<span class="error">{{ detector_unsupported|escapejs }}</span>';
             };
             document.head.appendChild(script);
         }

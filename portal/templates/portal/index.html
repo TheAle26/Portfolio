@@ -1,11 +1,11 @@
-{% load i18n %}
-{% load static %}
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="{{ LANGUAGE_CODE }}" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alejo Vincent | Backend Developer & IT Engineer</title>
+    <title>{% translate "Alejo Vincent | Backend Developer & IT Engineer" %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -191,33 +191,32 @@
     </style>
 </head>
 <body>
+    {% include 'includes/language_toggle.html' %}
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-10 mx-auto text-center">
                     <h1 class="display-3 fw-bold mb-3">Alejo Vincent</h1>
-                    <h2 class="h4 text-muted mb-4">Backend Developer & IT Engineer</h2>
+                    <h2 class="h4 text-muted mb-4">{% translate "Backend Developer & IT Engineer" %}</h2>
                     <p class="lead mb-4 mx-auto" style="max-width: 800px;">
-                        Advanced Computer Engineering student with a strong focus on Backend development. Civil Engineer transitioning into the world of code. 
-                        Specialist in Java, Python, Django, Relational database and Linux Infrastructure. I combine a strong analytical background with hands-on experience 
-                        developing and deploying web applications.
+                        {% blocktranslate trimmed %}Advanced Computer Engineering student with a strong focus on Backend development. Civil Engineer transitioning into the world of code. Specialist in Java, Python, Django, relational databases and Linux infrastructure. I combine a strong analytical background with hands-on experience developing and deploying web applications.{% endblocktranslate %}
                     </p>
                     <div class="mb-4">
                         <a href="#projects" class="btn btn-primary btn-lg me-3 mb-2">
-                            <i class="fas fa-code me-2"></i>View Projects
+                            <i class="fas fa-code me-2"></i>{% translate "View Projects" %}
                         </a>
 
                         <a href="mailto:alejo.vincent26@gmail.com" class="btn btn-outline-light btn-lg mb-2">
-                            <i class="fas fa-envelope me-2"></i>Contact
+                            <i class="fas fa-envelope me-2"></i>{% translate "Contact" %}
                         </a>
 
                         <a href="{% static 'portal/archivos/Vincent Alejo CV EN.pdf' %}" download="CV Vincent Alejo EN.pdf" class="btn btn-outline-light btn-lg mb-2">
-                                <i class="fas fa-download me-2"></i>English CV
+                                <i class="fas fa-download me-2"></i>{% translate "English CV" %}
                             </a>
 
                         <a href="{% static 'portal/archivos/Vincent Alejo CV ES.pdf' %}" download="CV Vincent Alejo ES.pdf" class="btn btn-primary btn-lg me-3 mb-2">
-                            <i class="fas fa-download me-2"></i>CV Español
+                            <i class="fas fa-download me-2"></i>{% translate "Spanish CV" %}
                         </a>
 
                     </div>
@@ -242,7 +241,7 @@
     <!-- Projects Ecosystem Section --> 
     <section id="projects" class="py-5">
         <div class="container">
-            <h2 class="display-5 fw-bold text-center mb-5">Ecosystem & Projects</h2>
+            <h2 class="display-5 fw-bold text-center mb-5">{% translate "Ecosystem & Projects" %}</h2>
             <div class="row g-4">
                 <!-- FulboApp Card -->
                 <div class="col-lg-6">
@@ -251,12 +250,12 @@
                             <h3 class="h4 mb-0">FulboApp</h3>
                             <span class="live-badge">
                                 <span class="pulse-dot"></span>
-                                Live Deployment
+                                {% translate "Live Deployment" %}
                             </span>
                         </div>
-                        <h5 class="text-muted mb-3">Comprehensive Sports Management System</h5>
+                        <h5 class="text-muted mb-3">{% translate "Comprehensive Sports Management System" %}</h5>
                         <p class="mb-4">
-                            Developed in Django with PostgreSQL. <em>This project is currently hosted and running on the local server.</em>
+                            {% blocktranslate trimmed %}Developed in Django with PostgreSQL. <em>This project is currently hosted and running on the local server.</em>{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
                             <span class="badge bg-success me-2">Python/Django</span>
@@ -264,7 +263,7 @@
                             <span class="badge bg-success">Bootstrap 5</span>
                         </div>
                         <a href="/AppFulbo/inicio" class="btn btn-outline-light" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                            <i class="fas fa-external-link-alt me-2"></i>{% translate "Go to App" %}
                         </a>
                     </div>
                 </div>
@@ -276,13 +275,12 @@
                             <h3 class="h4 mb-0">IoT Tracking</h3>
                             <span class="live-badge">
                                 <span class="pulse-dot"></span>
-                                Live Deployment
+                                {% translate "Live Deployment" %}
                             </span>
                         </div>
-                        <h5 class="text-muted mb-3">Real-Time Telemetry Dashboard</h5>
+                        <h5 class="text-muted mb-3">{% translate "Real-Time Telemetry Dashboard" %}</h5>
                         <p class="mb-4">
-                            Integration of telematics hardware (Teltonika FMC150). TCP/UDP frame decoding and visualization via Flespi Platform for logistics fleets. 
-                            <em>Currently hosted on the local server.</em>
+                            {% blocktranslate trimmed %}Integration of telematics hardware (Teltonika FMC150). TCP/UDP frame decoding and visualization via the Flespi platform for logistics fleets. <em>Currently hosted on the local server.</em>{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
                             <span class="badge bg-info me-2">Teltonika FMC150</span>
@@ -290,7 +288,7 @@
                             <span class="badge bg-info">TCP/UDP</span>
                         </div>
                         <a href="/tracking" class="btn btn-outline-light" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                            <i class="fas fa-external-link-alt me-2"></i>{% translate "Go to App" %}
                         </a>
                     </div>
                 </div>
@@ -301,12 +299,12 @@
                             <h3 class="h4 mb-0">FarmaGo</h3>
                             <span class="academic-badge">
                                 <i class="fas fa-graduation-cap"></i>
-                                Academic Project
+                                {% translate "Academic Project" %}
                             </span>
                         </div>
-                        <h5 class="text-muted mb-3">Multi-Role Delivery Platform</h5>
+                        <h5 class="text-muted mb-3">{% translate "Multi-Role Delivery Platform" %}</h5>
                         <p class="mb-4">
-                            Advanced Django system managing three distinct user roles (Clients, Pharmacies, Drivers). Features a <strong>Custom User Model</strong> (Email Auth), strict Regex data validation, and an admin verification workflow for partners.
+                            {% blocktranslate trimmed %}Advanced Django system managing three distinct user roles (clients, pharmacies and drivers). It features a <strong>custom user model</strong> with email authentication, strict Regex data validation and an admin verification workflow for partners.{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
                             <span class="badge bg-purple me-2">Role-Based Auth</span>
@@ -314,7 +312,7 @@
                             <span class="badge bg-purple">Regex Validation</span>
                         </div>
                         <a href="/FarmaGo" class="btn btn-outline-light" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                            <i class="fas fa-external-link-alt me-2"></i>{% translate "Go to App" %}
                         </a>
                     </div>
                 </div>
@@ -326,22 +324,20 @@
                             <h3 class="h4 mb-0">ChangoMás Tracker</h3>
                             <span class="live-badge">
                                 <span class="pulse-dot"></span>
-                                Live Deployment
+                                {% translate "Live Deployment" %}
                             </span>
                         </div>
-                        <h5 class="text-muted mb-3">Supermarket Price History & Barcode Scanner</h5>
+                        <h5 class="text-muted mb-3">{% translate "Supermarket Price History & Barcode Scanner" %}</h5>
                         <p class="mb-4">
-                            Daily scraper tracking the full MasOnline (ChangoMás) catalog via its VTEX API:
-                            30-day price history with real promo-adjusted prices. Scan any barcode with your
-                            phone camera to see a product's price evolution, minimum and maximum.
+                            {% blocktranslate trimmed %}Daily scraper tracking the full MasOnline (ChangoMás) catalog through its VTEX API. It keeps a 30-day history with real promotion-adjusted prices. Scan any barcode with your phone camera to see the product's price evolution, minimum and maximum.{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
-                            <span class="badge bg-warning text-dark me-2">Web Scraping</span>
-                            <span class="badge bg-warning text-dark me-2">Barcode Scanner</span>
-                            <span class="badge bg-warning text-dark">Price History</span>
+                            <span class="badge bg-warning text-dark me-2">{% translate "Web Scraping" %}</span>
+                            <span class="badge bg-warning text-dark me-2">{% translate "Barcode Scanner" %}</span>
+                            <span class="badge bg-warning text-dark">{% translate "Price History" %}</span>
                         </div>
                         <a href="https://vincentalejo.myddns.me/changomas" class="btn btn-outline-light" target="_blank">
-                            <i class="fas fa-external-link-alt me-2"></i>Go to App
+                            <i class="fas fa-external-link-alt me-2"></i>{% translate "Go to App" %}
                         </a>
                     </div>
                 </div>
@@ -353,13 +349,12 @@
                             <h3 class="h4 mb-0">Home Server</h3>
                             <span class="here-badge">
                                 <span class="pulse-dot pulse-dot-blue"></span>
-                                You're here
+                                {% translate "You're here" %}
                             </span>
                         </div>
-                        <h5 class="text-muted mb-3">Infrastructure & DevOps (Raspberry Pi)</h5>
+                        <h5 class="text-muted mb-3">{% translate "Infrastructure & DevOps (Raspberry Pi)" %}</h5>
                         <p class="mb-4">
-                            Linux server configured from scratch. SSH security management, Dynamic DNS (No-IP), and Gunicorn/Nginx. 
-                            In charge of hosting this portfolio and serving FulboApp to the world.
+                            {% blocktranslate trimmed %}Linux server configured from scratch, with SSH security management, dynamic DNS (No-IP) and Gunicorn/Nginx. It hosts this portfolio and serves FulboApp to the world.{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
                             <span class="badge bg-danger me-2">Linux / Bash</span>
@@ -375,16 +370,16 @@
                 <div class="col-lg-6">
                     <div class="project-card card-accent-gray p-4">
                         <h3 class="h4 mb-3">Django Admin</h3>
-                        <h5 class="text-muted mb-3">System Management</h5>
+                        <h5 class="text-muted mb-3">{% translate "System Management" %}</h5>
                         <p class="mb-4">
-                            Restricted access to Django's native administration panel for database maintenance, record CRUD operations, and user management.
+                            {% blocktranslate trimmed %}Restricted access to Django's native administration panel for database maintenance, record CRUD operations and user management.{% endblocktranslate %}
                         </p>
                         <div class="mb-4">
                             <span class="badge bg-secondary me-2">Admin Panel</span>
                             <span class="badge bg-secondary">Auth</span>
                         </div>
                         <a href="/admin/" class="btn btn-outline-light">
-                            <i class="fas fa-lock me-2"></i>Access
+                            <i class="fas fa-lock me-2"></i>{% translate "Access" %}
                         </a>
                     </div>
                 </div>
@@ -401,53 +396,53 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-6 mb-5 mb-lg-0">
-                    <h2 class="display-6 fw-bold mb-4">Education</h2>
+                    <h2 class="display-6 fw-bold mb-4">{% translate "Education" %}</h2>
                     <div class="timeline-item mb-4">
-                        <h4 class="h5 mb-2">B.S. in Computer Engineering</h4>
-                        <p class="text-muted mb-2">National University of La Plata (UNLP)</p>
-                        <p class="text-muted mb-2"><small>Mar 2024 – Present</small></p>
-                        <p class="mb-0">GPA: 8.6/10 | Progress: ~70% completed</p>
+                        <h4 class="h5 mb-2">{% translate "B.S. in Computer Engineering" %}</h4>
+                        <p class="text-muted mb-2">{% translate "National University of La Plata (UNLP)" %}</p>
+                        <p class="text-muted mb-2"><small>{% translate "Mar 2024 – Present" %}</small></p>
+                        <p class="mb-0">{% translate "GPA: 8.6/10 | Progress: ~70% completed" %}</p>
                     </div>
                     <div class="timeline-item mb-4">
-                        <h4 class="h5 mb-2">B.S. in Civil Engineering</h4>
-                        <p class="text-muted mb-2">National University of La Plata (UNLP)</p>
-                        <p class="text-muted mb-2"><small>Mar 2018 – May 2023</small></p>
-                        <p class="mb-0">GPA: 8.48/10 | Graduated</p>
+                        <h4 class="h5 mb-2">{% translate "B.S. in Civil Engineering" %}</h4>
+                        <p class="text-muted mb-2">{% translate "National University of La Plata (UNLP)" %}</p>
+                        <p class="text-muted mb-2"><small>{% translate "Mar 2018 – May 2023" %}</small></p>
+                        <p class="mb-0">{% translate "GPA: 8.48/10 | Graduated" %}</p>
                     </div>
                     <div class="timeline-item mb-4">
                         <h4 class="h5 mb-2">Python (Django)</h4>
                         <p class="text-muted mb-2">Coderhouse</p>
-                        <p class="text-muted mb-2"><small>Jan 2024</small></p>
-                        <p class="mb-0">Recognized in the Top 10 for academic performance.</p>
+                        <p class="text-muted mb-2"><small>{% translate "Jan 2024" %}</small></p>
+                        <p class="mb-0">{% translate "Recognized in the Top 10 for academic performance." %}</p>
                     </div>
                     <div class="timeline-item">
                         <h4 class="h5 mb-2">Data Analytics (SQL & Power BI)</h4>
                         <p class="text-muted mb-2">Coderhouse</p>
-                        <p class="text-muted mb-2"><small>Aug 2023</small></p>
+                        <p class="text-muted mb-2"><small>{% translate "Aug 2023" %}</small></p>
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <h2 class="display-6 fw-bold mb-4">Experience</h2>
+                    <h2 class="display-6 fw-bold mb-4">{% translate "Experience" %}</h2>
                     <div class="timeline-item mb-4">
-                        <h4 class="h5 mb-2">IT Systems Analyst</h4>
+                        <h4 class="h5 mb-2">{% translate "IT Systems Analyst" %}</h4>
                         <p class="text-muted mb-2">Vive Health</p>
-                        <p class="text-muted mb-2"><small>Apr 2026 – Present</small></p>
+                        <p class="text-muted mb-2"><small>{% translate "Apr 2026 – Present" %}</small></p>
                         <ul class="mb-0">
-                            <li>Design and develop microservices and scalable backend architectures</li>
-                            <li>Build automations and modify Odoo codebase to optimize business workflows</li>
-                            <li>Conduct thorough testing and debugging of new features and code modifications in staging environments prior to production deployment</li>
-                            <li>Analyze business requirements to architect robust technical solutions</li>
-                            <li>Manage Mobile Device Management (MDM) infrastructure, enforcing diverse security and operational policies</li>
+                            <li>{% translate "Design and develop microservices and scalable backend architectures" %}</li>
+                            <li>{% translate "Build automations and modify the Odoo codebase to optimize business workflows" %}</li>
+                            <li>{% translate "Test and debug features and code changes in staging environments before production deployment" %}</li>
+                            <li>{% translate "Analyze business requirements to architect robust technical solutions" %}</li>
+                            <li>{% translate "Manage Mobile Device Management (MDM) infrastructure and enforce security and operational policies" %}</li>
                         </ul>
                     </div>
                     <div class="timeline-item">
-                        <h4 class="h5 mb-2">Technical Office</h4>
+                        <h4 class="h5 mb-2">{% translate "Technical Office" %}</h4>
                         <p class="text-muted mb-2">Ocsa S.A. – Pelque S.A. UT</p>
-                        <p class="text-muted mb-2"><small>Mar 2023 – Mar 2024 | La Plata, Argentina</small></p>
+                        <p class="text-muted mb-2"><small>{% translate "Mar 2023 – Mar 2024 | La Plata, Argentina" %}</small></p>
                         <ul class="mb-0">
-                            <li>Oversaw project planning, budgeting, and cost control for large-scale infrastructure projects</li>
-                            <li>Coordinated with subcontractors, ensuring adherence to deadlines and technical specifications</li>
-                            <li>Performed data analysis for price updates, progress certifications, and reporting to senior management</li>
+                            <li>{% translate "Oversaw planning, budgeting and cost control for large-scale infrastructure projects" %}</li>
+                            <li>{% translate "Coordinated with subcontractors, ensuring adherence to deadlines and technical specifications" %}</li>
+                            <li>{% translate "Performed data analysis for price updates, progress certifications and reports to senior management" %}</li>
                         </ul>
                     </div>
                 </div>
@@ -458,7 +453,7 @@
     <!-- Footer -->
     <footer class="py-5 text-center border-top border-secondary">
         <div class="container">
-            <p class="mb-3">© 2026 Alejo Vincent. Developed in Django, served from Raspberry Pi.</p>
+            <p class="mb-3">{% translate "© 2026 Alejo Vincent. Developed in Django, served from Raspberry Pi." %}</p>
             <div>
                 <a href="https://www.linkedin.com/in/alejo-vincent-37aa63220/" target="_blank" class="text-light me-4 fs-4">
                     <i class="fab fa-linkedin"></i>

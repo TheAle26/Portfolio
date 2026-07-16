@@ -1,4 +1,5 @@
 {% extends "orders/base.html" %}
+{% load i18n %}
 {% load crispy_forms_tags %}
 
 {% block title %}Gestionar Inventario{% endblock %}
@@ -10,8 +11,8 @@
         
 
     <div class="mb-3">
-        <a href="{% url 'farmacia_panel' %}" class="btn btn-secondary">Volver al panel</a>
-        <a href="{% url 'farmacia_pedidos' %}" class="btn btn-info">Pedidos Entrantes</a>
+        <a href="{% url 'farmacia_panel' %}" class="btn btn-secondary">{% translate "Volver al panel" %}</a>
+        <a href="{% url 'farmacia_pedidos' %}" class="btn btn-info">{% translate "Pedidos entrantes" %}</a>
     </div>
 
     <!-- Card: Agregar Medicamento -->
@@ -21,13 +22,13 @@
         </div>
         <div class="card-body">
             {% if add_form.fields.medicamento.disabled %}
-                <div class="alert alert-info mb-0">Ya tienes todos los medicamentos disponibles registrados en tu stock.</div>
+                <div class="alert alert-info mb-0">{% translate "Ya tenés todos los medicamentos disponibles registrados en tu stock." %}</div>
             {% else %}
                 <form method="post" action="{% url 'gestionar_inventario' %}" class="row g-1">
                     {% csrf_token %}
                     {{ add_form|crispy }}
                     <div class="col-md-3 d-grid">
-                        <button type="submit" class="btn btn-primary" >Agregar al Stock</button>
+                        <button type="submit" class="btn btn-primary" >{% translate "Agregar al stock" %}</button>
                     </div>
                 </form>
             {% endif %}
@@ -45,10 +46,10 @@
                 <table class="table table-hover align-middle mb-0" id="tabla-inventario">
                     <thead class="table-light sticky-top shadow-sm">
                         <tr>
-                            <th>Medicamento</th>
-                            <th>Concentración</th>
-                            <th class="text-center">Precio ($)</th>
-                            <th class="text-center">Stock</th>
+                            <th>{% translate "Medicamento" %}</th>
+                            <th>{% translate "Concentración" %}</th>
+                            <th class="text-center">{% translate "Precio ($)" %}</th>
+                            <th class="text-center">{% translate "Stock" %}</th>
                             <th class="text-end"></th>
                         </tr>
                     </thead>
@@ -85,7 +86,7 @@
                                     
                                 </td>
                                 <td class="text-end" style="width:140px">
-                                    <button type="submit" class="btn btn-info btn-sm ">Guardar</button>
+                                    <button type="submit" class="btn btn-info btn-sm ">{% translate "Guardar" %}</button>
                                 </td>
                             </form>
                         </tr>
@@ -94,7 +95,7 @@
                 </table>
             </div>
         {% else %}
-            <div class="alert alert-info mb-0">Aún no has agregado medicamentos a tu inventario.</div>
+            <div class="alert alert-info mb-0">{% translate "Todavía no agregaste medicamentos a tu inventario." %}</div>
         {% endif %}
 </div>
 

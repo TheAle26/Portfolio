@@ -1,5 +1,5 @@
 {% extends "accounts/base.html" %} 
-{% load crispy_forms_tags %} 
+{% load crispy_forms_tags i18n %}
 {% block content %}
 <div class="mx-auto" style="max-width: 500px">
   <div class="card shadow-sm">
@@ -21,17 +21,17 @@
 
         <div class="text-center mt-3" style="margin-bottom: 20px;">
           <a href="{% url 'tyc' %}" target="_blank" rel="noopener noreferrer" id="tyc">
-              Ver terminos y condiciones
+              {% translate "Ver términos y condiciones" %}
           </a>
         </div>
 
         <button class="btn btn-primary w-100" type="submit">
-          Crear cuenta
+          {% translate "Crear cuenta" %}
         </button>
       </form>
       
       <div class="text-center mt-3">
-        <a href="{% url 'registro_selector' %}" class="btn btn-secondary w-50 mt-2" >Volver a elegir tipo</a>
+        <a href="{% url 'registro_selector' %}" class="btn btn-secondary w-50 mt-2" >{% translate "Volver a elegir tipo" %}</a>
       </div>
     </div>
   </div>

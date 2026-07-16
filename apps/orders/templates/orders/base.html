@@ -1,9 +1,10 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 
 <link rel="stylesheet" href="{% static 'orders/css/style.css' %}">
 
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="utf-8" />
     <!-- Viewport correcto para móvil -->
@@ -20,6 +21,7 @@
     <link href="{% static 'css/style.css' %}" rel="stylesheet" />
   </head>
   <body class="d-flex flex-column min-vh-100 bg-light">
+    {% include 'includes/language_toggle.html' %}
     <nav class="navbar navbar-expand-md navbar-dark bg-primary">
       <div class="container-fluid">
         <a class="navbar-brand fw-semibold" href="/">FarmaGo</a>
@@ -32,7 +34,7 @@
           data-bs-target="#navMain"
           aria-controls="navMain"
           aria-expanded="false"
-          aria-label="Mostrar menú"
+          aria-label="{% translate 'Mostrar menú' %}"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -43,11 +45,11 @@
             {% if user.is_authenticated %}
               {% if user.cliente %}
               <li class="nav-item d-flex align-items-center">
-                <a class="cart-button" href="{% url 'ver_carrito' %}" aria-label="Ver carrito">
+                <a class="cart-button" href="{% url 'ver_carrito' %}" aria-label="{% translate 'Ver carrito' %}">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
                     <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
                   </svg>
-                  <span class="cart-text d-none d-sm-inline">Carrito</span>
+                  <span class="cart-text d-none d-sm-inline">{% translate "Carrito" %}</span>
                   {% if cart_item_count > 0 %}
                     <span class="cart-pill">
                       {{ cart_item_count }}
@@ -60,7 +62,7 @@
               <li class="nav-item d-flex align-items-center"> <a
                   class="nav-link btn btn-link text-white" href="{% url 'panel_redireccion' %}"
                 >
-                  Panel
+                  {% translate "Panel" %}
                 </a>
               </li>
 
@@ -72,18 +74,18 @@
                     class="nav-link btn btn-link p-0 text-white"
                     style="text-decoration: none"
                   >
-                    Salir
+                    {% translate "Salir" %}
                   </button>
                 </form>
               </li>
               
             {% else %}
               <li class="nav-item">
-                <a class="nav-link" href="{% url 'login' %}">Ingresar</a>
+                <a class="nav-link" href="{% url 'login' %}">{% translate "Ingresar" %}</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="{% url 'registro_selector' %}"
-                  >Registrarse</a
+                  >{% translate "Registrarse" %}</a
                 >
               </li>
             {% endif %}
@@ -109,7 +111,7 @@
             type="button"
             class="btn-close btn-close-white me-2 m-auto"
             data-bs-dismiss="toast"
-            aria-label="Close"
+            aria-label="{% translate 'Cerrar' %}"
           ></button>
         </div>
       </div>

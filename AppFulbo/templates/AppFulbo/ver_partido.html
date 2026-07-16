@@ -1,18 +1,19 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Detalles del Partido</h2>
-    <p><strong>Liga:</strong> <a href="{% url 'ver_liga' partido.liga.id %}">{{ partido.liga.nombre_liga }}</a></p>
-    <p><strong>Fecha:</strong> {{ partido.fecha_partido|date:"d/m/Y" }}</p>
-    <p><strong>Cancha:</strong> {{ partido.cancha }}</p>
+    <h2>{% translate "Detalles del partido" %}</h2>
+    <p><strong>{% translate "Liga:" %}</strong> <a href="{% url 'ver_liga' partido.liga.id %}">{{ partido.liga.nombre_liga }}</a></p>
+    <p><strong>{% translate "Fecha:" %}</strong> {{ partido.fecha_partido|date:"d/m/Y" }}</p>
+    <p><strong>{% translate "Cancha:" %}</strong> {{ partido.cancha }}</p>
     {% if puntuacion_pendiente %}
     <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion_pendiente.id %}" class="btn btn-sm btn-outline-primary mb-2 justify-content-center">
     <i class="fas fa-clipboard-list me-2"></i> {# Ícono de Font Awesome para lista/tarea #}
-    Puntuación Pendiente
+    {% translate "Puntuación pendiente" %}
     </a>
     {% endif %}
-    <h3>Jugadores y Puntajes</h3>
+    <h3>{% translate "Jugadores y puntajes" %}</h3>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
         {% for puntaje in puntajes %}
             <div class="col mb-3">
@@ -21,16 +22,16 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             {{ puntaje.jugador.apodo }}
-                            <span class="badge bg-primary ms-3">Puntaje: {{ puntaje.puntaje|floatformat:2 }}</span>
+                            <span class="badge bg-primary ms-3">{% translate "Puntaje" %}: {{ puntaje.puntaje|floatformat:2 }}</span>
                         </h5>
                         <p class="card-text">
-                            Posición: {{ puntaje.jugador.get_posicion_display }}
+                            {% translate "Posición" %}: {{ puntaje.jugador.get_posicion_display }}
                         </p>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <p>No hay jugadores registrados para este partido.</p>
+            <p>{% translate "No hay jugadores registrados para este partido." %}</p>
         {% endfor %}
     </div>
 </div>

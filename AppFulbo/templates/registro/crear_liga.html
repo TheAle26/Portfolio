@@ -1,15 +1,16 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 
 {% block content %}
 {% load crispy_forms_tags %}
 <div class="container mt-4">
-    <h2>Crear Liga</h2>
+    <h2>{% translate "Crear liga" %}</h2>
     <form method="post">
         {% csrf_token %}
         {{ form_liga|crispy }}
-        <h2>Crear SU jugador de esta liga</h2>
+        <h2>{% translate "Crear tu jugador para esta liga" %}</h2>
         {{ form_jugador|crispy }}
-        <button type="submit" class="btn btn-primary">Crear Liga</button>
+        <button type="submit" class="btn btn-primary">{% translate "Crear liga" %}</button>
     </form>
 </div>
 {% endblock %}

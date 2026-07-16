@@ -1,5 +1,5 @@
 {% extends 'AppFulbo/base.html' %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags i18n %}
 
 {% block content %}
 <div class="container mt-4">
@@ -7,7 +7,7 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-{% block card_header_bg %}primary{% endblock %} text-white">
-                    <h3 class="mb-0">{% block form_title %}Título del Formulario{% endblock %}</h3>
+                    <h3 class="mb-0">{% block form_title %}{% translate "Formulario" %}{% endblock %}</h3>
                 </div>
                 <div class="card-body">
                     {% block form_content %}
@@ -17,10 +17,10 @@
                             {{ form|crispy }}
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="submit" class="btn btn-{% block submit_button_class %}primary{% endblock %} d-inline-flex align-items-center">
-                                    <i class="{% block submit_button_icon %}fas fa-check{% endblock %} me-2"></i> {% block submit_button_text %}Enviar{% endblock %}
+                                    <i class="{% block submit_button_icon %}fas fa-check{% endblock %} me-2"></i> {% block submit_button_text %}{% translate "Enviar" %}{% endblock %}
                                 </button>
                                 <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
-                                    <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+                                    <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a gestión" %}
                                 </a>
                             </div>
                         </form>

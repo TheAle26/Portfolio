@@ -10,6 +10,7 @@ from .forms import PedidoForm, EditStockMedicamentoForm, AddStockMedicamentoForm
 from django.db import transaction, IntegrityError
 from django.db.models import F, Q, IntegerField, ExpressionWrapper, DecimalField
 from django.contrib import messages
+from django.utils.translation import gettext as _
 from django.db.models import Case, When
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -24,7 +25,7 @@ def panel_principal(request):
     elif es_repartidor(request.user):
         return redirect("repartidor_panel")
     else:
-        return HttpResponseForbidden("Perfil no reconocido.")
+        return HttpResponseForbidden(_("Perfil no reconocido."))
 
 
     ## nose como usar esto, lo hice mas abajo como Cliente_ver_pedido
@@ -37,7 +38,7 @@ class MedicamentoDetailView(DetailView):
 
 @login_required(login_url='login')
 def cliente_panel(request):
-    if not es_cliente(request.user): return HttpResponseForbidden("Solo clientes")
+    if not es_cliente(request.user): return HttpResponseForbidden(_("Sólo clientes"))
     # Ordenar por estado según la prioridad deseada y luego por fecha de creación
     pedidos = (
         Pedido.objects.filter(cliente=request.user.cliente)
@@ -100,7 +101,7 @@ def _add_to_cart_logic(request, stock_id, cantidad):
 
         # 1. Validar stock
         if stock_item.stock_actual < cantidad:
-            messages.error(request, f"No hay stock suficiente para {stock_item.medicamento.nombre_comercial}.")
+            messages.error(request, _("No hay stock suficiente para %(medicine)s.") % {'medicine': stock_item.medicamento.nombre_comercial})
             return False # Indicar que falló
 
         # 2. Obtener carrito de la sesión (con strings para Decimal)
@@ -136,7 +137,7 @@ def _add_to_cart_logic(request, stock_id, cantidad):
         request.session['carrito'] = carrito_sesion
         request.session.modified = True
 
-        messages.success(request, f"{stock_item.medicamento.nombre_comercial} agregado al carrito.")
+        messages.success(request, _("%(medicine)s se agregó al carrito.") % {'medicine': stock_item.medicamento.nombre_comercial})
         return True
 
     except Exception as e:
@@ -161,7 +162,7 @@ def update_cart_item(request, stock_id_str):
             # Leer la cantidad de ESE input específico
             cantidad = int(request.POST.get(cantidad_input_name, 1))
         except ValueError:
-            messages.error(request, "Cantidad inválida.")
+            messages.error(request, _("Cantidad inválida."))
             return redirect('ver_carrito')
 
         # ... (El resto de tu lógica de 'update_cart_item' es correcta) ...
@@ -174,7 +175,7 @@ def update_cart_item(request, stock_id_str):
             return remove_cart_item(request, stock_id_str)
         
         if cantidad < 0:
-            messages.error(request, "Cantidad inválida.")
+            messages.error(request, _("Cantidad inválida."))
             return redirect('ver_carrito')
 
         item_encontrado = False
@@ -187,7 +188,7 @@ def update_cart_item(request, stock_id_str):
                         messages.error(request, f"Stock insuficiente (Máx: {stock_obj.stock_actual}).")
                         return redirect('ver_carrito')
                 except StockMedicamento.DoesNotExist:
-                    messages.error(request, "El producto ya no existe.")
+                    messages.error(request, _("El producto ya no existe."))
                     return redirect('ver_carrito')
 
                 f_data['items'][stock_id_str]['cantidad'] = cantidad
@@ -197,7 +198,7 @@ def update_cart_item(request, stock_id_str):
         if item_encontrado:
             request.session['carrito'] = _recalculate_cart_totals(carrito)
             request.session.modified = True
-            messages.success(request, "Cantidad actualizada.")
+            messages.success(request, _("Cantidad actualizada."))
         
     return redirect('ver_carrito')
 
@@ -297,11 +298,11 @@ def finalizar_compra_view(request):
     carrito = request.session.get('carrito')
     
     if not carrito or not carrito.get('farmacias'):
-        messages.error(request, "Tu carrito está vacío.")
+        messages.error(request, _("Tu carrito está vacío."))
         return redirect('ver_carrito')
     direccion_validada = request.POST.get('direccion_entrega')
     if not direccion_validada:
-        messages.error(request, "Por favor, completa la dirección de entrega.")
+        messages.error(request, _("Completá la dirección de entrega."))
         return redirect('ver_carrito')
     try:
         pedidos_creados = []
@@ -373,7 +374,7 @@ def finalizar_compra_view(request):
         del request.session['carrito']
         request.session.modified = True
         
-        messages.success(request, f"Pedido confirmado. Se generaron {len(pedidos_creados)} pedidos correctamente.")
+        messages.success(request, _("Pedido confirmado. Se generaron %(count)s pedidos correctamente.") % {'count': len(pedidos_creados)})
         return redirect('cliente_panel')
 
     except Exception as e:
@@ -436,7 +437,7 @@ def buscar_medicamentos(request):
     
 def cliente_ver_pedido(request, pedido_id):
     if not es_cliente(request.user):
-        return HttpResponseForbidden("Solo clientes")
+        return HttpResponseForbidden(_("Sólo clientes"))
 
     pedido = get_object_or_404(
         Pedido,
@@ -467,7 +468,7 @@ def cliente_ver_pedido(request, pedido_id):
 @login_required(login_url='login')
 def farmacia_panel(request):
     if not es_farmacia(request.user): 
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
     # En el panel principal solo mostramos acciones rápidas y enlaces
     # La lista de pedidos se muestra en la vista dedicada 'farmacia_pedidos'
     return render(request, "orders/farmacia/farmacia_panel.html")
@@ -479,7 +480,7 @@ def farmacia_pedidos_entrantes(request):
     Muestra todos los pedidos de la farmacia, priorizando los pendientes.
     """
     if not es_farmacia(request.user):
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
 
     todos_los_pedidos = Pedido.objects.filter(farmacia=request.user.farmacia)
 
@@ -498,7 +499,7 @@ def farmacia_pedidos_entrantes(request):
 @login_required(login_url='login')
 def farmacia_aceptar(request, pedido_id):
     if not es_farmacia(request.user): 
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
 
     pedido = get_object_or_404(
         Pedido, 
@@ -551,13 +552,13 @@ def farmacia_aceptar(request, pedido_id):
         pedido.descontar_stock()
 
 
-    messages.success(request, "Se aceptó el pedido exitosamente.")
+    messages.success(request, _("El pedido se aceptó correctamente."))
     return redirect("farmacia_pedidos")
 
 @login_required(login_url='login')
 def farmacia_rechazar(request, pedido_id):
     if not es_farmacia(request.user): 
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
 
     pedido = get_object_or_404(
         Pedido, 
@@ -566,31 +567,31 @@ def farmacia_rechazar(request, pedido_id):
         farmacia=request.user.farmacia 
     )
     if request.method != "POST":
-        messages.error(request, "Debes seleccionar un motivo para rechazar el pedido.")
+        messages.error(request, _("Debés seleccionar un motivo para rechazar el pedido."))
         return redirect("farmacia_pedidos")
 
     motivo = request.POST.get("motivo")
     comentario = (request.POST.get("comentario") or "").strip()
 
     if not motivo:
-        messages.error(request, "Seleccioná un motivo de rechazo.")
+        messages.error(request, _("Seleccioná un motivo de rechazo."))
         return redirect("farmacia_pedidos")
 
     if motivo == "OTRO" and not comentario:
-        messages.error(request, "Indicá un detalle cuando el motivo es 'Otro'.")
+        messages.error(request, _("Indicá un detalle cuando el motivo sea 'Otro'."))
         return redirect("farmacia_pedidos")
 
     pedido.estado = "RECHAZADO"
     pedido.motivo_rechazo = motivo
     pedido.comentario_rechazo = comentario or None
     pedido.save()
-    messages.success(request, f"Se rechazo el pedido exitosamente.")
+    messages.success(request, _("El pedido se rechazó correctamente."))
     return redirect("farmacia_pedidos")
 
 @login_required(login_url='login')
 def farmacia_gestionar_inventario(request):
     if not es_farmacia(request.user): 
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
     farmacia = request.user.farmacia
     stock_items = StockMedicamento.objects.filter(farmacia=farmacia).select_related('medicamento').order_by('medicamento__nombre_comercial')
     add_form = AddStockMedicamentoForm(farmacia=farmacia)
@@ -620,7 +621,7 @@ def farmacia_gestionar_inventario(request):
 
         else:
             # Si el form de añadir no es válido, mostramos los errores
-             messages.error(request, "Error al agregar el medicamento. Revisa los datos ingresados.")
+             messages.error(request, _("Error al agregar el medicamento. Revisá los datos ingresados."))
              edit_form = EditStockMedicamentoForm() # Formulario vacío para editar (contexto)
 
     else:
@@ -638,7 +639,7 @@ def farmacia_gestionar_inventario(request):
 @login_required(login_url='login')
 def farmacia_editar_stock(request, stock_id):
     if not es_farmacia(request.user): 
-        return HttpResponseForbidden("Solo farmacias")
+        return HttpResponseForbidden(_("Sólo farmacias"))
     farmacia = request.user.farmacia
     stock_item = get_object_or_404(StockMedicamento, id=stock_id, farmacia=farmacia)
 
@@ -669,7 +670,7 @@ def farmacia_editar_stock(request, stock_id):
 # ---------- REPARTIDOR ----------
 @login_required(login_url='login')
 def repartidor_panel(request):
-    if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
+    if not es_repartidor(request.user): return HttpResponseForbidden(_("Sólo repartidores"))
     disponibles = Pedido.objects.filter(estado="ACEPTADO", repartidor__isnull=True)
     # Usar la instancia `Repartidor` asociada al user
     mis = Pedido.objects.filter(repartidor=request.user.repartidor).exclude(estado__in=["ENTREGADO"])
@@ -685,7 +686,7 @@ def repartidor_panel(request):
 
 @login_required(login_url='login')
 def repartidor_tomar(request, pedido_id):
-    if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
+    if not es_repartidor(request.user): return HttpResponseForbidden(_("Sólo repartidores"))
     p = get_object_or_404(Pedido, id=pedido_id, estado="ACEPTADO", repartidor__isnull=True)
     # asignar la instancia Repartidor relacionada al user, no el User
     p.repartidor = request.user.repartidor
@@ -695,7 +696,7 @@ def repartidor_tomar(request, pedido_id):
 
 @login_required(login_url='login')
 def repartidor_entregado(request, pedido_id):
-    if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
+    if not es_repartidor(request.user): return HttpResponseForbidden(_("Sólo repartidores"))
     p = get_object_or_404(Pedido, id=pedido_id, repartidor=request.user.repartidor, estado="EN_CAMINO")
     p.estado = "ENTREGADO"
     p.save()
@@ -703,11 +704,11 @@ def repartidor_entregado(request, pedido_id):
 
 def repartidor_ver_pedidos(request):
     # chequeo instancia Repartidor
-    if not es_repartidor(request.user): return HttpResponseForbidden("Solo repartidores")
+    if not es_repartidor(request.user): return HttpResponseForbidden(_("Sólo repartidores"))
 
     # se puede chequear aqui que no tenga un pedido en curso si se quiere.
     if Pedido.objects.filter(repartidor=request.user.repartidor, estado="EN_CAMINO").exists():
-        messages.warning(request, "Tienes un pedido en curso.")
+        messages.warning(request, _("Tenés un pedido en curso."))
         return redirect("repartidor_panel")
 
     pedidos = Pedido.objects.filter(estado="ACEPTADO").order_by("creado")
@@ -717,17 +718,17 @@ def repartidor_aceptar(request, pedido_id):
     if request.method!="POST":
         return redirect("repartidor_panel")
     if not es_repartidor(request.user):
-        return HttpResponseForbidden("Solo repartidores")
+        return HttpResponseForbidden(_("Sólo repartidores"))
 
     try:
         repartidor_instance = Repartidor.objects.get(user=request.user)
     except Repartidor.DoesNotExist:
     # Esto ocurre si el usuario pasa el es_repartidor pero el perfil no está creado
-        messages.error(request, "Tu perfil de repartidor no está completo o no existe.")
+        messages.error(request, _("Tu perfil de repartidor está incompleto o no existe."))
         return redirect('repartidor_panel')
 
     if not repartidor_instance.disponible:
-        messages.error(request, "Ya tienes un pedido asignado o en curso y no puedes aceptar uno nuevo.")
+        messages.error(request, _("Ya tenés un pedido asignado o en curso y no podés aceptar otro."))
         return redirect("repartidor_panel")
     
     try:
@@ -738,7 +739,7 @@ def repartidor_aceptar(request, pedido_id):
         )
     except Pedido.DoesNotExist:
         # Captura si el pedido ya fue tomado o no cumple las condiciones
-        messages.error(request, "Este pedido ya no está disponible.")
+        messages.error(request, _("Este pedido ya no está disponible."))
         return redirect("repartidor_panel")
 
     repartidor_instance.disponible = False
@@ -753,11 +754,11 @@ def repartidor_aceptar(request, pedido_id):
 @login_required(login_url='login')
 def repartidor_ver_pedido_actual(request):
     if not es_repartidor(request.user):
-        return HttpResponseForbidden("Solo repartidores")
+        return HttpResponseForbidden(_("Sólo repartidores"))
     try:
         repartidor_instance = Repartidor.objects.get(user=request.user)
     except Repartidor.DoesNotExist:
-        messages.error(request, "Tu perfil de repartidor no está completo o no existe.")
+        messages.error(request, _("Tu perfil de repartidor está incompleto o no existe."))
         return redirect('repartidor_panel')
     try:
         pedido = Pedido.objects.get(
@@ -765,7 +766,7 @@ def repartidor_ver_pedido_actual(request):
             estado="EN_CAMINO"
         )
     except Pedido.DoesNotExist:
-        messages.warning(request, "No tienes una entrega activa asignada. Vuelve al panel para tomar una.")
+        messages.warning(request, _("No tenés una entrega activa. Volvé al panel para tomar una."))
         return redirect('repartidor_panel')
 
     context = {
@@ -793,18 +794,18 @@ def repartidor_entregar_pedido(request, pedido_id):
         return redirect('repartidor_panel')
 
     if not es_repartidor(request.user):
-        return HttpResponseForbidden("Solo repartidores")
+        return HttpResponseForbidden(_("Sólo repartidores"))
 
     try:
         repartidor_instance = Repartidor.objects.get(user=request.user)
     except Repartidor.DoesNotExist:
-        messages.error(request, "Tu perfil de repartidor no está completo o no existe.")
+        messages.error(request, _("Tu perfil de repartidor está incompleto o no existe."))
         return redirect('repartidor_panel')
 
     try:
         pedido = Pedido.objects.get(pk=pedido_id, repartidor=repartidor_instance, estado='EN_CAMINO')
     except Pedido.DoesNotExist:
-        messages.error(request, "No tienes un pedido en curso con ese ID.")
+        messages.error(request, _("No tenés un pedido en curso con ese ID."))
         return redirect('repartidor_panel')
 
     # Marcar como entregado y liberar repartidor

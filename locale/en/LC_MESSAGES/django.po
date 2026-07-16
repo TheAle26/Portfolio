@@ -1,0 +1,1445 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Portfolio 1.0\n"
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "%(counter)s producto"
+msgid_plural "%(counter)s productos"
+msgstr[0] "%(counter)s product"
+msgstr[1] "%(counter)s products"
+
+msgid "Seleccionar idioma"
+msgstr "Select language"
+
+msgid "Mi Proyecto Fulbo"
+msgstr "My Fulbo Project"
+
+msgid "Mostrar navegación"
+msgstr "Show navigation"
+
+msgid "Mis Ligas"
+msgstr "My Leagues"
+
+msgid "Mis Partidos"
+msgstr "My Matches"
+
+msgid "Sin novedades."
+msgstr "No updates."
+
+msgid "Hola, %(username)s"
+msgstr "Hello, %(username)s"
+
+msgid "Mi Perfil"
+msgstr "My Profile"
+
+msgid "Cerrar sesión"
+msgstr "Log out"
+
+msgid "Iniciar sesión"
+msgstr "Log in"
+
+msgid "Registrarse"
+msgstr "Sign up"
+
+msgid "Bienvenido a FulboApp"
+msgstr "Welcome to FulboApp"
+
+msgid "FulboApp es una plataforma liviana y eficiente para organizar tus ligas de fútbol amateur."
+msgstr "FulboApp is a lightweight, efficient platform for organizing amateur football leagues."
+
+msgid "¿Qué podés hacer en FulboApp?"
+msgstr "What can you do in FulboApp?"
+
+msgid "Crear y gestionar <strong>ligas</strong>."
+msgstr "Create and manage <strong>leagues</strong>."
+
+msgid "Agregar y editar <strong>jugadores</strong> con sus estadísticas."
+msgstr "Add and edit <strong>players</strong> and their statistics."
+
+msgid "Registrar <strong>partidos</strong> y puntuar a los jugadores."
+msgstr "Record <strong>matches</strong> and rate players."
+
+msgid "Visualizar datos de rendimiento y seguimiento individual."
+msgstr "View performance data and individual progress."
+
+msgid "Próximamente"
+msgstr "Coming soon"
+
+msgid "Ver canchas cercanas."
+msgstr "Find nearby fields."
+
+msgid "Ver niveles de las ligas."
+msgstr "View league levels."
+
+msgid "¿Cómo fue desarrollada?"
+msgstr "How was it built?"
+
+msgid "Esta aplicación fue desarrollada con <strong>Django (Python)</strong> y utiliza <strong>Bootstrap 5</strong> para el diseño. Corre en una <strong>Raspberry Pi Zero 2W</strong>, demostrando que se pueden lograr sistemas web funcionales y rápidos incluso con hardware limitado."
+msgstr "This application was built with <strong>Django (Python)</strong> and uses <strong>Bootstrap 5</strong> for its design. It runs on a <strong>Raspberry Pi Zero 2W</strong>, showing that fast, functional web systems can run even on limited hardware."
+
+msgid "Servidor actual: Raspberry Pi Zero 2W"
+msgstr "Current server: Raspberry Pi Zero 2W"
+
+msgid "Ver Mis Ligas"
+msgstr "View My Leagues"
+
+msgid "¡Hola de nuevo!"
+msgstr "Welcome back!"
+
+msgid "Ingresá tus datos para gestionar tu liga"
+msgstr "Enter your details to manage your league"
+
+msgid "¿Olvidaste tu contraseña?"
+msgstr "Forgot your password?"
+
+msgid "¿Todavía no tenés una cuenta?"
+msgstr "Don't have an account yet?"
+
+msgid "¡Creá tu cuenta gratis!"
+msgstr "Create your free account!"
+
+msgid "Editar perfil"
+msgstr "Edit profile"
+
+msgid "Foto actual:"
+msgstr "Current photo:"
+
+msgid "Cambiar contraseña (opcional)"
+msgstr "Change password (optional)"
+
+msgid "Guardar cambios"
+msgstr "Save changes"
+
+msgid "Cancelar"
+msgstr "Cancel"
+
+msgid "Foto de perfil"
+msgstr "Profile photo"
+
+msgid "Sin foto de perfil"
+msgstr "No profile photo"
+
+msgid "Cambiar foto"
+msgstr "Change photo"
+
+msgid "Nombre:"
+msgstr "First name:"
+
+msgid "Apellido:"
+msgstr "Last name:"
+
+msgid "Fecha de nacimiento:"
+msgstr "Date of birth:"
+
+msgid "Fecha de registro:"
+msgstr "Registration date:"
+
+msgid "Mis ligas y puntajes"
+msgstr "My leagues and scores"
+
+msgid "Liga"
+msgstr "League"
+
+msgid "Jugador"
+msgstr "Player"
+
+msgid "Puntaje"
+msgstr "Score"
+
+msgid "Puntaje total"
+msgstr "Total score"
+
+msgid "No tenés ligas asociadas."
+msgstr "You don't have any associated leagues."
+
+msgid "Crear liga"
+msgstr "Create league"
+
+msgid "Buscar liga por nombre..."
+msgstr "Search league by name..."
+
+msgid "Mi jugador"
+msgstr "My player"
+
+msgid "No estás en ninguna liga."
+msgstr "You haven't joined any league."
+
+msgid "Ligas públicas"
+msgstr "Public leagues"
+
+msgid "Explorá nuevas competencias abiertas."
+msgstr "Explore open competitions."
+
+msgid "Nombre de la liga"
+msgstr "League name"
+
+msgid "Descripción"
+msgstr "Description"
+
+msgid "Acción"
+msgstr "Action"
+
+msgid "Sin descripción"
+msgstr "No description"
+
+msgid "Ver"
+msgstr "View"
+
+msgid "No hay ligas públicas disponibles en este momento."
+msgstr "There are no public leagues available right now."
+
+msgid "Mis partidos jugados"
+msgstr "My played matches"
+
+msgid "Buscar por fecha, cancha o liga..."
+msgstr "Search by date, field or league..."
+
+msgid "Fecha"
+msgstr "Date"
+
+msgid "Cancha"
+msgstr "Field"
+
+msgid "Mi puntaje"
+msgstr "My score"
+
+msgid "Ir al detalle"
+msgstr "Open details"
+
+msgid "Detalles"
+msgstr "Details"
+
+msgid "No jugaste ningún partido."
+msgstr "You haven't played any matches."
+
+msgid "Presidentes de la liga"
+msgstr "League presidents"
+
+msgid "Superpresidente"
+msgstr "Super president"
+
+msgid "Posición"
+msgstr "Position"
+
+msgid "No tenés un perfil de jugador en esta liga."
+msgstr "You don't have a player profile in this league."
+
+msgid "Editar liga"
+msgstr "Edit league"
+
+msgid "Formar equipos"
+msgstr "Build teams"
+
+msgid "Puntuación pendiente"
+msgstr "Pending rating"
+
+msgid "Jugadores de la liga"
+msgstr "League players"
+
+msgid "Mostrar jugadores"
+msgstr "Show players"
+
+msgid "Ocultar jugadores"
+msgstr "Hide players"
+
+msgid "Buscar por apodo o posición..."
+msgstr "Search by nickname or position..."
+
+msgid "Ordenar por:"
+msgstr "Sort by:"
+
+msgid "Apodo (A-Z)"
+msgstr "Nickname (A-Z)"
+
+msgid "Apodo (Z-A)"
+msgstr "Nickname (Z-A)"
+
+msgid "Posición (A-Z)"
+msgstr "Position (A-Z)"
+
+msgid "Posición (Z-A)"
+msgstr "Position (Z-A)"
+
+msgid "Puntaje (mayor a menor)"
+msgstr "Score (highest first)"
+
+msgid "Puntaje (menor a mayor)"
+msgstr "Score (lowest first)"
+
+msgid "Foto de %(nickname)s"
+msgstr "Photo of %(nickname)s"
+
+msgid "No hay jugadores activos registrados en esta liga."
+msgstr "There are no active players in this league."
+
+msgid "Partidos de la liga"
+msgstr "League matches"
+
+msgid "Mostrar partidos"
+msgstr "Show matches"
+
+msgid "Ocultar partidos"
+msgstr "Hide matches"
+
+msgid "¡Tenés puntuaciones pendientes!"
+msgstr "You have pending ratings!"
+
+msgid "Nuevo partido"
+msgstr "New match"
+
+msgid "Buscar por cancha o fecha..."
+msgstr "Search by field or date..."
+
+msgid "Fecha (más reciente)"
+msgstr "Date (newest first)"
+
+msgid "Fecha (más antigua)"
+msgstr "Date (oldest first)"
+
+msgid "Cancha (A-Z)"
+msgstr "Field (A-Z)"
+
+msgid "Cancha (Z-A)"
+msgstr "Field (Z-A)"
+
+msgid "Ver detalles"
+msgstr "View details"
+
+msgid "Calificar jugadores"
+msgstr "Rate players"
+
+msgid "No hay partidos registrados en esta liga."
+msgstr "There are no matches in this league."
+
+msgid "Crear tu jugador para esta liga"
+msgstr "Create your player for this league"
+
+msgid "Crear jugador"
+msgstr "Create player"
+
+msgid "Crear y asociar usuario"
+msgstr "Create and link user"
+
+msgid "Volver a gestión"
+msgstr "Back to management"
+
+msgid "Asociando usuario al jugador: <strong>%(nickname)s</strong>"
+msgstr "Linking a user to player: <strong>%(nickname)s</strong>"
+
+msgid "Asociar usuario"
+msgstr "Link user"
+
+msgid "Usuario:"
+msgstr "User:"
+
+msgid "El usuario no existe o no está disponible."
+msgstr "The user does not exist or is unavailable."
+
+msgid "Error al verificar el usuario."
+msgstr "Error while checking the user."
+
+msgid "Seleccionar jugadores"
+msgstr "Select players"
+
+msgid "Buscar equipos"
+msgstr "Find teams"
+
+msgid "Volver a la liga"
+msgstr "Back to league"
+
+msgid "Equipos más parejos"
+msgstr "Most balanced teams"
+
+msgid "Equipo 1"
+msgstr "Team 1"
+
+msgid "Equipo 2"
+msgstr "Team 2"
+
+msgid "Diferencia de puntajes"
+msgstr "Score difference"
+
+msgid "Volver a crear equipos"
+msgstr "Build teams again"
+
+msgid "Los jugadores participantes no se pueden modificar una vez creado el partido."
+msgstr "Participating players cannot be changed after the match is created."
+
+msgid "Crear partido"
+msgstr "Create match"
+
+msgid "Puntuar jugadores del partido %(match)s"
+msgstr "Rate players from match %(match)s"
+
+msgid "Guardar puntajes"
+msgstr "Save scores"
+
+msgid "Detalles del partido"
+msgstr "Match details"
+
+msgid "Liga:"
+msgstr "League:"
+
+msgid "Fecha:"
+msgstr "Date:"
+
+msgid "Cancha:"
+msgstr "Field:"
+
+msgid "Jugadores y puntajes"
+msgstr "Players and scores"
+
+msgid "No hay jugadores registrados para este partido."
+msgstr "There are no players registered for this match."
+
+msgid "¡Atención!"
+msgstr "Warning!"
+
+msgid "Estás a punto de eliminar el partido del %(date)s en %(field)s de la liga %(league)s."
+msgstr "You are about to delete the %(date)s match at %(field)s from league %(league)s."
+
+msgid "Esta acción no se puede deshacer y eliminará todos los puntajes asociados al partido."
+msgstr "This action cannot be undone and will delete every score associated with the match."
+
+msgid "¿Estás seguro de que querés continuar?"
+msgstr "Are you sure you want to continue?"
+
+msgid "Confirmar eliminación"
+msgstr "Confirm deletion"
+
+msgid "Confirmar desactivación"
+msgstr "Confirm deactivation"
+
+msgid "Confirmar reactivación"
+msgstr "Confirm reactivation"
+
+msgid "El jugador no podrá participar en nuevas actividades, pero se conservarán sus datos históricos."
+msgstr "The player will not be able to join new activities, but their historical data will be kept."
+
+msgid "El jugador volverá a estar activo y podrá participar en nuevas actividades."
+msgstr "The player will become active again and may join new activities."
+
+msgid "Formulario"
+msgstr "Form"
+
+msgid "Enviar"
+msgstr "Submit"
+
+msgid "Gestión de jugadores en %(league)s"
+msgstr "Player management in %(league)s"
+
+msgid "Nuevo jugador"
+msgstr "New player"
+
+msgid "Apodo"
+msgstr "Nickname"
+
+msgid "Usuario asociado"
+msgstr "Linked user"
+
+msgid "Número"
+msgstr "Number"
+
+msgid "Estado"
+msgstr "Status"
+
+msgid "Acciones"
+msgstr "Actions"
+
+msgid "Sin asociar"
+msgstr "Not linked"
+
+msgid "Activo"
+msgstr "Active"
+
+msgid "Jugadores inactivos"
+msgstr "Inactive players"
+
+msgid "Inactivo"
+msgstr "Inactive"
+
+msgid "Reactivar"
+msgstr "Reactivate"
+
+msgid "No hay jugadores registrados en esta liga."
+msgstr "There are no players in this league."
+
+msgid "Buscar por fecha, cancha o jugadores..."
+msgstr "Search by date, field or players..."
+
+msgid "Jugadores participantes:"
+msgstr "Participating players:"
+
+msgid "Pendiente"
+msgstr "Pending"
+
+msgid "Ir a detalles del partido"
+msgstr "Open match details"
+
+msgid "No hay partidos registrados en esta liga. ¡Animate a crear uno!"
+msgstr "There are no matches in this league. Create one!"
+
+msgid "¡Todo listo!"
+msgstr "All set!"
+
+msgid "Tu contraseña se restableció correctamente. Ya podés ingresar con tus nuevas credenciales."
+msgstr "Your password was reset successfully. You can now log in with your new credentials."
+
+msgid "Iniciar sesión ahora"
+msgstr "Log in now"
+
+msgid "Nueva contraseña"
+msgstr "New password"
+
+msgid "Ingresá tu nueva contraseña."
+msgstr "Enter your new password."
+
+msgid "Cambiar contraseña"
+msgstr "Change password"
+
+msgid "Enlace inválido"
+msgstr "Invalid link"
+
+msgid "El enlace para restablecer la contraseña no es válido o ya venció."
+msgstr "The password reset link is invalid or has expired."
+
+msgid "Solicitar un nuevo enlace"
+msgstr "Request a new link"
+
+msgid "¡Correo enviado!"
+msgstr "Email sent!"
+
+msgid "Enviamos las instrucciones para restablecer tu contraseña al correo electrónico que proporcionaste."
+msgstr "We sent password reset instructions to the email address you provided."
+
+msgid "Revisá tu bandeja de entrada."
+msgstr "Please check your inbox."
+
+msgid "Si no lo recibís en unos minutos, revisá la carpeta de spam."
+msgstr "If it does not arrive in a few minutes, check your spam folder."
+
+msgid "Volver al inicio de sesión"
+msgstr "Back to login"
+
+msgid "Hola %(username)s,"
+msgstr "Hello %(username)s,"
+
+msgid "Recibiste este correo porque solicitaste restablecer tu contraseña en FulboApp."
+msgstr "You received this email because you requested a password reset for FulboApp."
+
+msgid "Ingresá a la siguiente página y elegí una nueva contraseña:"
+msgstr "Open the following page and choose a new password:"
+
+msgid "Si no fuiste vos, ignorá este mensaje."
+msgstr "If you did not request this, ignore this message."
+
+msgid "¡Gracias!"
+msgstr "Thank you!"
+
+msgid "Recuperar contraseña"
+msgstr "Reset password"
+
+msgid "Ingresá tu correo electrónico y te enviaremos las instrucciones para restablecer tu contraseña."
+msgstr "Enter your email address and we will send instructions to reset your password."
+
+msgid "Enviar correo de recuperación"
+msgstr "Send recovery email"
+
+msgid "Mostrar menú"
+msgstr "Show menu"
+
+msgid "Ver carrito"
+msgstr "View cart"
+
+msgid "Carrito"
+msgstr "Cart"
+
+msgid "Panel"
+msgstr "Dashboard"
+
+msgid "Salir"
+msgstr "Log out"
+
+msgid "Ingresar"
+msgstr "Log in"
+
+msgid "Cerrar"
+msgstr "Close"
+
+msgid "Bienvenido a FarmaGo"
+msgstr "Welcome to FarmaGo"
+
+msgid "FarmaGo conecta clientes, farmacias y repartidores para que tus medicamentos lleguen de forma rápida y segura."
+msgstr "FarmaGo connects customers, pharmacies and drivers so your medicines arrive quickly and safely."
+
+msgid "Panel principal"
+msgstr "Main dashboard"
+
+msgid "Credenciales de acceso (DEMO)"
+msgstr "Access credentials (DEMO)"
+
+msgid "ROL: CLIENTE"
+msgstr "ROLE: CUSTOMER"
+
+msgid "ROL: FARMACIA"
+msgstr "ROLE: PHARMACY"
+
+msgid "ROL: REPARTIDOR"
+msgstr "ROLE: DRIVER"
+
+msgid "Contraseña:"
+msgstr "Password:"
+
+msgid "Todos los derechos reservados"
+msgstr "All rights reserved"
+
+msgid "Entrar"
+msgstr "Log in"
+
+msgid "Elegí tu tipo de cuenta"
+msgstr "Choose your account type"
+
+msgid "Cliente"
+msgstr "Customer"
+
+msgid "Farmacia"
+msgstr "Pharmacy"
+
+msgid "Repartidor"
+msgstr "Driver"
+
+msgid "Registro"
+msgstr "Sign up"
+
+msgid "Ver términos y condiciones"
+msgstr "View terms and conditions"
+
+msgid "Crear cuenta"
+msgstr "Create account"
+
+msgid "Volver a elegir tipo"
+msgstr "Choose another account type"
+
+msgid "Términos y condiciones de FarmaGo"
+msgstr "FarmaGo Terms and Conditions"
+
+msgid "Leé atentamente estos términos y condiciones antes de utilizar el servicio. Al registrarte o usar FarmaGo, aceptás estos términos."
+msgstr "Read these terms and conditions carefully before using the service. By registering or using FarmaGo, you agree to these terms."
+
+msgid "1. Definiciones"
+msgstr "1. Definitions"
+
+msgid "<strong>\"Plataforma\":</strong> se refiere a la aplicación web y móvil FarmaGo."
+msgstr "<strong>\"Platform\":</strong> refers to the FarmaGo web and mobile application."
+
+msgid "<strong>\"Cliente\":</strong> usuario registrado que realiza pedidos de medicamentos."
+msgstr "<strong>\"Customer\":</strong> a registered user who orders medicines."
+
+msgid "<strong>\"Farmacia\":</strong> entidad comercial registrada y validada que dispensa medicamentos mediante la plataforma."
+msgstr "<strong>\"Pharmacy\":</strong> a registered, verified business that dispenses medicines through the platform."
+
+msgid "2. Uso de la plataforma y cuentas"
+msgstr "2. Platform and account use"
+
+msgid "Debés tener al menos 18 años para registrarte como cliente. Sos responsable de mantener la confidencialidad de tu contraseña y de la actividad de tu cuenta."
+msgstr "You must be at least 18 years old to register as a customer. You are responsible for keeping your password confidential and for all activity on your account."
+
+msgid "3. Pedidos y recetas médicas"
+msgstr "3. Orders and prescriptions"
+
+msgid "La plataforma facilita la conexión entre clientes y farmacias. FarmaGo no es una farmacia ni vende medicamentos directamente."
+msgstr "The platform connects customers and pharmacies. FarmaGo is not a pharmacy and does not sell medicines directly."
+
+msgid "<strong>Medicamentos con receta:</strong> si un medicamento requiere receta, debés cargar una imagen o un PDF válido. La farmacia puede rechazar el pedido si la receta no es válida, está incompleta o parece fraudulenta."
+msgstr "<strong>Prescription medicines:</strong> when a medicine requires a prescription, you must upload a valid image or PDF. The pharmacy may reject the order if the prescription is invalid, incomplete or appears fraudulent."
+
+msgid "La validación final de la receta es responsabilidad exclusiva de la farmacia que dispensa el pedido."
+msgstr "Final prescription validation is the sole responsibility of the pharmacy dispensing the order."
+
+msgid "4. Pagos"
+msgstr "4. Payments"
+
+msgid "Información sobre pagos"
+msgstr "Payment information"
+
+msgid "No compartiremos tu información de pago con terceros."
+msgstr "We will not share your payment information with third parties."
+
+msgid "5. Condiciones adicionales"
+msgstr "5. Additional conditions"
+
+msgid "¿Estás leyendo esto?"
+msgstr "Are you reading this?"
+
+msgid "Nunca nadie llegó tan lejos."
+msgstr "No one has ever made it this far."
+
+msgid "Última actualización: 26 de octubre de 2025."
+msgstr "Last updated: October 26, 2025."
+
+msgid "Mis pedidos"
+msgstr "My orders"
+
+msgid "Actualizar"
+msgstr "Refresh"
+
+msgid "Buscar medicamentos"
+msgstr "Search medicines"
+
+msgid "Todavía no tenés pedidos."
+msgstr "You don't have any orders yet."
+
+msgid "Nombre o principio activo..."
+msgstr "Name or active ingredient..."
+
+msgid "Filtrar por obra social (todas)"
+msgstr "Filter by health insurance (all)"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Requiere receta"
+msgstr "Prescription required"
+
+msgid "No se encontraron medicamentos para la búsqueda o los filtros seleccionados."
+msgstr "No medicines matched your search or selected filters."
+
+msgid "Usá la búsqueda y los filtros para encontrar medicamentos."
+msgstr "Use search and filters to find medicines."
+
+msgid "Volver a mis pedidos"
+msgstr "Back to my orders"
+
+msgid "Estado:"
+msgstr "Status:"
+
+msgid "Creado:"
+msgstr "Created:"
+
+msgid "Farmacia:"
+msgstr "Pharmacy:"
+
+msgid "Enviado a:"
+msgstr "Sent to:"
+
+msgid "Código:"
+msgstr "Code:"
+
+msgid "Artículos"
+msgstr "Items"
+
+msgid "Ver receta adjunta"
+msgstr "View attached prescription"
+
+msgid "No hay detalles para este pedido."
+msgstr "There are no details for this order."
+
+msgid "Volver"
+msgstr "Back"
+
+msgid "Mi carrito de compras"
+msgstr "My shopping cart"
+
+msgid "Pedido a:"
+msgstr "Order from:"
+
+msgid "Precio unitario"
+msgstr "Unit price"
+
+msgid "Subtotal"
+msgstr "Subtotal"
+
+msgid "Quitar"
+msgstr "Remove"
+
+msgid "Formatos aceptados: <strong>PDF, JPG, PNG</strong>."
+msgstr "Accepted formats: <strong>PDF, JPG, PNG</strong>."
+
+msgid "Carrito vacío."
+msgstr "Your cart is empty."
+
+msgid "Dirección de entrega"
+msgstr "Delivery address"
+
+msgid "Verificá tu dirección. Podés cambiarla sólo para este pedido."
+msgstr "Check your address. You may change it for this order only."
+
+msgid "Enviar a:"
+msgstr "Deliver to:"
+
+msgid "Método de pago"
+msgstr "Payment method"
+
+msgid "Efectivo"
+msgstr "Cash"
+
+msgid "Transferencia bancaria (la farmacia te contactará con los datos)"
+msgstr "Bank transfer (the pharmacy will contact you with the details)"
+
+msgid "Total general"
+msgstr "Grand total"
+
+msgid "Finalizar compra y realizar pedidos"
+msgstr "Complete purchase and place orders"
+
+msgid "Carrito de compras"
+msgstr "Shopping cart"
+
+msgid "Pedidos entrantes"
+msgstr "Incoming orders"
+
+msgid "Gestionar inventario"
+msgstr "Manage inventory"
+
+msgid "Volver al panel"
+msgstr "Back to dashboard"
+
+msgid "Ya tenés todos los medicamentos disponibles registrados en tu stock."
+msgstr "Every available medicine is already registered in your stock."
+
+msgid "Agregar al stock"
+msgstr "Add to stock"
+
+msgid "Medicamento"
+msgstr "Medicine"
+
+msgid "Concentración"
+msgstr "Concentration"
+
+msgid "Precio ($)"
+msgstr "Price ($)"
+
+msgid "Stock"
+msgstr "Stock"
+
+msgid "Guardar"
+msgstr "Save"
+
+msgid "Todavía no agregaste medicamentos a tu inventario."
+msgstr "You have not added any medicines to your inventory yet."
+
+msgid "Código"
+msgstr "Code"
+
+msgid "Motivo:"
+msgstr "Reason:"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "Aceptar"
+msgstr "Accept"
+
+msgid "Motivo"
+msgstr "Reason"
+
+msgid "Seleccioná un motivo…"
+msgstr "Select a reason…"
+
+msgid "Sin stock"
+msgstr "Out of stock"
+
+msgid "Receta inválida"
+msgstr "Invalid prescription"
+
+msgid "Fuera de cobertura o entrega"
+msgstr "Outside coverage or delivery area"
+
+msgid "Datos incompletos o ilegibles"
+msgstr "Incomplete or unreadable information"
+
+msgid "Otro"
+msgstr "Other"
+
+msgid "Detalle (requerido si elegís “Otro”)"
+msgstr "Details (required when choosing “Other”)"
+
+msgid "Especificá el motivo…"
+msgstr "Explain the reason…"
+
+msgid "Confirmar rechazo"
+msgstr "Confirm rejection"
+
+msgid "No hay receta adjunta"
+msgstr "No prescription attached"
+
+msgid "No hay pedidos para mostrar."
+msgstr "There are no orders to display."
+
+msgid "Panel del repartidor"
+msgstr "Driver dashboard"
+
+msgid "No tenés entregas en curso."
+msgstr "You have no active deliveries."
+
+msgid "Pedidos disponibles"
+msgstr "Available orders"
+
+msgid "Aceptar pedido"
+msgstr "Accept order"
+
+msgid "No hay pedidos aceptados por las farmacias en este momento."
+msgstr "There are no pharmacy-approved orders right now."
+
+msgid "Dirección de retiro (farmacia)"
+msgstr "Pickup address (pharmacy)"
+
+msgid "Dirección:"
+msgstr "Address:"
+
+msgid "Dirección de entrega (cliente)"
+msgstr "Delivery address (customer)"
+
+msgid "Cliente:"
+msgstr "Customer:"
+
+msgid "Detalles de la entrega"
+msgstr "Delivery details"
+
+msgid "Código de seguridad (entrega):"
+msgstr "Security code (delivery):"
+
+msgid "Ganancia estimada:"
+msgstr "Estimated earnings:"
+
+msgid "Tiempo estimado: XX minutos"
+msgstr "Estimated time: XX minutes"
+
+msgid "Marcar como entregado"
+msgstr "Mark as delivered"
+
+msgid "ChangoMás Tracker"
+msgstr "ChangoMás Tracker"
+
+msgid "Escanear"
+msgstr "Scan"
+
+msgid "Buscar producto..."
+msgstr "Search products..."
+
+msgid "Todas las categorías"
+msgstr "All categories"
+
+msgid "Sin imagen"
+msgstr "No image"
+
+msgid "Precio promo"
+msgstr "Promotional price"
+
+msgid "c/u"
+msgstr "each"
+
+msgid "Ref"
+msgstr "Ref"
+
+msgid "Anterior"
+msgstr "Previous"
+
+msgid "Página %(current)s de %(total_pages)s"
+msgstr "Page %(current)s of %(total_pages)s"
+
+msgid "Siguiente"
+msgstr "Next"
+
+msgid "No hay productos guardados todavía"
+msgstr "No products have been saved yet"
+
+msgid "Ejecutá <code>python manage.py scrape_masonline</code> para poblar la base."
+msgstr "Run <code>python manage.py scrape_masonline</code> to populate the database."
+
+msgid "Escanear otro"
+msgstr "Scan another"
+
+msgid "Catálogo"
+msgstr "Catalog"
+
+msgid "No disponible en la última actualización"
+msgstr "Unavailable in the latest update"
+
+msgid "Mínimo de %(counter)s día"
+msgid_plural "Mínimo de %(counter)s días"
+msgstr[0] "Minimum over %(counter)s day"
+msgstr[1] "Minimum over %(counter)s days"
+
+msgid "Hoy (%(date)s)"
+msgstr "Today (%(date)s)"
+
+msgid "Máximo de %(counter)s día"
+msgid_plural "Máximo de %(counter)s días"
+msgstr[0] "Maximum over %(counter)s day"
+msgstr[1] "Maximum over %(counter)s days"
+
+msgid "Evolución del precio (últimos 30 días)"
+msgstr "Price evolution (last 30 days)"
+
+msgid "Gráfico de evolución del precio"
+msgstr "Price evolution chart"
+
+msgid "Historial (%(counter)s registro)"
+msgid_plural "Historial (%(counter)s registros)"
+msgstr[0] "History (%(counter)s record)"
+msgstr[1] "History (%(counter)s records)"
+
+msgid "Precio"
+msgstr "Price"
+
+msgid "Promo"
+msgstr "Promotion"
+
+msgid "Precio efectivo"
+msgstr "Effective price"
+
+msgid "Todavía no hay precios registrados para este producto."
+msgstr "There are no recorded prices for this product yet."
+
+msgid "Producto no encontrado"
+msgstr "Product not found"
+
+msgid "No hay ningún producto con el código <code>%(product_code)s</code>."
+msgstr "No product was found with code <code>%(product_code)s</code>."
+
+msgid "Puede que MasOnline no lo venda online o que todavía no lo hayamos relevado."
+msgstr "MasOnline may not sell it online, or it may not have been collected yet."
+
+msgid "Ir al catálogo"
+msgstr "Go to catalog"
+
+msgid "Escanear producto"
+msgstr "Scan product"
+
+msgid "código de barras"
+msgstr "barcode"
+
+msgid "Iniciando cámara..."
+msgstr "Starting camera..."
+
+msgid "¿No funciona la cámara? Ingresá el código de barras manualmente:"
+msgstr "Camera not working? Enter the barcode manually:"
+
+msgid "Código detectado:"
+msgstr "Code detected:"
+
+msgid "Este navegador no permite usar la cámara (se necesita HTTPS). Podés ingresar el código manualmente."
+msgstr "This browser cannot access the camera (HTTPS is required). You can enter the code manually."
+
+msgid "Apuntá al código de barras del producto"
+msgstr "Point the camera at the product barcode"
+
+msgid "No se pudo acceder a la cámara. Revisá los permisos o ingresá el código manualmente."
+msgstr "The camera could not be accessed. Check permissions or enter the code manually."
+
+msgid "No se pudo iniciar el detector. Ingresá el código manualmente."
+msgstr "The detector could not be started. Enter the code manually."
+
+msgid "Tu navegador no soporta la detección de códigos y no se pudo cargar el detector alternativo. Ingresá el código manualmente."
+msgstr "Your browser does not support barcode detection and the fallback detector could not be loaded. Enter the code manually."
+
+msgid "Nombre"
+msgstr "First name"
+
+msgid "Apellido"
+msgstr "Last name"
+
+msgid "Fecha de nacimiento"
+msgstr "Date of birth"
+
+msgid "Foto de perfil (opcional)"
+msgstr "Profile photo (optional)"
+
+msgid "Repetir nueva contraseña"
+msgstr "Repeat new password"
+
+msgid "Este email ya está registrado. Probá con otro."
+msgstr "This email is already registered. Try another one."
+
+msgid "Las contraseñas no coinciden."
+msgstr "Passwords do not match."
+
+msgid "Apodo del jugador"
+msgstr "Player nickname"
+
+msgid "El apodo debe ser único en esta liga."
+msgstr "The nickname must be unique in this league."
+
+msgid "Este apodo ya está en uso en esta liga. Elegí otro."
+msgstr "This nickname is already used in this league. Choose another one."
+
+msgid "Nombre de usuario existente"
+msgstr "Existing username"
+
+msgid "Nombre de usuario para asociar"
+msgstr "Username to link"
+
+msgid "Ingresá el nombre de usuario de la cuenta a asociar. Debe existir y no tener otro jugador asociado en esta liga."
+msgstr "Enter the username of the account to link. It must exist and must not have another player in this league."
+
+msgid "Número de camiseta"
+msgstr "Jersey number"
+
+msgid "No se encontró ningún usuario con ese nombre."
+msgstr "No user was found with that name."
+
+msgid "El usuario no existe."
+msgstr "The user does not exist."
+
+msgid "Este usuario ya tiene un perfil de jugador en esta liga."
+msgstr "This user already has a player profile in this league."
+
+msgid "Jugadores que participaron"
+msgstr "Players who participated"
+
+msgid "¡Bienvenido, %(username)s!"
+msgstr "Welcome, %(username)s!"
+
+msgid "Datos incorrectos"
+msgstr "Incorrect credentials"
+
+msgid "Liga y jugador creados correctamente."
+msgstr "League and player created successfully."
+
+msgid "No tenés un jugador asociado a esta liga privada. Contactá a su presidente."
+msgstr "You do not have a player linked to this private league. Contact its president."
+
+msgid "No tenés permiso para editar la liga."
+msgstr "You do not have permission to edit this league."
+
+msgid "Datos de la liga actualizados."
+msgstr "League details updated."
+
+msgid "Error al actualizar la liga."
+msgstr "Error updating the league."
+
+msgid "Sólo el superpresidente puede eliminar presidentes."
+msgstr "Only the super president can remove presidents."
+
+msgid "Presidente eliminado."
+msgstr "President removed."
+
+msgid "Error al eliminar al presidente."
+msgstr "Error removing the president."
+
+msgid "Debés asignar un superpresidente antes de irte."
+msgstr "You must assign a super president before leaving."
+
+msgid "Abandonaste la liga y tu jugador fue desactivado."
+msgstr "You left the league and your player was deactivated."
+
+msgid "Jugador eliminado."
+msgstr "Player removed."
+
+msgid "Error al eliminar al jugador."
+msgstr "Error removing the player."
+
+msgid "Partido eliminado."
+msgstr "Match deleted."
+
+msgid "Error al eliminar el partido."
+msgstr "Error deleting the match."
+
+msgid "Sólo el superpresidente actual puede realizar este cambio."
+msgstr "Only the current super president can make this change."
+
+msgid "El presidente elegido no existe o no es válido."
+msgstr "The selected president does not exist or is invalid."
+
+msgid "El usuario elegido debe ser presidente antes de ser designado superpresidente."
+msgstr "The selected user must be a president before becoming super president."
+
+msgid "No tenés permiso para gestionar jugadores en esta liga."
+msgstr "You do not have permission to manage players in this league."
+
+msgid "No tenés permiso para agregar jugadores a esta liga."
+msgstr "You do not have permission to add players to this league."
+
+msgid "No tenés permiso para modificar jugadores en esta liga."
+msgstr "You do not have permission to edit players in this league."
+
+msgid "No tenés permiso para asociar usuarios a jugadores en esta liga."
+msgstr "You do not have permission to link users to players in this league."
+
+msgid "No tenés permiso para desactivar jugadores de esta liga."
+msgstr "You do not have permission to deactivate players in this league."
+
+msgid "No tenés permiso para reactivar jugadores en esta liga."
+msgstr "You do not have permission to reactivate players in this league."
+
+msgid "No tenés permiso para crear partidos en esta liga."
+msgstr "You do not have permission to create matches in this league."
+
+msgid "No tenés permiso para gestionar partidos en esta liga."
+msgstr "You do not have permission to manage matches in this league."
+
+msgid "No tenés permiso para modificar partidos en esta liga."
+msgstr "You do not have permission to edit matches in this league."
+
+msgid "No tenés permiso para eliminar partidos en esta liga."
+msgstr "You do not have permission to delete matches in this league."
+
+msgid "Partido creado correctamente."
+msgstr "Match created successfully."
+
+msgid "Agregar nuevo jugador"
+msgstr "Add new player"
+
+msgid "Agregar nuevo jugador y asociar usuario"
+msgstr "Add a new player and link a user"
+
+msgid "Modificar jugador: %(nickname)s"
+msgstr "Edit player: %(nickname)s"
+
+msgid "Asociar usuario a %(nickname)s"
+msgstr "Link user to %(nickname)s"
+
+msgid "Crear nuevo partido"
+msgstr "Create new match"
+
+msgid "Gestión de partidos en %(league)s"
+msgstr "Match management in %(league)s"
+
+msgid "Modificar partido: %(date)s"
+msgstr "Edit match: %(date)s"
+
+msgid "Confirmar eliminación del partido: %(date)s"
+msgstr "Confirm match deletion: %(date)s"
+
+msgid "Acepto los términos y condiciones"
+msgstr "I accept the terms and conditions"
+
+msgid "Acepto los términos y condiciones y la política de privacidad."
+msgstr "I accept the terms and conditions and privacy policy."
+
+msgid "Debés aceptar los términos y condiciones para registrarte."
+msgstr "You must accept the terms and conditions to register."
+
+msgid "El archivo no puede superar %(max_mb)s MB."
+msgstr "The file cannot be larger than %(max_mb)s MB."
+
+msgid "El nombre sólo puede contener letras y espacios."
+msgstr "First name may contain only letters and spaces."
+
+msgid "El apellido sólo puede contener letras y espacios."
+msgstr "Last name may contain only letters and spaces."
+
+msgid "Ya existe un cliente con este número de documento."
+msgstr "A customer with this document number already exists."
+
+msgid "Nombre de la farmacia"
+msgstr "Pharmacy name"
+
+msgid "Dirección de la sucursal"
+msgstr "Branch address"
+
+msgid "Obras sociales aceptadas"
+msgstr "Accepted health insurance providers"
+
+msgid "Documentación de la farmacia"
+msgstr "Pharmacy documentation"
+
+msgid "Archivos permitidos: PDF, JPG, PNG."
+msgstr "Allowed files: PDF, JPG, PNG."
+
+msgid "Formato de CUIT inválido. Usá XX-XXXXXXXX-X."
+msgstr "Invalid CUIT format. Use XX-XXXXXXXX-X."
+
+msgid "Ya existe una farmacia registrada con este CUIT."
+msgstr "A pharmacy with this CUIT already exists."
+
+msgid "Antecedentes penales"
+msgstr "Criminal record"
+
+msgid "Archivo (JPG/PNG/PDF), máximo 5 MB."
+msgstr "File (JPG/PNG/PDF), maximum 5 MB."
+
+msgid "Ya existe un repartidor registrado con este CUIT."
+msgstr "A driver with this CUIT already exists."
+
+msgid "El CBU debe contener exactamente 22 dígitos numéricos."
+msgstr "The CBU must contain exactly 22 digits."
+
+msgid "Registro de cliente"
+msgstr "Customer registration"
+
+msgid "Registro de farmacia"
+msgstr "Pharmacy registration"
+
+msgid "Registro de repartidor"
+msgstr "Driver registration"
+
+msgid "Cuenta de cliente creada."
+msgstr "Customer account created."
+
+msgid "Cuenta de farmacia creada."
+msgstr "Pharmacy account created."
+
+msgid "Cuenta de repartidor creada."
+msgstr "Driver account created."
+
+msgid "Cerraste sesión."
+msgstr "You have logged out."
+
+msgid "Acceso denegado: tu perfil de farmacia todavía no fue validado."
+msgstr "Access denied: your pharmacy profile has not been verified yet."
+
+msgid "Acceso denegado: tu perfil de repartidor todavía no fue validado."
+msgstr "Access denied: your driver profile has not been verified yet."
+
+msgid "Seleccioná un medicamento..."
+msgstr "Select a medicine..."
+
+msgid "Precio de venta ($)"
+msgstr "Sale price ($)"
+
+msgid "Stock inicial"
+msgstr "Initial stock"
+
+msgid "Nuevo precio ($)"
+msgstr "New price ($)"
+
+msgid "Nuevo stock"
+msgstr "New stock"
+
+msgid "Confirmo la receta de %(medicine)s"
+msgstr "I confirm the prescription for %(medicine)s"
+
+msgid "Perfil no reconocido."
+msgstr "Unrecognized profile."
+
+msgid "Sólo clientes"
+msgstr "Customers only"
+
+msgid "Sólo farmacias"
+msgstr "Pharmacies only"
+
+msgid "Sólo repartidores"
+msgstr "Drivers only"
+
+msgid "No hay stock suficiente para %(medicine)s."
+msgstr "There is not enough stock for %(medicine)s."
+
+msgid "%(medicine)s se agregó al carrito."
+msgstr "%(medicine)s was added to the cart."
+
+msgid "Cantidad inválida."
+msgstr "Invalid quantity."
+
+msgid "Cantidad actualizada."
+msgstr "Quantity updated."
+
+msgid "El producto ya no existe."
+msgstr "The product no longer exists."
+
+msgid "Tu carrito está vacío."
+msgstr "Your cart is empty."
+
+msgid "Completá la dirección de entrega."
+msgstr "Enter the delivery address."
+
+msgid "Pedido confirmado. Se generaron %(count)s pedidos correctamente."
+msgstr "Order confirmed. %(count)s orders were created successfully."
+
+msgid "El pedido se aceptó correctamente."
+msgstr "The order was accepted successfully."
+
+msgid "El pedido se rechazó correctamente."
+msgstr "The order was rejected successfully."
+
+msgid "Debés seleccionar un motivo para rechazar el pedido."
+msgstr "You must select a reason for rejecting the order."
+
+msgid "Seleccioná un motivo de rechazo."
+msgstr "Select a rejection reason."
+
+msgid "Indicá un detalle cuando el motivo sea 'Otro'."
+msgstr "Provide details when the reason is 'Other'."
+
+msgid "Error al agregar el medicamento. Revisá los datos ingresados."
+msgstr "Error adding the medicine. Check the entered information."
+
+msgid "Tenés un pedido en curso."
+msgstr "You have an active order."
+
+msgid "Tu perfil de repartidor está incompleto o no existe."
+msgstr "Your driver profile is incomplete or does not exist."
+
+msgid "Ya tenés un pedido asignado o en curso y no podés aceptar otro."
+msgstr "You already have an assigned or active order and cannot accept another one."
+
+msgid "Este pedido ya no está disponible."
+msgstr "This order is no longer available."
+
+msgid "No tenés una entrega activa. Volvé al panel para tomar una."
+msgstr "You do not have an active delivery. Return to the dashboard to take one."
+
+msgid "No tenés un pedido en curso con ese ID."
+msgstr "You do not have an active order with that ID."
+
+msgid "Presidentes"
+msgstr "Presidents"
+
+msgid "Eliminar"
+msgstr "Delete"
+
+msgid "Modificar"
+msgstr "Edit"
+
+msgid "¿Querés eliminar a este presidente?"
+msgstr "Do you want to remove this president?"
+
+msgid "¿Querés ascender a este presidente? Dejarás de ser superpresidente."
+msgstr "Do you want to promote this president? You will no longer be super president."
+
+msgid "ASCENDER"
+msgstr "PROMOTE"
+
+msgid "No hay presidentes asignados."
+msgstr "There are no assigned presidents."
+
+msgid "Buscar jugador para presidente"
+msgstr "Search player for president"
+
+msgid "Agregar presidente"
+msgstr "Add president"
+
+msgid "Ninguno"
+msgstr "None"
+
+msgid "Editar"
+msgstr "Edit"
+
+msgid "¿Querés salir de la liga?"
+msgstr "Do you want to leave the league?"
+
+msgid "Abandonar liga"
+msgstr "Leave league"
+
+msgid "¿Querés eliminar a este jugador?"
+msgstr "Do you want to remove this player?"
+
+msgid "No hay jugadores registrados."
+msgstr "There are no registered players."
+
+msgid "¿Querés eliminar este partido?"
+msgstr "Do you want to delete this match?"
+
+msgid "¿Querés eliminar este partido? Esta acción es irreversible."
+msgstr "Do you want to delete this match? This action is irreversible."
+
+msgid "Buscar por apodo, posición o estado..."
+msgstr "Search by nickname, position or status..."
+
+msgid "¿Querés desactivar al jugador <strong>%(nickname)s</strong> de la liga <strong>%(league)s</strong>?"
+msgstr "Do you want to deactivate player <strong>%(nickname)s</strong> from league <strong>%(league)s</strong>?"
+
+msgid "¿Querés reactivar al jugador <strong>%(nickname)s</strong> en la liga <strong>%(league)s</strong>?"
+msgstr "Do you want to reactivate player <strong>%(nickname)s</strong> in league <strong>%(league)s</strong>?"
+msgid "Supermercados"
+msgstr "Supermarkets"
+
+msgid "Puede que %(store_name)s no lo venda online o que todavía no lo hayamos relevado."
+msgstr "%(store_name)s may not sell it online, or we may not have tracked it yet."
+
+msgid "Ejecutá <code>python manage.py scrape_supermarkets</code> para poblar la base."
+msgstr "Run <code>python manage.py scrape_supermarkets</code> to populate the database."

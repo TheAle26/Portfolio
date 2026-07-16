@@ -1,23 +1,24 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 {% block content %}
-<h2>Equipos Más Parejos</h2>
+<h2>{% translate "Equipos más parejos" %}</h2>
 
-<h3>Equipo 1</h3>
+<h3>{% translate "Equipo 1" %}</h3>
 <ul>
     {% for jugador in equipo1 %}
-        <li>{{ jugador.apodo }} (Puntaje: {{ jugador.puntaje|floatformat:2 }})</li>
+        <li>{{ jugador.apodo }} ({% translate "Puntaje" %}: {{ jugador.puntaje|floatformat:2 }})</li>
     {% endfor %}
 </ul>
 
-<h3>Equipo 2</h3>
+<h3>{% translate "Equipo 2" %}</h3>
 <ul>
     {% for jugador in equipo2 %}
         <li>{{ jugador.apodo }} ({{ jugador.puntaje|floatformat:2 }})</li>
     {% endfor %}
 </ul>
 
-<p>Diferencia de Puntajes: {{ diferencia|floatformat:2 }}</p>
+<p>{% translate "Diferencia de puntajes" %}: {{ diferencia|floatformat:2 }}</p>
 
-<a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn btn-primary">🔄 Volver a Crear Equipos</a>
+<a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn btn-primary">🔄 {% translate "Volver a crear equipos" %}</a>
 
 {% endblock %}

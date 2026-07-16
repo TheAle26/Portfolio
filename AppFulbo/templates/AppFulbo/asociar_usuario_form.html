@@ -1,11 +1,11 @@
 {% extends 'AppFulbo/form_base.html' %}
-{% load crispy_forms_tags %} 
+{% load crispy_forms_tags i18n %}
 
 {% block card_header_bg %}success{% endblock %}
 {% block form_title %}{{ titulo }}{% endblock %}
 
 {% block form_content %}
-    <p class="text-muted">Asociando usuario al jugador: <strong>{{ jugador.apodo }}</strong></p>
+    <p class="text-muted">{% blocktranslate with nickname=jugador.apodo %}Asociando usuario al jugador: <strong>{{ nickname }}</strong>{% endblocktranslate %}</p>
     <form method="post" action="{% url 'asociar_usuario_a_jugador' liga.id jugador.id %}">
         {% csrf_token %}
         
@@ -28,17 +28,20 @@
 
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn btn-primary d-inline-flex align-items-center">
-                <i class="fas fa-link me-2"></i> Asociar Usuario
+                <i class="fas fa-link me-2"></i> {% translate "Asociar usuario" %}
             </button>
 
             <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
-                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+                <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a gestión" %}
             </a>
         </div>
     </form>
 {% endblock form_content %}
 
 {% block extra_js %}
+{% translate "Usuario:" as user_label %}
+{% translate "El usuario no existe o no está disponible." as user_unavailable %}
+{% translate "Error al verificar el usuario." as user_check_error %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const usernameInput = document.getElementById('id_username_usuario');
@@ -60,16 +63,16 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.exists) {
-                                    feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Usuario: <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
+                                    feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> {{ user_label|escapejs }} <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
                                     usernameInput.classList.add('is-valid');
                                 } else {
-                                    feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Usuario no existe o no disponible.</span>';
+                                    feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> {{ user_unavailable|escapejs }}</span>';
                                     usernameInput.classList.add('is-invalid');
                                 }
                             })
                             .catch(error => {
                                 console.error('Error en la petición AJAX:', error);
-                                feedbackDiv.innerHTML = '<span class="text-warning">Error al verificar usuario.</span>';
+                                feedbackDiv.innerHTML = '<span class="text-warning">{{ user_check_error|escapejs }}</span>';
                                 usernameInput.classList.remove('is-valid', 'is-invalid');
                             });
                     }, 500);
@@ -85,18 +88,18 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.exists) {
-                                feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> Usuario: <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
+                                feedbackDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i> {{ user_label|escapejs }} <strong>' + data.first_name + ' ' + data.last_name + '</strong></span>';
                                 usernameInput.classList.remove('is-invalid');
                                 usernameInput.classList.add('is-valid');
                             } else {
-                                feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> Usuario no existe o no disponible.</span>';
+                                feedbackDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i> {{ user_unavailable|escapejs }}</span>';
                                 usernameInput.classList.remove('is-valid');
                                 usernameInput.classList.add('is-invalid');
                             }
                         })
                         .catch(error => {
                             console.error('Error en la petición AJAX:', error);
-                            feedbackDiv.innerHTML = '<span class="text-warning">Error al verificar usuario.</span>';
+                            feedbackDiv.innerHTML = '<span class="text-warning">{{ user_check_error|escapejs }}</span>';
                             usernameInput.classList.remove('is-valid', 'is-invalid');
                         });
                 } else {

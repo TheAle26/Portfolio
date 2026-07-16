@@ -1,0 +1,45 @@
+{% load i18n %}
+{% get_current_language as CURRENT_LANGUAGE %}
+<form class="language-toggle" action="{% url 'set_language' %}" method="post" aria-label="{% translate 'Seleccionar idioma' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" name="language" value="es" {% if CURRENT_LANGUAGE|slice:':2' == 'es' %}class="is-active" aria-current="true"{% endif %}>ES</button>
+    <span aria-hidden="true">/</span>
+    <button type="submit" name="language" value="en" {% if CURRENT_LANGUAGE|slice:':2' == 'en' %}class="is-active" aria-current="true"{% endif %}>EN</button>
+</form>
+<style>
+    .language-toggle {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 1100;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .45rem .65rem;
+        border: 1px solid rgba(148, 163, 184, .55);
+        border-radius: 999px;
+        background: rgba(15, 23, 42, .92);
+        color: #cbd5e1;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .24);
+        backdrop-filter: blur(8px);
+        font: 700 .78rem/1 system-ui, sans-serif;
+    }
+    .language-toggle button {
+        appearance: none;
+        border: 0;
+        padding: .2rem .25rem;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        opacity: .7;
+    }
+    .language-toggle button:hover,
+    .language-toggle button:focus-visible,
+    .language-toggle button.is-active {
+        color: #fff;
+        opacity: 1;
+    }
+    .language-toggle button.is-active { text-decoration: underline; text-underline-offset: 3px; }
+</style>

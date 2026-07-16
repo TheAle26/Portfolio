@@ -1,19 +1,20 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 {% block content %}
 <form method="POST" action="{% url 'encontrar_equipos_mas_parejos' liga.id %}">
     {% csrf_token %}
 
 
-    <h3>Seleccionar Jugadores</h3>
+    <h3>{% translate "Seleccionar jugadores" %}</h3>
     <div>
         {% for jugador in form.fields.jugadores.queryset %}
             <input type="checkbox" name="jugadores" value="{{ jugador.id }}"> {{ jugador.apodo }} ({{ jugador.puntaje|floatformat:2 }})<br>
         {% endfor %}
     </div>
 
-    <button type="submit" class="btn btn-primary">Buscar Equipos</button>
+    <button type="submit" class="btn btn-primary">{% translate "Buscar equipos" %}</button>
 
     <!-- Botón para volver a la liga -->
-    <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary">Volver a la Liga</a>
+    <a href="{% url 'ver_liga' liga.id %}" class="btn btn-secondary">{% translate "Volver a la liga" %}</a>
 </form>
 {% endblock %}

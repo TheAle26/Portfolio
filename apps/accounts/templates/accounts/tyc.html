@@ -1,72 +1,62 @@
 {% extends "accounts/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-lg-8 offset-lg-2">
             
-            <h1 class="mb-4 text-center">Términos y Condiciones de FarmaGo</h1>
+            <h1 class="mb-4 text-center">{% translate "Términos y condiciones de FarmaGo" %}</h1>
             
             <p class="lead">
-                Por favor, lee atentamente los siguientes términos y condiciones antes de utilizar
-                nuestro servicio. Al registrarte o utilizar la plataforma FarmaGo, aceptas
-                estar sujeto a estos términos.
+                {% translate "Leé atentamente estos términos y condiciones antes de utilizar el servicio. Al registrarte o usar FarmaGo, aceptás estos términos." %}
             </p>
 
             <hr>
 
-            <h2 class="h4 mt-4">1. Definiciones</h2>
+            <h2 class="h4 mt-4">{% translate "1. Definiciones" %}</h2>
             <p>
-                <strong>"Plataforma":</strong> Se refiere a la aplicación web y móvil FarmaGo.
+                {% blocktranslate %}<strong>"Plataforma":</strong> se refiere a la aplicación web y móvil FarmaGo.{% endblocktranslate %}
             </p>
             <p>
-                <strong>"Cliente":</strong> Usuario registrado que realiza pedidos de medicamentos.
+                {% blocktranslate %}<strong>"Cliente":</strong> usuario registrado que realiza pedidos de medicamentos.{% endblocktranslate %}
             </p>
             <p>
-                <strong>"Farmacia":</strong> Entidad comercial registrada y validada que dispensa
-                medicamentos a través de la plataforma.
-            </p>
-
-            <h2 class="h4 mt-4">2. Uso de la Plataforma y Cuentas</h2>
-            <p>
-                Debes tener al menos 18 años de edad para registrarte como Cliente. Eres
-                responsable de mantener la confidencialidad de tu contraseña y de toda
-                la actividad que ocurra en tu cuenta.
+                {% blocktranslate %}<strong>"Farmacia":</strong> entidad comercial registrada y validada que dispensa medicamentos mediante la plataforma.{% endblocktranslate %}
             </p>
 
-            <h2 class="h4 mt-4">3. Pedidos y Recetas Médicas</h2>
+            <h2 class="h4 mt-4">{% translate "2. Uso de la plataforma y cuentas" %}</h2>
             <p>
-                La plataforma facilita la conexión entre Clientes y Farmacias. FarmaGo
-                no es una farmacia ni vende medicamentos directamente.
+                {% translate "Debés tener al menos 18 años para registrarte como cliente. Sos responsable de mantener la confidencialidad de tu contraseña y de la actividad de tu cuenta." %}
+            </p>
+
+            <h2 class="h4 mt-4">{% translate "3. Pedidos y recetas médicas" %}</h2>
+            <p>
+                {% translate "La plataforma facilita la conexión entre clientes y farmacias. FarmaGo no es una farmacia ni vende medicamentos directamente." %}
             </p>
             <p>
-                <strong>Medicamentos con Receta:</strong> Si un medicamento requiere receta
-                (según la legislación vigente y lo indicado en la plataforma),
-                debes cargar una imagen o PDF válido de la misma. La farmacia se
-                reserva el derecho de rechazar el pedido si la receta no es válida,
-                está incompleta o parece fraudulenta.
+                {% blocktranslate trimmed %}<strong>Medicamentos con receta:</strong> si un medicamento requiere receta, debés cargar una imagen o un PDF válido. La farmacia puede rechazar el pedido si la receta no es válida, está incompleta o parece fraudulenta.{% endblocktranslate %}
             </sstrong>
             <p>
-                La validación final de la receta es responsabilidad exclusiva de la
-                Farmacia que dispensa el pedido.
+                {% translate "La validación final de la receta es responsabilidad exclusiva de la farmacia que dispensa el pedido." %}
             </p>
 
-            <h2 class="h4 mt-4">4. Pagos</h2>
+            <h2 class="h4 mt-4">{% translate "4. Pagos" %}</h2>
             <p>
-                <em>Cosas sobre pagos</em>
-                No daremos tu informacion de pago  a nadie
+                <em>{% translate "Información sobre pagos" %}</em>
+                {% translate "No compartiremos tu información de pago con terceros." %}
             </p>
 
-            <h2 class="h4 mt-4">5. Seccion de condiciones</h2>
+            <h2 class="h4 mt-4">{% translate "5. Condiciones adicionales" %}</h2>
             <p>
-                <em>Estas leyendo esto?</em>
-                Nunca nadie llego tan lejos
+                <em>{% translate "¿Estás leyendo esto?" %}</em>
+                {% translate "Nunca nadie llegó tan lejos." %}
             </p>
 
             <hr class="my-4">
 
             <p class="text-muted small">
-                Última actualización: 26 de Octubre de 2025.
+                {% translate "Última actualización: 26 de octubre de 2025." %}
             </p>
             
 

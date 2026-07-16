@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Producto no encontrado - ChangoMás Tracker</title>
+    <title>{% translate "Producto no encontrado" %} - {{ supermarket.name }} Tracker</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -32,14 +32,15 @@
     </style>
 </head>
 <body>
+    {% include 'includes/language_toggle.html' %}
     <div class="box">
         <div class="emoji">🔍</div>
-        <h1>Producto no encontrado</h1>
-        {% if code %}<p>No hay ningún producto con el código <code>{{ code }}</code>.</p>{% endif %}
-        <p>Puede que MasOnline no lo venda online o que todavía no lo hayamos relevado.</p>
+        <h1>{% translate "Producto no encontrado" %}</h1>
+        {% if code %}<p>{% blocktranslate with product_code=code %}No hay ningún producto con el código <code>{{ product_code }}</code>.{% endblocktranslate %}</p>{% endif %}
+        <p>{% blocktranslate with store_name=supermarket.name %}Puede que {{ store_name }} no lo venda online o que todavía no lo hayamos relevado.{% endblocktranslate %}</p>
         <div class="acciones">
-            <a href="{% url 'changomas:scan' %}">📷 Escanear otro</a>
-            <a class="sec" href="{% url 'changomas:product_list' %}">🛒 Ir al catálogo</a>
+            <a href="{% url 'changomas:store_scan' supermarket.slug %}">📷 {% translate "Escanear otro" %}</a>
+            <a class="sec" href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {% translate "Ir al catálogo" %}</a>
         </div>
     </div>
 </body>

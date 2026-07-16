@@ -1,5 +1,5 @@
 {% extends 'AppFulbo/base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block title %}Liga: {{ liga.nombre_liga }}{% endblock %}
 
@@ -13,11 +13,11 @@
             {% if liga.descripcion %}
                 <h3>{{ liga.descripcion }}</h3>
             {% endif %}
-            <h5>Presidentes de la Liga</h5>
+            <h5>{% translate "Presidentes de la liga" %}</h5>
             <ul class="list-unstyled">
                 {% for presidente in liga.presidentes.all %}
                     {% if presidente == liga.super_presidente %}
-                        <li style="color: gold;">{{ presidente.username }} <i class="fas fa-crown ms-1" title="Super Presidente"></i></li>
+                        <li style="color: gold;">{{ presidente.username }} <i class="fas fa-crown ms-1" title="{% translate 'Superpresidente' %}"></i></li>
                     {% else %}
                         <li>{{ presidente.username }}</li>
                     {% endif %}
@@ -27,27 +27,27 @@
 
         <div class="col-lg-3 col-md-4 mt-3 mt-md-0">
             {% if mi_jugador %}
-                Mi Jugador
+                {% translate "Mi jugador" %}
                 <div class="card" style="border: 3px solid gold;">
                     <div class="card-body">
                         <h5 class="card-title">
                             {{ mi_jugador.apodo }}
-                            <span class="badge bg-warning text-dark ms-2">Puntaje: {{ mi_jugador.puntaje|floatformat:2 }}</span>
+                            <span class="badge bg-warning text-dark ms-2">{% translate "Puntaje" %}: {{ mi_jugador.puntaje|floatformat:2 }}</span>
                         </h5>
                         <p class="card-text">
-                            Posición: {{ mi_jugador.get_posicion_display }}
+                            {% translate "Posición" %}: {{ mi_jugador.get_posicion_display }}
                         </p>
                     </div>
                 </div>
             {% else %}
-                <p class="text-muted">No tienes un perfil de jugador en esta liga.</p>
+                <p class="text-muted">{% translate "No tenés un perfil de jugador en esta liga." %}</p>
             {% endif %}
 
 
         </div>
                                 {% if request.user in liga.presidentes.all %}
                 <a class="btn btn-success me-2 mb-2" href="{% url 'editar_liga' liga.id %}">
-                    <i class="fa-solid fa-pencil"></i> Editar Liga
+                    <i class="fa-solid fa-pencil"></i> {% translate "Editar liga" %}
                 </a>
             {% endif %}
     </div>
@@ -58,13 +58,13 @@
         <div class="col-12">
 
             <a href="{% url 'encontrar_equipos_mas_parejos' liga.id %}" class="btn-magic mb-2">
-                ✨ Formar Equipos ✨
+                ✨ {% translate "Formar equipos" %} ✨
             </a>
             
             {% if mi_jugador.puntuacion_pendiente.all %}
 
                 <a href="{% url 'puntuar_jugadores_partido' liga.id mi_jugador.puntuacion_pendiente.first.partido.id %}" class="btn btn-warning mb-2 d-inline-flex align-items-center">
-                    <i class="bi bi-stars me-2"></i> Puntuación Pendiente
+                    <i class="bi bi-stars me-2"></i> {% translate "Puntuación pendiente" %}
                 </a>
             {% endif %}
         </div>
@@ -75,24 +75,24 @@
     <div class="row">
         
         <div class="col-lg-6 mb-4">
-            <h3 class="d-flex justify-content-between align-items-center">Jugadores de la Liga
+            <h3 class="d-flex justify-content-between align-items-center">{% translate "Jugadores de la liga" %}
                 <button class="btn btn-sm btn-outline-primary mb-2" id="toggleJugadoresBtn">
-                    Mostrar Jugadores
+                    {% translate "Mostrar jugadores" %}
                 </button>
             </h3>
 
             <div id="jugadoresContainer" style="display: none;"> {# Inicialmente oculto #}
-                <input type="text" id="buscarJugadorInput" class="form-control mb-3" placeholder="Buscar por apodo o posición...">
+                <input type="text" id="buscarJugadorInput" class="form-control mb-3" placeholder="{% translate 'Buscar por apodo o posición...' %}">
 
                 <div class="mb-3 d-flex align-items-center">
-                    <label for="ordenarJugadoresSelect" class="form-label me-2 mb-0">Ordenar por:</label>
+                    <label for="ordenarJugadoresSelect" class="form-label me-2 mb-0">{% translate "Ordenar por:" %}</label>
                     <select class="form-select form-select-sm flex-grow-1" id="ordenarJugadoresSelect">
-                        <option value="apodo_asc">Apodo (A-Z)</option>
-                        <option value="apodo_desc">Apodo (Z-A)</option>
-                        <option value="posicion_asc">Posición (A-Z)</option>
-                        <option value="posicion_desc">Posición (Z-A)</option>
-                        <option value="puntaje_desc">Puntaje (Mayor a Menor)</option>
-                        <option value="puntaje_asc">Puntaje (Menor a Mayor)</option>
+                        <option value="apodo_asc">{% translate "Apodo (A-Z)" %}</option>
+                        <option value="apodo_desc">{% translate "Apodo (Z-A)" %}</option>
+                        <option value="posicion_asc">{% translate "Posición (A-Z)" %}</option>
+                        <option value="posicion_desc">{% translate "Posición (Z-A)" %}</option>
+                        <option value="puntaje_desc">{% translate "Puntaje (mayor a menor)" %}</option>
+                        <option value="puntaje_asc">{% translate "Puntaje (menor a mayor)" %}</option>
                     </select>
                 </div>
                 <div class="list-group" id="listaJugadores">
@@ -105,20 +105,20 @@
                                 <img src="{{ jugador.usuario.profile.foto_perfil.url }}"
                                     class="rounded-circle me-3"
                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                    alt="Foto de {{ jugador.apodo }}">
+                                    alt="{% blocktranslate with nickname=jugador.apodo %}Foto de {{ nickname }}{% endblocktranslate %}">
 
                                 <div class="flex-grow-1 d-flex flex-column justify-content-center" style="gap: 0.5rem;">
                                     <div class="fw-bold" style="font-size: 1.1rem; margin-bottom: 2px;margin-left: 1rem;">
                                         {{ jugador.apodo }}
                                     </div>
                                     <div class="text-muted" style="font-size: 0.9rem;margin-left: 1rem;">
-                                        {{ jugador.get_posicion_display }} &bull; Puntaje: {{ jugador.puntaje|floatformat:2 }}
+                                        {{ jugador.get_posicion_display }} &bull; {% translate "Puntaje" %}: {{ jugador.puntaje|floatformat:2 }}
                                     </div>
                                 </div>
                             </li>
                         {% endif %}
                     {% empty %}
-                        <li class="list-group-item">No hay jugadores activos registrados en esta liga.</li>
+                        <li class="list-group-item">{% translate "No hay jugadores activos registrados en esta liga." %}</li>
                     {% endfor %}
                 </div>
             </div>
@@ -126,33 +126,33 @@
 
         <div class="col-lg-6 mb-4">
             <h3 class="d-flex justify-content-between align-items-center">
-                Partidos de la Liga
-                <button class="btn btn-sm btn-outline-primary mb-2" id="togglePartidosBtn">Mostrar Partidos</button>
+                {% translate "Partidos de la liga" %}
+                <button class="btn btn-sm btn-outline-primary mb-2" id="togglePartidosBtn">{% translate "Mostrar partidos" %}</button>
             </h3>
 
             {% if puntuaciones_pendientes %}
                 <div class="alert alert-info mt-3" role="alert">
-                    <h5 class="alert-heading">¡Tienes puntuaciones pendientes!</h5>
+                    <h5 class="alert-heading">{% translate "¡Tenés puntuaciones pendientes!" %}</h5>
                 </div>
             {% endif %}
             {% if request.user in liga.presidentes.all %}
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>{{ titulo }}</h2>
                     <a href="{% url 'crear_partido' liga.id %}" class="btn btn-primary d-inline-flex align-items-center">
-                        <i class="fas fa-plus-circle me-2"></i> Nuevo Partido
+                        <i class="fas fa-plus-circle me-2"></i> {% translate "Nuevo partido" %}
                     </a>
                 </div>
             {% endif %}
             <div class="row" id="contenedorPartidos" style="display: none;"> {# Inicialmente oculto #}
-                <input id="buscarPartidoInput" type="text" class="form-control my-2" placeholder="Buscar por cancha o fecha...">
+                <input id="buscarPartidoInput" type="text" class="form-control my-2" placeholder="{% translate 'Buscar por cancha o fecha...' %}">
                 
                 <div class="mb-3 d-flex align-items-center">
-                    <label for="ordenarPartidosSelect" class="form-label me-2 mb-0">Ordenar por:</label>
+                    <label for="ordenarPartidosSelect" class="form-label me-2 mb-0">{% translate "Ordenar por:" %}</label>
                     <select class="form-select form-select-sm flex-grow-1" id="ordenarPartidosSelect">
-                        <option value="fecha_desc">Fecha (Más Reciente)</option>
-                        <option value="fecha_asc">Fecha (Más Antigua)</option>
-                        <option value="cancha_asc">Cancha (A-Z)</option>
-                        <option value="cancha_desc">Cancha (Z-A)</option>
+                        <option value="fecha_desc">{% translate "Fecha (más reciente)" %}</option>
+                        <option value="fecha_asc">{% translate "Fecha (más antigua)" %}</option>
+                        <option value="cancha_asc">{% translate "Cancha (A-Z)" %}</option>
+                        <option value="cancha_desc">{% translate "Cancha (Z-A)" %}</option>
                     </select>
                 </div>
                 <div id="listaPartidosContainer"> {# Contenedor para reinsertar partidos ordenados #}
@@ -186,7 +186,7 @@
                                         <a href="{% url 'ver_partido' partido.id %}"
                                         class="btn btn-outline-info btn-sm d-inline-flex align-items-center">
                                             <i class="fas fa-info-circle me-2"></i>
-                                            Ver Detalles
+                                            {% translate "Ver detalles" %}
                                         </a>
                                         <hr class="my-1">
 
@@ -196,7 +196,7 @@
                                                 <a href="{% url 'puntuar_jugadores_partido' partido.id puntuacion.id %}"
                                                 class="btn btn-warning btn-sm d-inline-flex align-items-center btn-hover-custom">
                                                     <i class="bi bi-stars me-2"></i>
-                                                    Calificar Jugadores
+                                                    {% translate "Calificar jugadores" %}
                                                 </a>
                                                 
                                             {% endif %}
@@ -207,7 +207,7 @@
                             </div>
                         </div>
                     {% empty %}
-                        <p>No hay partidos registrados en esta liga.</p>
+                        <p>{% translate "No hay partidos registrados en esta liga." %}</p>
                     {% endfor %}
                 </div> {# Cierre de listaPartidosContainer #}
             </div>
@@ -216,6 +216,10 @@
 
 </div>
 
+{% translate "Mostrar jugadores" as show_players %}
+{% translate "Ocultar jugadores" as hide_players %}
+{% translate "Mostrar partidos" as show_matches %}
+{% translate "Ocultar partidos" as hide_matches %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Inicialización de tooltips de Bootstrap
@@ -279,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleJugadoresBtn.addEventListener('click', () => {
         const visible = jugadoresContainer.style.display === 'block'; 
         jugadoresContainer.style.display = visible ? 'none' : 'block';
-        toggleJugadoresBtn.textContent = visible ? 'Mostrar Jugadores' : 'Ocultar Jugadores';
+        toggleJugadoresBtn.textContent = visible ? '{{ show_players|escapejs }}' : '{{ hide_players|escapejs }}';
         
         if (!visible && jugadorItems.length === 0) { // Si se acaba de mostrar y los items no se han cargado aún
             jugadorItems = Array.from(listaJugadores.querySelectorAll('.jugador-item'));
@@ -350,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
     togglePartidosBtn.addEventListener('click', function () {
         const visible = contenedorPartidos.style.display === 'flex'; 
         contenedorPartidos.style.display = visible ? 'none' : 'flex'; // Usar 'flex' para la visualización
-        togglePartidosBtn.textContent = visible ? 'Mostrar Partidos' : 'Ocultar Partidos';
+        togglePartidosBtn.textContent = visible ? '{{ show_matches|escapejs }}' : '{{ hide_matches|escapejs }}';
         
         if (!visible && partidoItems.length === 0) { // Si se acaba de mostrar y los items no se han cargado aún
             partidoItems = Array.from(listaPartidosContainer.querySelectorAll('.partido-item'));
@@ -370,9 +374,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Ocultar secciones por defecto al cargar la página
     jugadoresContainer.style.display = 'none'; 
-    toggleJugadoresBtn.textContent = 'Mostrar Jugadores';
+    toggleJugadoresBtn.textContent = '{{ show_players|escapejs }}';
     contenedorPartidos.style.display = 'none'; 
-    togglePartidosBtn.textContent = 'Mostrar Partidos';
+    togglePartidosBtn.textContent = '{{ show_matches|escapejs }}';
 });
 </script>
 

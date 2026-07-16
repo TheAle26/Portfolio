@@ -10,12 +10,13 @@ from django.core.exceptions import ValidationError
 import re
 import uuid
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 User = get_user_model()
 
 def validate_file_size(value):
     max_mb = 5
     if value.size > max_mb * 1024 * 1024:
-        raise ValidationError(f'El archivo no puede superar {max_mb} MB.')
+        raise ValidationError(_("El archivo no puede superar %(max_mb)s MB.") % {'max_mb': max_mb})
 
 
 class BaseRegistroForm(UserCreationForm):
@@ -50,7 +51,7 @@ class RegistroClienteForm(BaseRegistroForm):
     edad = forms.IntegerField(validators=[MinValueValidator(18), MaxValueValidator(120)])
     direccion = forms.CharField(max_length=255)
     telefono = forms.IntegerField()
-    terms_cond = forms.BooleanField(label="Acepto los términos y condiciones")
+    terms_cond = forms.BooleanField(label=_("Acepto los términos y condiciones"))
     
     class Meta(BaseRegistroForm.Meta):
         fields = BaseRegistroForm.Meta.fields + ["password1","password2","nombre","apellido","documento","edad","direccion", "telefono","terms_cond"]
@@ -62,13 +63,13 @@ class RegistroClienteForm(BaseRegistroForm):
         # * -> Cero o más veces
         # $ -> Fin de la cadena
         if not re.match(r"^[a-zA-Z\s]*$", nombre):
-            raise ValidationError("El nombre solo puede contener letras y espacios.")
+            raise ValidationError(_("El nombre sólo puede contener letras y espacios."))
         return nombre
 
     def clean_apellido(self):
         apellido = self.cleaned_data.get('apellido')
         if not re.match(r"^[a-zA-Z\s]*$", apellido):
-            raise ValidationError("El apellido solo puede contener letras y espacios.")
+            raise ValidationError(_("El apellido sólo puede contener letras y espacios."))
         return apellido
     
     # Validación personalizada para el campo 'documento'
@@ -78,16 +79,16 @@ class RegistroClienteForm(BaseRegistroForm):
         # Verifica si ya existe un cliente con ese número de documento.
         # Esto asume que el modelo 'Cliente' ya existe y está importado.
         if Cliente.objects.filter(documento=documento).exists():
-            raise ValidationError("Ya existe un cliente registrado con este número de documento.")
+            raise ValidationError(_("Ya existe un cliente con este número de documento."))
         
         return documento # Si es único, devuelve el valor.
 
 class RegistroFarmaciaForm(BaseRegistroForm):
-    nombre = forms.CharField(max_length=100, label="Nombre de la farmacia")
+    nombre = forms.CharField(max_length=100, label=_("Nombre de la farmacia"))
 
     direccion = forms.CharField(
         max_length=255, 
-        label="Dirección de la Sucursal",
+        label=_("Dirección de la sucursal"),
         widget=forms.TextInput(attrs={'id': 'id_direccion_autocomplete'})
     )
 
@@ -95,9 +96,9 @@ class RegistroFarmaciaForm(BaseRegistroForm):
                            widget=forms.TextInput(attrs={'maxlength': 13, 'placeholder': '20-12345678-3'}))
     cbu = forms.CharField(max_length=22, label="CBU de la farmacia",
                           widget=forms.TextInput(attrs={'maxlength': 22, 'placeholder': '22 dígitos numéricos'}))
-    obras_sociales = forms.ModelMultipleChoiceField(queryset=ObraSocial.objects.all(), widget = forms.CheckboxSelectMultiple, required=False, label="Obras Sociales Aceptadas")
-    documentacion = forms.FileField(label="Documentación de la farmacia", validators = [FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'png'])], help_text="Archivos permitidos: PDF, JPG, PNG.")
-    acepta_tyc = forms.BooleanField(label="Acepto los términos y condiciones y la Política de Privacidad.", required=True, error_messages={'required': 'Debes aceptar los términos y condiciones para registrarte.'})
+    obras_sociales = forms.ModelMultipleChoiceField(queryset=ObraSocial.objects.all(), widget = forms.CheckboxSelectMultiple, required=False, label=_("Obras sociales aceptadas"))
+    documentacion = forms.FileField(label=_("Documentación de la farmacia"), validators = [FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'png'])], help_text=_("Archivos permitidos: PDF, JPG, PNG."))
+    acepta_tyc = forms.BooleanField(label=_("Acepto los términos y condiciones y la política de privacidad."), required=True, error_messages={'required': _("Debés aceptar los términos y condiciones para registrarte.")})
 
     latitud = forms.DecimalField(
         widget=forms.HiddenInput(), 
@@ -132,9 +133,9 @@ class RegistroFarmaciaForm(BaseRegistroForm):
             self.cleaned_data['cuit'] = cuit
 
         if not re.match(r'^\d{2}-\d{8}-\d{1}$', cuit):
-            raise ValidationError("Formato de CUIT inválido. Use XX-XXXXXXXX-X.")
+            raise ValidationError(_("Formato de CUIT inválido. Usá XX-XXXXXXXX-X."))
         if Farmacia.objects.filter(cuit=cuit).exists() :
-            raise ValidationError("Ya existe una farmacia registrada con este CUIT.")
+            raise ValidationError(_("Ya existe una farmacia registrada con este CUIT."))
         return cuit
 
 class RegistroRepartidorForm(BaseRegistroForm):
@@ -144,15 +145,15 @@ class RegistroRepartidorForm(BaseRegistroForm):
                           widget=forms.TextInput(attrs={'maxlength': 22, 'placeholder': '22 dígitos numéricos'}))
     vehiculo = forms.ChoiceField(choices=Repartidor.VEHICULO_CHOICES)
     patente = forms.CharField(max_length=7, required=False)
-    antecedentes = forms.FileField(label="Antecedentes penales",
+    antecedentes = forms.FileField(label=_("Antecedentes penales"),
         required=True,
         validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'pdf']), validate_file_size],
-        help_text='Archivo (JPG/PNG/PDF), máximo 5 MB.'
+        help_text=_("Archivo (JPG/PNG/PDF), máximo 5 MB.")
     )
     acepta_tyc = forms.BooleanField( 
-        label="Acepto los términos y condiciones",
+        label=_("Acepto los términos y condiciones"),
         required=True,
-        error_messages={'required': 'Debes aceptar los términos y condiciones para registrarte.'}
+        error_messages={'required': _("Debés aceptar los términos y condiciones para registrarte.")}
         
     )
 
@@ -181,9 +182,9 @@ class RegistroRepartidorForm(BaseRegistroForm):
             self.cleaned_data['cuit'] = cuit
 
         if not re.match(r'^\d{2}-\d{8}-\d{1}$', cuit):
-            raise ValidationError("Formato de CUIT inválido. Use XX-XXXXXXXX-X.")
+            raise ValidationError(_("Formato de CUIT inválido. Usá XX-XXXXXXXX-X."))
         if Repartidor.objects.filter(cuit=cuit).exists():
-            raise ValidationError("Ya existe un repartidor registrado con este CUIT.")
+            raise ValidationError(_("Ya existe un repartidor registrado con este CUIT."))
         return cuit
 
     def clean_cbu(self):
@@ -193,7 +194,7 @@ class RegistroRepartidorForm(BaseRegistroForm):
         digits = re.sub(r'\D', '', cbu)
         # CBU argentino tiene 22 dígitos
         if len(digits) != 22:
-            raise ValidationError('El CBU debe contener exactamente 22 dígitos numéricos.')
+            raise ValidationError(_("El CBU debe contener exactamente 22 dígitos numéricos."))
         # normalizar a solo dígitos
         self.cleaned_data['cbu'] = digits
         return digits

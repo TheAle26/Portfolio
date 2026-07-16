@@ -1,5 +1,6 @@
 {# AppFulbo/templates/AppFulbo/partido_form.html #}
 {% extends 'AppFulbo/form_base.html' %}
+{% load i18n %}
 {# NO cargues crispy_forms_tags si no lo usas para este form #}
 
 {% block card_header_bg %}{% if partido %}info{% else %}primary{% endif %}{% endblock %}
@@ -46,17 +47,17 @@
         {% else %}
             {# Mensaje opcional cuando se está modificando y los jugadores no son editables #}
             <div class="alert alert-info" role="alert">
-                Los jugadores participantes no se pueden modificar una vez creado el partido.
+                {% translate "Los jugadores participantes no se pueden modificar una vez creado el partido." %}
             </div>
         {% endif %}
 
         <div class="d-flex justify-content-between mt-4">
             <button type="submit" class="btn {% if partido %}btn-info{% else %}btn-success{% endif %} d-inline-flex align-items-center">
                 <i class="fas {% if partido %}fa-edit{% else %}fa-plus-circle{% endif %} me-2"></i> 
-                {% if partido %}Guardar Cambios{% else %}Crear Partido{% endif %}
+                {% if partido %}{% translate "Guardar cambios" %}{% else %}{% translate "Crear partido" %}{% endif %}
             </button>
             <a href="{% url 'gestionar_partidos_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
-                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+                <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a gestión" %}
             </a>
         </div>
     </form>

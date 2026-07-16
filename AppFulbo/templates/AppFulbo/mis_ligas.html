@@ -1,21 +1,22 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 
 {% block content %}
 
 <div class="container mt-4">
-    <h2>Mis Ligas</h2>
+    <h2>{% translate "Mis Ligas" %}</h2>
 
-    <a class="btn btn-primary ml-2" href="{% url 'crear_liga' %}">Crear Liga</a>
+    <a class="btn btn-primary ml-2" href="{% url 'crear_liga' %}">{% translate "Crear liga" %}</a>
 
     <div class="mt-4 mb-3">
-        <input type="text" id="buscarLigaInput" class="form-control" placeholder="Buscar liga por nombre...">
+        <input type="text" id="buscarLigaInput" class="form-control" placeholder="{% translate 'Buscar liga por nombre...' %}">
     </div>
 
     <table class="table table-striped" id="tablaLigas">
         <thead>
             <tr>
-                <th class="sortable" data-sort-by="liga">Liga <span class="sort-icon"></span></th>
-                <th class="sortable" data-sort-by="jugador">Mi Jugador <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="liga">{% translate "Liga" %} <span class="sort-icon"></span></th>
+                <th class="sortable" data-sort-by="jugador">{% translate "Mi jugador" %} <span class="sort-icon"></span></th>
             </tr>
         </thead>
         <tbody>
@@ -27,15 +28,15 @@
                 <td>
                     {{ liga.mi_jugador.apodo }}
                     {% if liga.mi_jugador.puntaje %}
-                        - Puntaje: {{ liga.mi_jugador.puntaje }}
+                        - {% translate "Puntaje" %}: {{ liga.mi_jugador.puntaje }}
                     {% else %}
-                        - Puntaje: N/A
+                        - {% translate "Puntaje" %}: N/A
                     {% endif %}
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="2">No estás en ninguna liga.</td>
+                <td colspan="2">{% translate "No estás en ninguna liga." %}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -44,17 +45,17 @@
     <hr class="my-5"> 
 
     <h3 class="mb-3 text-primary">
-        <i class="fa-solid fa-earth-americas me-2"></i> Ligas Públicas
+        <i class="fa-solid fa-earth-americas me-2"></i> {% translate "Ligas públicas" %}
     </h3>
-    <p class="text-muted">Únete a nuevas competencias abiertas.</p>
+    <p class="text-muted">{% translate "Explorá nuevas competencias abiertas." %}</p>
 
     <div class="table-responsive">
         <table class="table table-hover table-bordered">
             <thead class="table-light">
                 <tr>
-                    <th>Nombre de la Liga</th>
-                    <th>Descripción</th>
-                    <th style="width: 150px;">Acción</th>
+                    <th>{% translate "Nombre de la liga" %}</th>
+                    <th>{% translate "Descripción" %}</th>
+                    <th style="width: 150px;">{% translate "Acción" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -65,12 +66,12 @@
                             {{ publica.nombre_liga }}
                         </td>
                         <td class="align-middle">
-                            {{ publica.descripcion|default:"Sin descripción"|truncatechars:60 }}
+                            {{ publica.descripcion|default:_('Sin descripción')|truncatechars:60 }}
                         </td>
                         <td class="text-center">
                             {# Botón para ver la liga y eventualmente unirse #}
                             <a href="{% url 'ver_liga' publica.id %}" class="btn btn-sm btn-outline-success w-100">
-                                <i class="fa-solid fa-eye"></i> Ver
+                                <i class="fa-solid fa-eye"></i> {% translate "Ver" %}
                             </a>
                         </td>
                     </tr>
@@ -78,7 +79,7 @@
                     <tr>
                         <td colspan="3" class="text-center text-muted py-4">
                             <i class="fa-regular fa-folder-open fa-2x mb-2"></i><br>
-                            No hay ligas públicas disponibles en este momento.
+                            {% translate "No hay ligas públicas disponibles en este momento." %}
                         </td>
                     </tr>
                 {% endfor %}

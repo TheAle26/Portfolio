@@ -3,11 +3,11 @@ import re
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.cache import cache_page
 
-from .models import PriceRecord, Product
+from .models import PriceRecord, Product, Supermarket
 
 PRODUCTS_PER_PAGE = 48
 MAX_QUERY_LENGTH = 100
@@ -15,29 +15,40 @@ CATEGORIES_CACHE_KEY = 'changomas:top_categories'
 CATEGORIES_CACHE_TTL = 60 * 60 * 6  # el dato cambia una vez por día
 
 
-def _get_top_categories():
+def categories_cache_key(store_slug):
+    return f'{CATEGORIES_CACHE_KEY}:{store_slug}'
+
+
+def _get_supermarket(store_slug):
+    return get_object_or_404(Supermarket, slug=store_slug, is_active=True)
+
+
+def _get_top_categories(supermarket):
     """Primer nivel de categorías, cacheado: la query DISTINCT sobre toda la
     tabla es cara para correrla en cada request en la Raspberry."""
-    top_level = cache.get(CATEGORIES_CACHE_KEY)
+    cache_key = categories_cache_key(supermarket.slug)
+    top_level = cache.get(cache_key)
     if top_level is None:
         paths = (
-            Product.objects.filter(is_available=True)
+            Product.objects.filter(supermarket=supermarket, is_available=True)
             .exclude(category='')
             .values_list('category', flat=True)
             .distinct()
         )
         # Solo el primer nivel de la ruta ("Almacén / Harinas" -> "Almacén")
         top_level = sorted({c.split(' / ')[0] for c in paths})
-        cache.set(CATEGORIES_CACHE_KEY, top_level, CATEGORIES_CACHE_TTL)
+        cache.set(cache_key, top_level, CATEGORIES_CACHE_TTL)
     return top_level
 
 
 @cache_page(60 * 15)
-def product_list(request):
+def product_list(request, store='changomas'):
     """Góndola: todos los productos trackeados con su último precio."""
+    supermarket = _get_supermarket(store)
     products = (
         Product.objects
-        .filter(is_available=True)
+        .filter(supermarket=supermarket, is_available=True)
+        .select_related('supermarket')
         .prefetch_related(
             Prefetch('prices', queryset=PriceRecord.objects.order_by('-date'), to_attr='price_history')
         )
@@ -65,16 +76,22 @@ def product_list(request):
         'page': page,
         'query': query,
         'category': category,
-        'categories': _get_top_categories(),
+        'categories': _get_top_categories(supermarket),
         'total': paginator.count,
+        'supermarket': supermarket,
+        'supermarkets': Supermarket.objects.filter(is_active=True),
     }
     return render(request, 'changomas/product_list.html', context)
 
 
-def scan_page(request):
+def scan_page(request, store='changomas'):
     """Escáner de códigos de barras con la cámara del celular. Sin estado:
     todo corre en el navegador y soporta usuarios simultáneos sin cuenta."""
-    return render(request, 'changomas/scan.html')
+    supermarket = _get_supermarket(store)
+    return render(request, 'changomas/scan.html', {
+        'supermarket': supermarket,
+        'supermarkets': Supermarket.objects.filter(is_active=True),
+    })
 
 
 MAX_CODE_LENGTH = 64
@@ -85,7 +102,7 @@ VALID_CODE_RE = re.compile(r'^[A-Za-z0-9._-]{1,64}$')
 NOT_FOUND_CACHE_TTL = 60 * 5
 
 
-def _find_product(code):
+def _find_product(supermarket, code):
     """
     Busca por cualquiera de los identificadores, en orden de prioridad:
     primero los únicos (reference_code, vtex_product_id) y después los que
@@ -96,13 +113,17 @@ def _find_product(code):
     if not VALID_CODE_RE.match(code):
         return None
     for lookup in ('reference_code', 'vtex_product_id'):
-        product = Product.objects.filter(**{lookup: code}).first()
+        product = Product.objects.filter(
+            supermarket=supermarket,
+            **{lookup: code},
+        ).first()
         if product:
             return product
     # ean / product_reference admiten duplicados: criterio determinístico,
     # preferimos el disponible visto más recientemente.
     return (
         Product.objects
+        .filter(supermarket=supermarket)
         .filter(Q(ean=code) | Q(product_reference=code))
         .order_by('-is_available', '-last_seen')
         .first()
@@ -128,20 +149,27 @@ def _build_chart(records):
 
 
 @cache_page(60 * 15)
-def product_detail(request, code):
+def product_detail(request, code, store='changomas'):
     """Ficha del producto escaneado: precio actual, histórico de 30 días
     y máximo/mínimo del período."""
     code = code.strip()[:MAX_CODE_LENGTH]
+    supermarket = _get_supermarket(store)
     # cache_page solo cachea respuestas 200: cacheamos a mano los códigos
     # inexistentes para que un loop de códigos random no golpee la DB.
-    not_found_key = f'changomas:notfound:{code}'
+    not_found_key = f'changomas:notfound:{supermarket.slug}:{code}'
     if cache.get(not_found_key):
-        return render(request, 'changomas/product_not_found.html', {'code': code}, status=404)
+        return render(request, 'changomas/product_not_found.html', {
+            'code': code,
+            'supermarket': supermarket,
+        }, status=404)
 
-    product = _find_product(code) if code else None
+    product = _find_product(supermarket, code) if code else None
     if product is None:
         cache.set(not_found_key, True, NOT_FOUND_CACHE_TTL)
-        return render(request, 'changomas/product_not_found.html', {'code': code}, status=404)
+        return render(request, 'changomas/product_not_found.html', {
+            'code': code,
+            'supermarket': supermarket,
+        }, status=404)
 
     # Filtro explícito de 30 días: si el job de purga se atrasa unos días,
     # el "últimos 30 días" de la UI sigue siendo cierto.
@@ -162,5 +190,7 @@ def product_detail(request, code):
         'records': list(reversed(records)),  # tabla: más reciente primero
         'stats': stats,
         'chart': _build_chart(records),
+        'supermarket': supermarket,
+        'supermarkets': Supermarket.objects.filter(is_active=True),
     }
     return render(request, 'changomas/product_detail.html', context)

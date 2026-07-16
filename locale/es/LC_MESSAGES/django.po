@@ -1,0 +1,435 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Portfolio 1.0\n"
+"Language: es\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Academic Project"
+msgstr "Proyecto académico"
+
+msgid "Access"
+msgstr "Acceder"
+
+msgid "Acquisition"
+msgstr "Adquisición"
+
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "Advanced Computer Engineering student with a strong focus on Backend development. Civil Engineer transitioning into the world of code. Specialist in Java, Python, Django, relational databases and Linux infrastructure. I combine a strong analytical background with hands-on experience developing and deploying web applications."
+msgstr "Estudiante avanzado de Ingeniería en Computación con un fuerte enfoque en desarrollo backend. Ingeniero civil en transición al mundo del código. Especialista en Java, Python, Django, bases de datos relacionales e infraestructura Linux. Combino una sólida formación analítica con experiencia práctica desarrollando y desplegando aplicaciones web."
+
+msgid "Advanced Django system managing three distinct user roles (clients, pharmacies and drivers). It features a <strong>custom user model</strong> with email authentication, strict Regex data validation and an admin verification workflow for partners."
+msgstr "Sistema avanzado en Django que gestiona tres roles diferentes: clientes, farmacias y repartidores. Incluye un <strong>modelo de usuario personalizado</strong> con autenticación por email, validación estricta mediante Regex y un flujo de verificación administrativa para asociados."
+
+msgid "Alejo Vincent | Backend Developer & IT Engineer"
+msgstr "Alejo Vincent | Desarrollador Backend e Ingeniero IT"
+
+msgid "All Set!"
+msgstr "¡Todo listo!"
+
+msgid "Analyze business requirements to architect robust technical solutions"
+msgstr "Analizar requerimientos de negocio para diseñar soluciones técnicas robustas"
+
+msgid "Apr 2026 – Present"
+msgstr "Abr 2026 – Actualidad"
+
+msgid "Aug 2023"
+msgstr "Ago 2023"
+
+msgid "B.S. in Civil Engineering"
+msgstr "Ingeniería Civil"
+
+msgid "B.S. in Computer Engineering"
+msgstr "Ingeniería en Computación"
+
+msgid "Back to Fleet"
+msgstr "Volver a la flota"
+
+msgid "Back to Login"
+msgstr "Volver al inicio de sesión"
+
+msgid "Back to Portal"
+msgstr "Volver al portal"
+
+msgid "Backend Developer & IT Engineer"
+msgstr "Desarrollador Backend e Ingeniero IT"
+
+msgid "Barcode Scanner"
+msgstr "Escáner de códigos"
+
+msgid "Battery"
+msgstr "Batería"
+
+msgid "Build automations and modify the Odoo codebase to optimize business workflows"
+msgstr "Crear automatizaciones y modificar el código de Odoo para optimizar procesos de negocio"
+
+msgid "Change Password"
+msgstr "Cambiar contraseña"
+
+msgid "Comprehensive Sports Management System"
+msgstr "Sistema integral de gestión deportiva"
+
+msgid "Contact"
+msgstr "Contacto"
+
+msgid "Coordinated with subcontractors, ensuring adherence to deadlines and technical specifications"
+msgstr "Coordiné con subcontratistas asegurando el cumplimiento de plazos y especificaciones técnicas"
+
+msgid "Credentials (DEMO)"
+msgstr "Credenciales (DEMO)"
+
+msgid "Daily scraper tracking the full MasOnline (ChangoMás) catalog through its VTEX API. It keeps a 30-day history with real promotion-adjusted prices. Scan any barcode with your phone camera to see the product's price evolution, minimum and maximum."
+msgstr "Scraper diario que releva el catálogo completo de MasOnline (ChangoMás) mediante su API VTEX. Conserva 30 días de historial con precios reales ajustados por promociones. Escaneá cualquier código con la cámara para ver la evolución, el mínimo y el máximo del producto."
+
+msgid "Dear user,"
+msgstr "Hola,"
+
+msgid "Design and develop microservices and scalable backend architectures"
+msgstr "Diseñar y desarrollar microservicios y arquitecturas backend escalables"
+
+msgid "Developed in Django with PostgreSQL. <em>This project is currently hosted and running on the local server.</em>"
+msgstr "Desarrollado en Django con PostgreSQL. <em>Este proyecto está alojado y ejecutándose actualmente en el servidor local.</em>"
+
+msgid "Device Inventory"
+msgstr "Inventario de dispositivos"
+
+msgid "Ecosystem & Projects"
+msgstr "Ecosistema y proyectos"
+
+msgid "Edit Settings (Coming Soon)"
+msgstr "Editar configuración (próximamente)"
+
+msgid "Education"
+msgstr "Educación"
+
+msgid "Email Sent"
+msgstr "Correo enviado"
+
+msgid "Email Sent!"
+msgstr "¡Correo enviado!"
+
+msgid "Encrypted data travels via 4G/LTE cellular network to the cloud."
+msgstr "Los datos cifrados viajan a la nube mediante la red celular 4G/LTE."
+
+msgid "English CV"
+msgstr "CV en inglés"
+
+msgid "Enter your email address below and we'll send you instructions to reset your password."
+msgstr "Ingresá tu email y te enviaremos instrucciones para restablecer tu contraseña."
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Experience"
+msgstr "Experiencia"
+
+msgid "Fleet Dashboard"
+msgstr "Panel de flota"
+
+msgid "Fleet Status"
+msgstr "Estado de la flota"
+
+msgid "Forgot Password?"
+msgstr "¿Olvidaste tu contraseña?"
+
+msgid "Forgot your credentials?"
+msgstr "¿Olvidaste tus credenciales?"
+
+msgid "Fuel"
+msgstr "Combustible"
+
+msgid "Fuel / Cost"
+msgstr "Combustible / Costo"
+
+msgid "GPA: 8.48/10 | Graduated"
+msgstr "Promedio: 8,48/10 | Graduado"
+
+msgid "GPA: 8.6/10 | Progress: ~70%% completed"
+msgstr "Promedio: 8,6/10 | Avance: ~70%% completado"
+
+msgid "Go to App"
+msgstr "Ir a la aplicación"
+
+msgid "Home"
+msgstr "Inicio"
+
+msgid "IT Systems Analyst"
+msgstr "Analista de Sistemas IT"
+
+msgid "If you did not request this, please ignore this email."
+msgstr "Si no solicitaste este cambio, ignorá este correo."
+
+msgid "If you don't receive it within a few minutes, please check your Spam folder."
+msgstr "Si no lo recibís en unos minutos, revisá la carpeta de spam."
+
+msgid "Ignition"
+msgstr "Encendido"
+
+msgid "Infrastructure & DevOps (Raspberry Pi)"
+msgstr "Infraestructura y DevOps (Raspberry Pi)"
+
+msgid "Integration of telematics hardware (Teltonika FMC150). TCP/UDP frame decoding and visualization via the Flespi platform for logistics fleets. <em>Currently hosted on the local server.</em>"
+msgstr "Integración de hardware telemático (Teltonika FMC150), decodificación de tramas TCP/UDP y visualización mediante Flespi para flotas logísticas. <em>Actualmente alojado en el servidor local.</em>"
+
+msgid "Invalid Link"
+msgstr "Enlace inválido"
+
+msgid "Invalid username or password."
+msgstr "Usuario o contraseña inválidos."
+
+msgid "IoT Access"
+msgstr "Acceso IoT"
+
+msgid "IoT Architecture"
+msgstr "Arquitectura IoT"
+
+msgid "IoT Tracking"
+msgstr "Seguimiento IoT"
+
+msgid "IoT Tracking System"
+msgstr "Sistema de seguimiento IoT"
+
+msgid "Jan 2024"
+msgstr "Ene 2024"
+
+msgid "LOG IN"
+msgstr "INGRESAR"
+
+msgid "Last Update"
+msgstr "Última actualización"
+
+msgid "Linux server configured from scratch, with SSH security management, dynamic DNS (No-IP) and Gunicorn/Nginx. It hosts this portfolio and serves FulboApp to the world."
+msgstr "Servidor Linux configurado desde cero, con seguridad SSH, DNS dinámico (No-IP) y Gunicorn/Nginx. Aloja este portfolio y publica FulboApp."
+
+msgid "Live Deployment"
+msgstr "Despliegue activo"
+
+msgid "Live Map"
+msgstr "Mapa en vivo"
+
+msgid "Live Tracking"
+msgstr "Seguimiento en vivo"
+
+msgid "Log In Again"
+msgstr "Volver a ingresar"
+
+msgid "Log In Now"
+msgstr "Ingresar ahora"
+
+msgid "Log out"
+msgstr "Cerrar sesión"
+
+msgid "Logged Out"
+msgstr "Sesión cerrada"
+
+msgid "Login"
+msgstr "Ingresar"
+
+msgid "Manage Mobile Device Management (MDM) infrastructure and enforce security and operational policies"
+msgstr "Administrar infraestructura MDM y aplicar políticas operativas y de seguridad"
+
+msgid "Mar 2018 – May 2023"
+msgstr "Mar 2018 – May 2023"
+
+msgid "Mar 2023 – Mar 2024 | La Plata, Argentina"
+msgstr "Mar 2023 – Mar 2024 | La Plata, Argentina"
+
+msgid "Mar 2024 – Present"
+msgstr "Mar 2024 – Actualidad"
+
+msgid "Middleware platform normalizes data packets and exposes a JSON API."
+msgstr "La plataforma middleware normaliza los paquetes y expone una API JSON."
+
+msgid "Multi-Role Delivery Platform"
+msgstr "Plataforma de delivery con múltiples roles"
+
+msgid "My Fleet Inventory"
+msgstr "Inventario de mi flota"
+
+msgid "National University of La Plata (UNLP)"
+msgstr "Universidad Nacional de La Plata (UNLP)"
+
+msgid "New Password"
+msgstr "Nueva contraseña"
+
+msgid "No data"
+msgstr "Sin datos"
+
+msgid "No devices assigned."
+msgstr "No hay dispositivos asignados."
+
+msgid "No devices found."
+msgstr "No se encontraron dispositivos."
+
+msgid "Not assigned"
+msgstr "Sin asignar"
+
+msgid "Odometer"
+msgstr "Odómetro"
+
+msgid "Oversaw planning, budgeting and cost control for large-scale infrastructure projects"
+msgstr "Supervisé planificación, presupuesto y control de costos de grandes proyectos de infraestructura"
+
+msgid "Password Reset Complete"
+msgstr "Contraseña restablecida"
+
+msgid "Password:"
+msgstr "Contraseña:"
+
+msgid "Performed data analysis for price updates, progress certifications and reports to senior management"
+msgstr "Realicé análisis de datos para redeterminaciones de precios, certificaciones de avance e informes gerenciales"
+
+msgid "Please check your inbox."
+msgstr "Revisá tu bandeja de entrada."
+
+msgid "Please click the link below to choose a new password:"
+msgstr "Ingresá al siguiente enlace para elegir una nueva contraseña:"
+
+msgid "Please enter your new password twice so we can verify you typed it correctly."
+msgstr "Ingresá dos veces tu nueva contraseña para verificarla."
+
+msgid "Price History"
+msgstr "Historial de precios"
+
+msgid "ROLE: USER"
+msgstr "ROL: USUARIO"
+
+msgid "Raspberry Pi / Django renders the live dashboard and procces the data( and will consume the API)."
+msgstr "Raspberry Pi y Django procesan los datos y renderizan el panel en vivo consumiendo la API."
+
+msgid "Real-Time Telemetry Architecture"
+msgstr "Arquitectura de telemetría en tiempo real"
+
+msgid "Real-Time Telemetry Dashboard"
+msgstr "Panel de telemetría en tiempo real"
+
+msgid "Recognized in the Top 10 for academic performance."
+msgstr "Reconocido dentro del Top 10 por desempeño académico."
+
+msgid "Regards,"
+msgstr "Saludos,"
+
+msgid "Request New Link"
+msgstr "Solicitar otro enlace"
+
+msgid "Reset Password"
+msgstr "Restablecer contraseña"
+
+msgid "Restricted access to Django's native administration panel for database maintenance, record CRUD operations and user management."
+msgstr "Acceso restringido al panel administrativo nativo de Django para mantenimiento de la base, operaciones CRUD y gestión de usuarios."
+
+msgid "Return Home"
+msgstr "Volver al inicio"
+
+msgid "Satellite Monitoring System"
+msgstr "Sistema de monitoreo satelital"
+
+msgid "Secure Access"
+msgstr "Acceso seguro"
+
+msgid "Send Email"
+msgstr "Enviar correo"
+
+msgid "Server"
+msgstr "Servidor"
+
+msgid "Set New Password"
+msgstr "Definir nueva contraseña"
+
+msgid "Spanish CV"
+msgstr "CV en español"
+
+msgid "Speed"
+msgstr "Velocidad"
+
+msgid "Supermarket Price History & Barcode Scanner"
+msgstr "Historial de precios y escáner de códigos"
+
+msgid "System Management"
+msgstr "Administración del sistema"
+
+msgid "Technical Office"
+msgstr "Oficina técnica"
+
+msgid "Test and debug features and code changes in staging environments before production deployment"
+msgstr "Probar y depurar funcionalidades y cambios en entornos de staging antes de producción"
+
+msgid "Thank you for using the IoT Tracking System."
+msgstr "Gracias por usar el sistema de seguimiento IoT."
+
+msgid "The IoT Monitor Team"
+msgstr "El equipo de IoT Monitor"
+
+msgid "The Teltonika FMC150 device captures GPS coordinates and sensor data."
+msgstr "El dispositivo Teltonika FMC150 captura coordenadas GPS y datos de sensores."
+
+msgid "The password reset link was invalid, possibly because it has already been used or has expired."
+msgstr "El enlace no es válido; posiblemente ya fue usado o venció."
+
+msgid "Transmission"
+msgstr "Transmisión"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Units"
+msgstr "Unidades"
+
+msgid "Updated"
+msgstr "Actualizado"
+
+msgid "Vehicle Name"
+msgstr "Nombre del vehículo"
+
+msgid "View Details"
+msgstr "Ver detalles"
+
+msgid "View Live Map"
+msgstr "Ver mapa en vivo"
+
+msgid "View Projects"
+msgstr "Ver proyectos"
+
+msgid "View on Map"
+msgstr "Ver en el mapa"
+
+msgid "We have sent instructions to reset your password to the email address you provided."
+msgstr "Enviamos instrucciones para restablecer tu contraseña al email indicado."
+
+msgid "We received a request to reset the password for your IoT Tracking account."
+msgstr "Recibimos una solicitud para restablecer la contraseña de tu cuenta de seguimiento IoT."
+
+msgid "Web Scraping"
+msgstr "Web scraping"
+
+msgid "You have been logged out"
+msgstr "Cerraste sesión"
+
+msgid "You're here"
+msgstr "Estás acá"
+
+msgid "Your password has been successfully reset. You can now log in with your new credentials."
+msgstr "Tu contraseña se restableció correctamente. Ya podés ingresar con tus nuevas credenciales."
+
+msgid "© 2026 Alejo Vincent. Developed in Django, served from Raspberry Pi."
+msgstr "© 2026 Alejo Vincent. Desarrollado en Django y servido desde una Raspberry Pi."
+
+msgid "Device not found."
+msgstr "Dispositivo no encontrado."
+
+msgid "No historical data available yet."
+msgstr "Todavía no hay datos históricos disponibles."
+
+msgid "Your session has been closed securely."
+msgstr "Tu sesión se cerró de forma segura."
+msgid "Supermercados"
+msgstr "Supermercados"
+
+msgid "Puede que %(store_name)s no lo venda online o que todavía no lo hayamos relevado."
+msgstr "Puede que %(store_name)s no lo venda online o que todavía no lo hayamos relevado."
+
+msgid "Ejecutá <code>python manage.py scrape_supermarkets</code> para poblar la base."
+msgstr "Ejecutá <code>python manage.py scrape_supermarkets</code> para poblar la base."

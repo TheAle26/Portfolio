@@ -1,10 +1,11 @@
 """
-Cliente de la API pública de VTEX de MasOnline (ChangoMás) y
-parser de promociones para calcular el precio efectivo por unidad.
+Cliente compartido para los catálogos públicos VTEX de ChangoMás,
+Carrefour y Disco, con parser de promociones por unidad.
 """
 import logging
 import re
 import time
+from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlparse
 
@@ -12,9 +13,42 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = 'https://www.masonline.com.ar'
-SEARCH_URL = BASE_URL + '/api/catalog_system/pub/products/search'
-TREE_URL = BASE_URL + '/api/catalog_system/pub/category/tree/3'
+
+@dataclass(frozen=True)
+class StoreConfig:
+    slug: str
+    name: str
+    base_url: str
+    category_tree_depth: int = 3
+    max_list_price_multiplier: Decimal | None = None
+
+    @property
+    def search_url(self):
+        return self.base_url + '/api/catalog_system/pub/products/search'
+
+    @property
+    def tree_url(self):
+        return self.base_url + f'/api/catalog_system/pub/category/tree/{self.category_tree_depth}'
+
+
+STORE_CONFIGS = {
+    config.slug: config
+    for config in (
+        StoreConfig('changomas', 'ChangoMás', 'https://www.masonline.com.ar'),
+        StoreConfig('carrefour', 'Carrefour', 'https://www.carrefour.com.ar'),
+        # Disco publica ocasionalmente ListPrice desfasados por dos ordenes de
+        # magnitud. No se muestran como descuento si superan 10x el precio.
+        StoreConfig(
+            'disco', 'Disco', 'https://www.disco.com.ar',
+            max_list_price_multiplier=Decimal('10'),
+        ),
+    )
+}
+
+# Alias conservados para integraciones que importaban estas constantes.
+BASE_URL = STORE_CONFIGS['changomas'].base_url
+SEARCH_URL = STORE_CONFIGS['changomas'].search_url
+TREE_URL = STORE_CONFIGS['changomas'].tree_url
 
 PAGE_SIZE = 50
 # La API de búsqueda de VTEX no permite paginar más allá del registro 2500.
@@ -33,10 +67,14 @@ class ScrapeError(Exception):
     """La API no respondió tras los reintentos: la categoría quedó incompleta."""
 
 
-class MasOnlineClient:
-    """Acceso HTTP a la API de catálogo, con reintentos y pausa entre requests."""
+class VtexClient:
+    """Acceso HTTP a un catálogo VTEX, con reintentos y pausa entre requests."""
 
-    def __init__(self, delay=0.3, timeout=30, max_retries=3):
+    def __init__(self, store='changomas', delay=0.3, timeout=30, max_retries=3):
+        try:
+            self.config = STORE_CONFIGS[store] if isinstance(store, str) else store
+        except KeyError as exc:
+            raise ValueError(f'Supermercado desconocido: {store}') from exc
         self.delay = delay
         self.timeout = timeout
         self.max_retries = max_retries
@@ -70,7 +108,7 @@ class MasOnlineClient:
         de VTEX; los ids sueltos no devuelven resultados en esta tienda.
         Se recorren las hojas para no duplicar productos de nodos padre.
         """
-        tree = self._get_json(TREE_URL)
+        tree = self._get_json(self.config.tree_url)
         if not tree:
             return []
         leaves = []
@@ -105,7 +143,7 @@ class MasOnlineClient:
                 '_from': offset,
                 '_to': offset + PAGE_SIZE - 1,
             }
-            page = self._get_json(SEARCH_URL, params=params)
+            page = self._get_json(self.config.search_url, params=params)
             if page is None:
                 raise ScrapeError(f'La API no respondió paginando la categoría {category_id_path}')
             if not page:
@@ -114,9 +152,21 @@ class MasOnlineClient:
             if len(page) < PAGE_SIZE:
                 return
             offset += PAGE_SIZE
-        logger.warning(
-            'Categoría %s alcanzó el límite de %s productos de VTEX: '
-            'puede haber productos no relevados.', category_id_path, VTEX_MAX_OFFSET,
+        raise ScrapeError(
+            f'La categoría {category_id_path} alcanzó el límite de '
+            f'{VTEX_MAX_OFFSET} productos de VTEX y quedó truncada.'
+        )
+
+
+class MasOnlineClient(VtexClient):
+    """Compatibilidad con el cliente original de ChangoMás."""
+
+    def __init__(self, delay=0.3, timeout=30, max_retries=3):
+        super().__init__(
+            store='changomas',
+            delay=delay,
+            timeout=timeout,
+            max_retries=max_retries,
         )
 
 
@@ -125,6 +175,7 @@ class MasOnlineClient:
 # ---------------------------------------------------------------------------
 
 TWO_DECIMALS = Decimal('0.01')
+FOUR_DECIMALS = Decimal('0.0001')
 
 # "50% en la 2da unidad", "2da unidad al 50%", "2do al 70%", "Segunda unidad 50% off"
 RE_SECOND_UNIT = re.compile(
@@ -144,6 +195,13 @@ MAX_QUANTITY_DISCOUNT = Decimal('0.70')
 
 def _to_decimal(value):
     return Decimal(str(value)).quantize(TWO_DECIMALS, rounding=ROUND_HALF_UP)
+
+
+def _to_unit_multiplier(value):
+    try:
+        return Decimal(str(value or 1)).quantize(FOUR_DECIMALS, rounding=ROUND_HALF_UP)
+    except (ArithmeticError, ValueError):
+        return Decimal('1.0000')
 
 
 def _normalize_key(key):
@@ -262,16 +320,7 @@ def _safe_url(value):
     return ''
 
 
-def parse_product(raw, category_path=''):
-    """
-    Convierte un producto crudo de la API en un dict plano listo para guardar.
-    Devuelve None si el producto no tiene oferta con precio.
-    """
-    items = raw.get('items') or []
-    if not items:
-        return None
-    item = items[0]
-
+def _parse_item(raw, item, category_path, config):
     offer = None
     for seller in item.get('sellers') or []:
         candidate = seller.get('commertialOffer') or {}
@@ -285,11 +334,25 @@ def parse_product(raw, category_path=''):
 
     price = _to_decimal(offer['Price'])
     list_price = _to_decimal(offer['ListPrice']) if offer.get('ListPrice') else None
+    if (
+        list_price is not None
+        and config.max_list_price_multiplier is not None
+        and list_price > price * config.max_list_price_multiplier
+    ):
+        logger.warning(
+            '%s: ListPrice implausible descartado para productId=%s (%s vs %s)',
+            config.name, raw.get('productId'), list_price, price,
+        )
+        list_price = None
     promo_price, promo_text = parse_promo(offer, price)
 
-    ean = (item.get('ean') or '').strip()
-    vtex_id = str(raw.get('productId'))
-    reference_code = ean if ean else f'vtex-{vtex_id}'
+    ean = (item.get('ean') or '').strip()[:32]
+    vtex_id = str(raw.get('productId') or '')
+    sku_id = str(item.get('itemId') or vtex_id)
+    if not vtex_id or not sku_id or len(vtex_id) > 32 or len(sku_id) > 32:
+        logger.warning('Producto VTEX descartado por identificador inválido: %r/%r', vtex_id, sku_id)
+        return None
+    reference_code = ean if ean else f'vtex-{sku_id}'
 
     images = item.get('images') or []
     image_url = _safe_url(images[0].get('imageUrl', '')) if images else ''
@@ -300,10 +363,15 @@ def parse_product(raw, category_path=''):
 
     return {
         'vtex_product_id': vtex_id,
+        'vtex_sku_id': sku_id,
         'reference_code': reference_code,
         'ean': ean,
-        'product_reference': str(raw.get('productReference') or ''),
-        'name': (raw.get('productName') or '').strip()[:300],
+        'product_reference': str(raw.get('productReference') or '')[:64],
+        'measurement_unit': str(item.get('measurementUnit') or '')[:16],
+        'unit_multiplier': _to_unit_multiplier(item.get('unitMultiplier')),
+        'name': (
+            item.get('nameComplete') or raw.get('productName') or ''
+        ).strip()[:300],
         'brand': (raw.get('brand') or '').strip()[:150],
         'category': category[:300],
         'image_url': image_url[:500],
@@ -314,3 +382,20 @@ def parse_product(raw, category_path=''):
         'promo_price': promo_price,
         'promo_text': promo_text,
     }
+
+
+def parse_products(raw, category_path='', store='changomas'):
+    """Convierte cada SKU con oferta de un producto VTEX en una publicacion."""
+    config = STORE_CONFIGS[store] if isinstance(store, str) else store
+    parsed = []
+    for item in raw.get('items') or []:
+        product = _parse_item(raw, item, category_path, config)
+        if product is not None:
+            parsed.append(product)
+    return parsed
+
+
+def parse_product(raw, category_path='', store='changomas'):
+    """Compatibilidad: devuelve el primer SKU vendible o ``None``."""
+    products = parse_products(raw, category_path=category_path, store=store)
+    return products[0] if products else None

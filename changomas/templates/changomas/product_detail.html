@@ -1,13 +1,13 @@
-{% load changomas_extras %}<!DOCTYPE html>
-<html lang="es">
+{% load changomas_extras i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.name }} - ChangoMás Tracker</title>
+    <title>{{ product.name }} - {{ supermarket.name }} Tracker</title>
     <style>
         :root {
-            --rojo: #d52b1e; --azul: #0071ce; --verde: #2e7d32;
-            --amarillo: #ffc220; --gris-fondo: #f4f4f4; --gris-texto: #555;
+            --rojo: #d52b1e; --azul: {{ supermarket.primary_color }}; --verde: #2e7d32;
+            --amarillo: {{ supermarket.accent_color }}; --gris-fondo: #f4f4f4; --gris-texto: #555;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--gris-fondo); color: #222; }
@@ -69,14 +69,24 @@
         td.promo { color: var(--verde); font-weight: 700; }
 
         .sin-datos { color: var(--gris-texto); text-align: center; padding: 30px 10px; }
+        .stores { display: flex; gap: 8px; padding: 10px 18px; overflow-x: auto; background: #fff; }
+        .stores a { color: #333; text-decoration: none; font-weight: 700; font-size: .8rem; padding: 6px 12px; border: 1px solid #ddd; border-radius: 18px; white-space: nowrap; }
+        .stores a.active { color: #fff; background: var(--azul); border-color: var(--azul); }
     </style>
 </head>
 <body>
+    {% include 'includes/language_toggle.html' %}
+    <nav class="stores" aria-label="{% translate 'Supermercados' %}">
+        {% for store in supermarkets %}
+            <a href="{% url 'changomas:store_product_list' store.slug %}"
+               class="{% if store.slug == supermarket.slug %}active{% endif %}">{{ store.name }}</a>
+        {% endfor %}
+    </nav>
     <header>
-        <h1>Chango<span>Más</span> Tracker</h1>
+        <h1>{{ supermarket.name }} <span>Tracker</span></h1>
         <nav>
-            <a href="{% url 'changomas:scan' %}">📷 Escanear otro</a>
-            <a href="{% url 'changomas:product_list' %}">🛒 Catálogo</a>
+            <a href="{% url 'changomas:store_scan' supermarket.slug %}">📷 {% translate "Escanear otro" %}</a>
+            <a href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {% translate "Catálogo" %}</a>
         </nav>
     </header>
 
@@ -96,17 +106,17 @@
                     {% endif %}
                     <div class="price">$ {{ stats.current.price|precio }}</div>
                     {% if stats.current.promo_price %}
-                        <div class="promo-line">Precio promo: $ {{ stats.current.promo_price|precio }} c/u</div>
+                        <div class="promo-line">{% translate "Precio promo" %}: $ {{ stats.current.promo_price|precio }} {% translate "c/u" %}</div>
                     {% endif %}
                     {% if stats.current.promo_text %}
                         <span class="badge-promo">{{ stats.current.promo_text }}</span>
                     {% endif %}
                 {% endif %}
                 {% if not product.is_available %}
-                    <div class="no-disponible">No disponible en la última actualización</div>
+                    <div class="no-disponible">{% translate "No disponible en la última actualización" %}</div>
                 {% endif %}
                 <div class="ref">
-                    Ref: {{ product.reference_code }}
+                    {% translate "Ref" %}: {{ product.reference_code }}
                     {% if product.ean and product.ean != product.reference_code %} · EAN: {{ product.ean }}{% endif %}
                 </div>
             </div>
@@ -115,24 +125,24 @@
         {% if stats %}
         <div class="stats">
             <div class="stat min">
-                <div class="label">Mínimo {{ stats.days }} día{{ stats.days|pluralize }}</div>
+                <div class="label">{% blocktranslate count counter=stats.days %}Mínimo de {{ counter }} día{% plural %}Mínimo de {{ counter }} días{% endblocktranslate %}</div>
                 <div class="value">$ {{ stats.min|precio }}</div>
             </div>
             <div class="stat">
-                <div class="label">Hoy ({{ stats.current.date|date:"d/m" }})</div>
+                <div class="label">{% blocktranslate with date=stats.current.date|date:"d/m" %}Hoy ({{ date }}){% endblocktranslate %}</div>
                 <div class="value">$ {{ stats.current.effective_price|precio }}</div>
             </div>
             <div class="stat max">
-                <div class="label">Máximo {{ stats.days }} día{{ stats.days|pluralize }}</div>
+                <div class="label">{% blocktranslate count counter=stats.days %}Máximo de {{ counter }} día{% plural %}Máximo de {{ counter }} días{% endblocktranslate %}</div>
                 <div class="value">$ {{ stats.max|precio }}</div>
             </div>
         </div>
 
         {% if chart %}
         <div class="panel">
-            <h3>Evolución del precio (últimos 30 días)</h3>
+            <h3>{% translate "Evolución del precio (últimos 30 días)" %}</h3>
             <svg class="chart" viewBox="0 0 600 180" preserveAspectRatio="none" role="img"
-                 aria-label="Gráfico de evolución del precio">
+                 aria-label="{% translate 'Gráfico de evolución del precio' %}">
                 <polyline points="{{ chart.points }}" fill="none" stroke="#0071ce" stroke-width="3"
                           stroke-linejoin="round" stroke-linecap="round"/>
                 <circle cx="{{ chart.last_x }}" cy="{{ chart.last_y }}" r="5" fill="#0071ce"/>
@@ -141,10 +151,10 @@
         {% endif %}
 
         <div class="panel">
-            <h3>Historial ({{ stats.days }} registro{{ stats.days|pluralize }})</h3>
+            <h3>{% blocktranslate count counter=stats.days %}Historial ({{ counter }} registro){% plural %}Historial ({{ counter }} registros){% endblocktranslate %}</h3>
             <table>
                 <thead>
-                    <tr><th>Fecha</th><th>Precio</th><th>Promo</th><th>Efectivo</th></tr>
+                    <tr><th>{% translate "Fecha" %}</th><th>{% translate "Precio" %}</th><th>{% translate "Promo" %}</th><th>{% translate "Precio efectivo" %}</th></tr>
                 </thead>
                 <tbody>
                     {% for r in records %}
@@ -159,7 +169,7 @@
             </table>
         </div>
         {% else %}
-        <div class="panel sin-datos">Todavía no hay precios registrados para este producto.</div>
+        <div class="panel sin-datos">{% translate "Todavía no hay precios registrados para este producto." %}</div>
         {% endif %}
     </main>
 </body>

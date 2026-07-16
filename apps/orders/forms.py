@@ -2,6 +2,7 @@ from django import forms
 from .models import Pedido, Medicamento, StockMedicamento
 from django.core.validators import MinValueValidator
 import decimal
+from django.utils.translation import gettext_lazy as _
 
 class PedidoForm(forms.ModelForm):
     class Meta:
@@ -11,18 +12,18 @@ class PedidoForm(forms.ModelForm):
 class AddStockMedicamentoForm(forms.Form):
     medicamento = forms.ModelChoiceField(
         queryset=Medicamento.objects.order_by('nombre_comercial'),
-        label="Medicamento",
-        empty_label="Seleccione un medicamento..."
+        label=_("Medicamento"),
+        empty_label=_("Seleccioná un medicamento...")
     )
     precio = forms.DecimalField(
         
         decimal_places=2,
-        label="Precio de Venta ($)",
+        label=_("Precio de venta ($)"),
         validators=[MinValueValidator(decimal.Decimal('0.01'))], # Precio debe ser positivo
         widget=forms.NumberInput(attrs={'step': '0.01'})
     )
     stock_actual = forms.IntegerField(
-        label="Stock Inicial",
+        label=_("Stock inicial"),
         validators=[MinValueValidator(0)], # Stock no puede ser negativo
         min_value=0 # Atributo HTML5 para el input
     )
@@ -42,12 +43,12 @@ class EditStockMedicamentoForm(forms.ModelForm):
     precio = forms.DecimalField(
         
         decimal_places=2,
-        label="Nuevo Precio ($)",
+        label=_("Nuevo precio ($)"),
         validators=[MinValueValidator(decimal.Decimal('0.01'))],
         widget=forms.NumberInput(attrs={'step': '0.01'})
     )
     stock_actual = forms.IntegerField(
-        label="Nuevo Stock",
+        label=_("Nuevo stock"),
         validators=[MinValueValidator(0)],
         min_value=0
     )
@@ -67,7 +68,7 @@ class FarmaciaAceptarPedidoForm(forms.Form):
                 field_name = f"confirmar_receta_{item.id}"
                 self.fields[field_name] = forms.BooleanField(
                     required=False,
-                    label=f"Confirmo la receta de {item.medicamento.nombre_comercial}",
+                    label=_("Confirmo la receta de %(medicine)s") % {'medicine': item.medicamento.nombre_comercial},
                 )
 
     def clean(self):

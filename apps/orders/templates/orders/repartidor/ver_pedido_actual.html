@@ -1,10 +1,11 @@
 {% extends "orders/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <a href="{% url 'repartidor_panel' %}" class="btn btn-secondary mb-3">Volver al Panel</a>
+            <a href="{% url 'repartidor_panel' %}" class="btn btn-secondary mb-3">{% translate "Volver al panel" %}</a>
             
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
@@ -12,38 +13,38 @@
                 </div>
                 <div class="card-body">
                     
-                    <h5 class="card-title text-success">📍 Dirección de Retiro (Farmacia)</h5>
+                    <h5 class="card-title text-success">📍 {% translate "Dirección de retiro (farmacia)" %}</h5>
                     <p>
-                        <strong>Farmacia:</strong> {{ pedido.farmacia.nombre }}<br>
-                        <strong>Dirección:</strong> {{ pedido.farmacia.direccion }}<br>
+                        <strong>{% translate "Farmacia:" %}</strong> {{ pedido.farmacia.nombre }}<br>
+                        <strong>{% translate "Dirección:" %}</strong> {{ pedido.farmacia.direccion }}<br>
                     </p>
                     
                     <hr>
 
-                    <h5 class="card-title text-danger">🏠 Dirección de Entrega (Cliente)</h5>
+                    <h5 class="card-title text-danger">🏠 {% translate "Dirección de entrega (cliente)" %}</h5>
                     <p>
-                        <strong>Cliente:</strong> {{ pedido.cliente.user.email }}<br>
-                        <strong>Dirección:</strong> {{ pedido.direccion }}
+                        <strong>{% translate "Cliente:" %}</strong> {{ pedido.cliente.user.email }}<br>
+                        <strong>{% translate "Dirección:" %}</strong> {{ pedido.direccion }}
                     </p>
                     
                     <hr>
 
-                    <h5 class="card-title">Detalles de la Entrega</h5>
+                    <h5 class="card-title">{% translate "Detalles de la entrega" %}</h5>
                     <p>
-                        <strong>Código de Seguridad (Entrega):</strong> 
+                        <strong>{% translate "Código de seguridad (entrega):" %}</strong>
                         <span class="text-danger fw-bold fs-5">{{pedido.codigo_seguridad}}</span> 
                     </p>
 
                     <p>
-                        <strong>Ganancia Estimada:</strong> 
+                        <strong>{% translate "Ganancia estimada:" %}</strong>
                         <span class="fw-bold text-success">${{pedido.total}}</span> 
                         </p>
-                    <p class="text-muted small">Tiempo estimado: XX minutos</p>
+                    <p class="text-muted small">{% translate "Tiempo estimado: XX minutos" %}</p>
                     
                     <div class="mt-4 text-center">
                         <form action="{% url 'repartidor_entregar_pedido' pedido.id %}" method="post" onsubmit="return confirm('Confirmar la entrega del pedido?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-lg btn-success">Marcar como ENTREGADO</button>
+                            <button type="submit" class="btn btn-lg btn-success">{% translate "Marcar como entregado" %}</button>
                         </form>
                     </div>
                 </div>

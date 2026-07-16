@@ -3,12 +3,21 @@ from unittest import mock
 
 from django.core.cache import cache
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, SimpleTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import PriceRecord, Product
-from .scraper import ScrapeError, parse_product, parse_promo, _promo_from_text, _safe_url
+from .models import PriceRecord, Product, Supermarket
+from .scraper import (
+    ScrapeError,
+    VtexClient,
+    _promo_from_text,
+    _safe_url,
+    parse_product,
+    parse_products,
+    parse_promo,
+)
 
 
 class PromoParserTests(SimpleTestCase):
@@ -126,6 +135,7 @@ class ParseProductTests(SimpleTestCase):
         self.assertEqual(parsed['reference_code'], '7790580146115')
         self.assertEqual(parsed['ean'], '7790580146115')
         self.assertEqual(parsed['vtex_product_id'], '220932')
+        self.assertEqual(parsed['vtex_sku_id'], '220932')
         self.assertEqual(parsed['price'], Decimal('1129.00'))
         self.assertEqual(parsed['list_price'], Decimal('1500.00'))
         self.assertIsNone(parsed['promo_price'])
@@ -158,8 +168,51 @@ class ParseProductTests(SimpleTestCase):
         self.assertEqual(_safe_url('javascript:alert(1)'), '')
         self.assertEqual(_safe_url(None), '')
 
+    def test_disco_descarta_list_price_implausible(self):
+        raw = self._raw_product()
+        raw['items'][0]['sellers'][0]['commertialOffer']['Price'] = 1110
+        raw['items'][0]['sellers'][0]['commertialOffer']['ListPrice'] = 91736
+        parsed = parse_product(raw, store='disco')
+        self.assertEqual(parsed['price'], Decimal('1110.00'))
+        self.assertIsNone(parsed['list_price'])
+
+    def test_parsea_todos_los_skus_vendibles(self):
+        raw = self._raw_product()
+        second_item = {
+            **raw['items'][0],
+            'itemId': 'sku-2',
+            'ean': '7790580146116',
+            'nameComplete': 'Puré De Tomate Arcor 1 Kg',
+        }
+        raw['items'][0]['itemId'] = 'sku-1'
+        raw['items'].append(second_item)
+        products = parse_products(raw)
+        self.assertEqual(len(products), 2)
+        self.assertEqual(
+            {product['vtex_sku_id'] for product in products}, {'sku-1', 'sku-2'},
+        )
+
+    def test_categoria_truncada_se_reporta_como_falla(self):
+        client = VtexClient(delay=0)
+        client._get_json = mock.Mock(return_value=[{}] * 50)
+        with self.assertRaises(ScrapeError):
+            list(client.iter_category_products('1/2'))
+
 
 class ModelTests(TestCase):
+
+    def test_mismo_ean_y_vtex_id_puede_existir_en_distintos_supermercados(self):
+        carrefour = Supermarket.objects.get(slug='carrefour')
+        disco = Supermarket.objects.get(slug='disco')
+        Product.objects.create(
+            supermarket=carrefour, reference_code='779', ean='779',
+            vtex_product_id='1', name='Producto Carrefour',
+        )
+        Product.objects.create(
+            supermarket=disco, reference_code='779', ean='779',
+            vtex_product_id='1', name='Producto Disco',
+        )
+        self.assertEqual(Product.objects.filter(ean='779').count(), 2)
 
     def test_effective_price_y_descuento(self):
         product = Product.objects.create(
@@ -230,6 +283,27 @@ class ViewTests(TestCase):
         self.assertContains(response, 'Leche Entera')
         self.assertNotContains(response, 'Pan Lactal')
 
+    def test_catalogos_estan_aislados_por_supermercado(self):
+        carrefour = Supermarket.objects.get(slug='carrefour')
+        Product.objects.create(
+            supermarket=carrefour, reference_code='carrefour-1',
+            vtex_product_id='1', name='Solo Carrefour',
+        )
+        changomas = self.client.get(reverse('changomas:product_list'))
+        carrefour_response = self.client.get(
+            reverse('changomas:store_product_list', args=['carrefour'])
+        )
+        self.assertNotContains(changomas, 'Solo Carrefour')
+        self.assertContains(carrefour_response, 'Solo Carrefour')
+
+    def test_selector_y_estado_vacio_tienen_traduccion_inglesa(self):
+        response = self.client.get(
+            reverse('changomas:store_product_list', args=['disco']),
+            HTTP_ACCEPT_LANGUAGE='en',
+        )
+        self.assertContains(response, 'Supermarkets')
+        self.assertContains(response, 'Run <code>python manage.py scrape_supermarkets</code>')
+
 
 class ProductDetailViewTests(TestCase):
 
@@ -266,8 +340,10 @@ class ProductDetailViewTests(TestCase):
         self.assertContains(response, '1.200,00')   # precio actual
         self.assertContains(response, 'Evolución del precio')
         # links cruzados con el escáner y el catálogo
-        self.assertContains(response, reverse('changomas:scan'))
-        self.assertContains(response, reverse('changomas:product_list'))
+        self.assertContains(
+            response, reverse('changomas:store_scan', args=['changomas']))
+        self.assertContains(
+            response, reverse('changomas:store_product_list', args=['changomas']))
 
     def test_detalle_por_referencia_vtex(self):
         # Si el EAN no está, se puede buscar por la referencia interna de VTEX
@@ -307,7 +383,7 @@ class ProductDetailViewTests(TestCase):
     def test_404_se_cachea_y_no_vuelve_a_consultar_la_db(self):
         url = reverse('changomas:product_detail', args=['9999999999999'])
         self.assertEqual(self.client.get(url).status_code, 404)
-        with self.assertNumQueries(0):
+        with self.assertNumQueries(1):  # valida el supermercado; no consulta Product
             response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
@@ -382,11 +458,12 @@ class ScanViewTests(TestCase):
         response = self.client.get(reverse('changomas:scan'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'BarcodeDetector')
-        self.assertContains(response, reverse('changomas:product_list'))
+        self.assertContains(
+            response, reverse('changomas:store_product_list', args=['changomas']))
 
     def test_catalogo_linkea_al_escaner(self):
         response = self.client.get(reverse('changomas:product_list'))
-        self.assertContains(response, reverse('changomas:scan'))
+        self.assertContains(response, reverse('changomas:store_scan', args=['changomas']))
 
 
 def _raw(vtex_id, ean, name='Producto', price=100.0):
@@ -476,11 +553,156 @@ class ScrapeCommandTests(TestCase):
         stale = Product.objects.create(reference_code='old', vtex_product_id='99', name='Ausente')
         Product.objects.filter(pk=stale.pk).update(
             last_seen=timezone.now() - timezone.timedelta(days=2))
-        self._run_command(
-            [('1', 'Almacén'), ('2', 'Bebidas')],
-            {'1': [_raw('10', 'nuevo-ean')], '2': ScrapeError('API caída')},
-        )
+        with self.assertRaises(CommandError):
+            self._run_command(
+                [('1', 'Almacén'), ('2', 'Bebidas')],
+                {'1': [_raw('10', 'nuevo-ean')], '2': ScrapeError('API caída')},
+            )
         stale.refresh_from_db()
         self.assertTrue(stale.is_available)
         # Lo que sí se bajó, se guardó igual
         self.assertTrue(Product.objects.filter(vtex_product_id='10').exists())
+
+    def test_arbol_vacio_hace_fallar_el_comando(self):
+        with mock.patch('changomas.management.commands.scrape_masonline.MasOnlineClient') as client_cls:
+            client_cls.return_value.get_leaf_categories.return_value = []
+            with self.assertRaises(CommandError):
+                call_command('scrape_masonline', verbosity=0)
+
+    def test_purga_solo_afecta_al_supermercado_ejecutado(self):
+        disco = Supermarket.objects.get(slug='disco')
+        old_date = timezone.localdate() - timezone.timedelta(days=20)
+        changomas_product = Product.objects.create(
+            reference_code='chango-old', vtex_product_id='200', name='Chango viejo',
+        )
+        disco_product = Product.objects.create(
+            supermarket=disco, reference_code='disco-old',
+            vtex_product_id='200', name='Disco viejo',
+        )
+        PriceRecord.objects.create(
+            product=changomas_product, date=old_date, price=Decimal('1'),
+        )
+        disco_price = PriceRecord.objects.create(
+            product=disco_product, date=old_date, price=Decimal('1'),
+        )
+        with mock.patch('changomas.management.commands.scrape_masonline.MasOnlineClient') as client_cls:
+            client = client_cls.return_value
+            client.get_leaf_categories.return_value = [('1', 'Almacén')]
+            client.iter_category_products.return_value = iter([_raw('10', 'nuevo')])
+            call_command('scrape_masonline', keep_days=7, verbosity=0)
+        self.assertFalse(PriceRecord.objects.filter(product=changomas_product).exists())
+        self.assertTrue(PriceRecord.objects.filter(pk=disco_price.pk).exists())
+
+    def test_un_product_id_con_dos_skus_guarda_dos_publicaciones(self):
+        raw = _raw('10', 'ean-1')
+        raw['items'][0]['itemId'] = 'sku-1'
+        raw['items'].append({
+            **raw['items'][0], 'itemId': 'sku-2', 'ean': 'ean-2',
+        })
+        self._run_command([('1', 'Almacén')], {'1': [raw]})
+        self.assertEqual(Product.objects.filter(vtex_product_id='10').count(), 2)
+        self.assertEqual(PriceRecord.objects.count(), 2)
+
+    def test_scrape_de_disco_no_modifica_changomas(self):
+        disco = Supermarket.objects.get(slug='disco')
+        changomas_product = Product.objects.create(
+            reference_code='compartido', vtex_product_id='99', name='Chango',
+        )
+        disco_product = Product.objects.create(
+            supermarket=disco, reference_code='viejo',
+            vtex_product_id='98', name='Disco viejo',
+        )
+        old_seen = timezone.now() - timezone.timedelta(days=2)
+        Product.objects.filter(pk__in=[changomas_product.pk, disco_product.pk]).update(
+            last_seen=old_seen,
+        )
+
+        with mock.patch('changomas.management.commands.scrape_masonline.VtexClient') as client_cls:
+            client = client_cls.return_value
+            client.get_leaf_categories.return_value = [('1', 'Almacén')]
+            client.iter_category_products.return_value = iter([
+                _raw('99', 'compartido', 'Disco nuevo'),
+            ])
+            call_command('scrape_masonline', store='disco', verbosity=0)
+
+        changomas_product.refresh_from_db()
+        disco_product.refresh_from_db()
+        self.assertTrue(changomas_product.is_available)
+        self.assertFalse(disco_product.is_available)
+        self.assertTrue(Product.objects.filter(
+            supermarket=disco, vtex_product_id='99',
+        ).exists())
+
+
+class SupermarketApiTests(TestCase):
+
+    def setUp(self):
+        cache.clear()
+        carrefour = Supermarket.objects.get(slug='carrefour')
+        disco = Supermarket.objects.get(slug='disco')
+        self.carrefour_product = Product.objects.create(
+            supermarket=carrefour, reference_code='7790580146115',
+            ean='7790580146115', vtex_product_id='739689',
+            name='Puré Carrefour', brand='Arcor', category='Almacén / Conservas',
+        )
+        self.disco_product = Product.objects.create(
+            supermarket=disco, reference_code='7790580146115',
+            ean='7790580146115', vtex_product_id='420198',
+            name='Puré Disco', brand='Arcor', category='Almacén / Conservas',
+        )
+        PriceRecord.objects.create(
+            product=self.carrefour_product, date=timezone.localdate(),
+            price=Decimal('1110.00'),
+        )
+
+    def test_lista_supermercados(self):
+        response = self.client.get(reverse('supermarkets_api:store-list'))
+        self.assertEqual(response.status_code, 200)
+        slugs = {item['slug'] for item in response.json()}
+        self.assertEqual(slugs, {'changomas', 'carrefour', 'disco'})
+
+    def test_productos_se_pueden_filtrar_por_ean_y_supermercado(self):
+        url = reverse('supermarkets_api:product-list')
+        response = self.client.get(url, {'ean': '7790580146115'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 2)
+
+        response = self.client.get(url, {
+            'ean': '7790580146115', 'store': 'carrefour',
+        })
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(
+            response.json()['results'][0]['supermarket']['slug'], 'carrefour',
+        )
+
+    def test_detalle_incluye_precio_e_historial(self):
+        response = self.client.get(reverse(
+            'supermarkets_api:product-detail', args=[self.carrefour_product.pk],
+        ))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['latest_price']['price'], '1110.00')
+        self.assertEqual(len(payload['price_history']), 1)
+        self.assertEqual(payload['stats']['days'], 1)
+
+    def test_no_expone_productos_de_supermercado_inactivo(self):
+        Supermarket.objects.filter(slug='disco').update(is_active=False)
+        response = self.client.get(reverse('supermarkets_api:product-list'), {
+            'ean': '7790580146115',
+        })
+        self.assertEqual(response.json()['count'], 1)
+        detail = self.client.get(reverse(
+            'supermarkets_api:product-detail', args=[self.disco_product.pk],
+        ))
+        self.assertEqual(detail.status_code, 404)
+
+
+class ScrapeAllCommandTests(SimpleTestCase):
+
+    def test_una_tienda_fallida_no_impide_intentar_las_restantes(self):
+        target = 'changomas.management.commands.scrape_supermarkets.call_command'
+        with mock.patch(target) as nested_call:
+            nested_call.side_effect = [CommandError('Carrefour caído'), None, None]
+            with self.assertRaises(CommandError):
+                call_command('scrape_supermarkets', verbosity=0)
+        self.assertEqual(nested_call.call_count, 3)

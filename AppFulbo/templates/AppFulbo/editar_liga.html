@@ -1,4 +1,5 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 {% comment %} {% if request.user in liga.presidentes.all %}
 <a class="btn btn-success" href="{% url 'crear_jugador' liga.id %}">
     <i class="fa-solid fa-plus"></i> Agregar Jugador
@@ -11,19 +12,19 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Editar Liga: <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td></h2>
-    <td><a href="{% url 'ver_liga' liga.id %}"> <button type="submit" class="btn btn-primary">Volver</button></a></td>
+    <h2>{% translate "Editar liga" %}: <td><a href="{% url 'ver_liga' liga.id %}">{{ liga.nombre_liga }}</a></td></h2>
+    <td><a href="{% url 'ver_liga' liga.id %}"> <button type="submit" class="btn btn-primary">{% translate "Volver" %}</button></a></td>
     <!-- Formulario para editar datos de la liga (nombre, descripción) -->
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="hidden" name="action" value="editar_liga">
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <button type="submit" class="btn btn-primary">{% translate "Guardar cambios" %}</button>
     </form>
     
     <hr>
     
-    <h3>Presidentes</h3>
+    <h3>{% translate "Presidentes" %}</h3>
     <!-- Listado de presidentes -->
     <ul class="list-group">
         {% for presidente in presidentes %}
@@ -36,14 +37,14 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete_president">
                 <input type="hidden" name="presidente_id" value="{{ presidente.id }}">
-                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar este presidente?')">Eliminar</button>
+                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('{% translate '¿Querés eliminar a este presidente?' %}')">{% translate "Eliminar" %}</button>
             </form>
 
                 <form method="post" style="display:inline;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="hacer_super_presidente">
                     <input type="hidden" name="presidente_id" value="{{ presidente.id }}">
-                    <button type="submit" style="border: 2px solid gold; font-weight: bold;" class="btn btn-danger" onclick="return confirm('¿Está seguro de hacer Super Presidente a {{presidente.username}}? Usted dejara de serlo')"><i class="fa-solid fa-crown"></i>ASCENDER</button>
+                    <button type="submit" style="border: 2px solid gold; font-weight: bold;" class="btn btn-danger" onclick="return confirm('{% translate '¿Querés ascender a este presidente? Dejarás de ser superpresidente.' %}')"><i class="fa-solid fa-crown"></i>{% translate "ASCENDER" %}</button>
                 </form>
             {% comment %} {% elif%}
                 <input type="hidden" name="action" value="abandonar_liga">
@@ -53,7 +54,7 @@
             {% endif %}
         </li>
         {% empty %}
-        <li class="list-group-item">No hay presidentes asignados.</li>
+        <li class="list-group-item">{% translate "No hay presidentes asignados." %}</li>
         {% endfor %}
     </ul>
 <!-- Formulario para agregar un presidente -->
@@ -63,13 +64,13 @@
 
     <div class="input-group">
         <input type="text" name="nuevo_presidente" class="form-control"
-               placeholder="Buscar jugador para presidente"
+               placeholder="{% translate 'Buscar jugador para presidente' %}"
                id="jugador-input" required>
 
         <div id="opciones-filtradas" class="list-group" style="position: absolute; z-index: 100; width: 100%; display: none; margin-top: 38px;">
         </div>
 
-        <button type="submit" class="btn btn-success">Agregar Presidente</button>
+        <button type="submit" class="btn btn-success">{% translate "Agregar presidente" %}</button>
     </div>
 </form>
 
@@ -137,7 +138,7 @@
                 {% if jugador.usuario %}
                     {{ jugador.usuario.username }}
                 {% else %}
-                    <span class="badge bg-secondary">Ninguno</span>
+                    <span class="badge bg-secondary">{% translate "Ninguno" %}</span>
                 {% endif %}
             </p>
             <div class="btn-group">
@@ -145,7 +146,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="edit_player">
                     <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                    <button type="submit" class="btn btn-warning btn-sm">Editar</button>
+                    <button type="submit" class="btn btn-warning btn-sm">{% translate "Editar" %}</button>
                 </form>
                 
                 <form method="post" style="display:inline;">
@@ -153,11 +154,11 @@
                     {% if jugador.usuario == request.user %}
                         <input type="hidden" name="action" value="abandonar_liga">
                         <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de salir de la liga?')">Abandonar Liga</button>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('{% translate '¿Querés salir de la liga?' %}')">{% translate "Abandonar liga" %}</button>
                     {% else %}
                         <input type="hidden" name="action" value="delete_player">
                         <input type="hidden" name="jugador_id" value="{{ jugador.id }}">
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar este jugador?')">Eliminar</button>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('{% translate '¿Querés eliminar a este jugador?' %}')">{% translate "Eliminar" %}</button>
                     {% endif %}
                 </form>
 
@@ -175,7 +176,7 @@
             </div>
         </div>
         {% empty %}
-        <p>No hay jugadores registrados.</p>
+        <p>{% translate "No hay jugadores registrados." %}</p>
         {% endfor %}
     </div>
      {% endcomment %}
@@ -206,21 +207,21 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="edit_match">
                             <input type="hidden" name="partido_id" value="{{ partido.id }}">
-                            <button type="submit" class="btn btn-warning btn-sm">Editar</button>
+                            <button type="submit" class="btn btn-warning btn-sm">{% translate "Editar" %}</button>
                         </form>
                         <!-- Botón eliminar partido -->
                         <form method="post" style="display:inline;">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="delete_match">
                             <input type="hidden" name="partido_id" value="{{ partido.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Está seguro de eliminar este partido?')">Eliminar</button>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('{% translate '¿Querés eliminar este partido?' %}')">{% translate "Eliminar" %}</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
         {% empty %}
-        <p>No hay partidos registrados en esta liga.</p>
+        <p>{% translate "No hay partidos registrados en esta liga." %}</p>
         {% endfor %}
     </div>
     

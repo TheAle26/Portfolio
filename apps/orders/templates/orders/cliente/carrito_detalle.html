@@ -1,16 +1,17 @@
 {% extends "orders/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Mi Carrito de Compras</h2> 
-    <a class="btn btn-primary" href="{% url 'buscar_medicamentos' %}">Buscar Medicamentos</a>
+    <h2>{% translate "Mi carrito de compras" %}</h2>
+    <a class="btn btn-primary" href="{% url 'buscar_medicamentos' %}">{% translate "Buscar medicamentos" %}</a>
 
     <form action="{% url 'finalizar_compra' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         {% for farmacia_data in carrito_data.farmacias %}
             <h3 class="h5 mb-0">
-            Pedido a: 
+            {% translate "Pedido a:" %}
             <strong class="ms-1">{{ farmacia_data.nombre_farmacia }}</strong>
             </h3>
             <h4></h4>
@@ -23,10 +24,10 @@
                                 <div class="col-md-5">
                                     <strong>{{ item.cantidad }}x {{ item.stock_obj.medicamento.nombre_comercial }}</strong>
                                     <p class="mb-1 text-muted small">
-                                        Precio Unitario: ${{ item.precio_unitario }}
+                                        {% translate "Precio unitario" %}: ${{ item.precio_unitario }}
                                     </p>
                                     <h5 class="mb-0 text-success">
-                                        Subtotal: ${{ item.subtotal }}
+                                        {% translate "Subtotal" %}: ${{ item.subtotal }}
                                     </h5>
                                 </div>
                                 
@@ -44,14 +45,14 @@
                                                 class="btn btn-secondary btn-sm ms-2"
                                                 formaction="{% url 'update_cart_item' item.stock_obj.id %}"
                                                 formnovalidate>
-                                            Actualizar
+                                            {% translate "Actualizar" %}
                                         </button>
                                     </div>
                                 </div>
                                 
                                 <div class="col-md-3 text-end">
                                     <a href="{% url 'remove_cart_item' item.stock_obj.id %}" class="btn btn-danger btn-sm">
-                                        Quitar
+                                        {% translate "Quitar" %}
                                     </a>
                                 </div>
                             </div>
@@ -64,7 +65,7 @@
                                            accept="image/*,.pdf" 
                                            required>
                                            <div class="form-text text-muted mt-1">
-                                                Formatos aceptados: <strong>PDF, JPG, PNG</strong>.
+                                                {% blocktranslate %}Formatos aceptados: <strong>PDF, JPG, PNG</strong>.{% endblocktranslate %}
                                             </div>
                                 </div>
                             {% endif %}
@@ -74,19 +75,19 @@
                 
                 </div>
         {% empty %}
-            <div class="alert alert-info" role="alert">Carrito vacío.</div>
+            <div class="alert alert-info" role="alert">{% translate "Carrito vacío." %}</div>
             
         {% endfor %}
 
         {% if total_general > 0 %}
         <div class="row justify-content-end mb-4">
                 <div class="col-lg-8">
-                    <h4>Dirección de Entrega</h4>
+                    <h4>{% translate "Dirección de entrega" %}</h4>
                     <p class="text-muted small">
-                        Verifica tu dirección. Puedes cambiarla solo para este pedido.
+                        {% translate "Verificá tu dirección. Podés cambiarla sólo para este pedido." %}
                     </p>
                     <div class="mb-3">
-                        <label for="direccion_entrega" class="form-label">Enviar a:</label>
+                        <label for="direccion_entrega" class="form-label">{% translate "Enviar a:" %}</label>
                         <input type="text" 
                                class="form-control" 
                                id="direccion_entrega" 
@@ -99,25 +100,25 @@
 
 
             <div class="col-md-5">
-                <h4>Método de Pago</h4>
+                <h4>{% translate "Método de pago" %}</h4>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="metodo_pago" id="pago_efectivo" value="efectivo" checked>
                     <label class="form-check-label" for="pago_efectivo">
-                        Efectivo
+                        {% translate "Efectivo" %}
                     </label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="metodo_pago" id="pago_transferencia" value="transferencia">
                     <label class="form-check-label" for="pago_transferencia">
-                        Transferencia Bancaria (La farmacia te contactará con los datos)
+                        {% translate "Transferencia bancaria (la farmacia te contactará con los datos)" %}
                     </label>
                 </div>
             </div>
 
             <div class="text-end">
-                <h3>Total General: ${{ total_general }}</h3>
+                <h3>{% translate "Total general" %}: ${{ total_general }}</h3>
                 <button type="submit" class="btn btn-info btn-lg">
-                    Finalizar Compra y Realizar Pedidos
+                    {% translate "Finalizar compra y realizar pedidos" %}
                 </button>
             </div>
         {% endif %}
@@ -125,7 +126,7 @@
 </div>
 
 <script>
-    document.title = document.title + " | Carrito de Compras";
+    document.title = document.title + " | {% translate 'Carrito de compras' %}";
 </script>
 
 {% endblock content %}

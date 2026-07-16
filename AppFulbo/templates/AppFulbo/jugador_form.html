@@ -1,5 +1,6 @@
 {# AppFulbo/templates/AppFulbo/jugador_form.html #}
 {% extends 'AppFulbo/form_base.html' %}
+{% load i18n %}
 
 {% block card_header_bg %}{% if jugador %}info{% else %}primary{% endif %}{% endblock %}
 {% block form_title %}{{ titulo }}{% endblock %}
@@ -62,21 +63,21 @@
             {# Botones para CREAR (solo aparecen si NO estamos modificando un jugador existente) #}
             {% if not jugador %}
                 <button type="submit" name="action" value="crear" class="btn btn-success d-inline-flex align-items-center">
-                    <i class="fas fa-plus-circle me-2"></i> Crear Jugador
+                    <i class="fas fa-plus-circle me-2"></i> {% translate "Crear jugador" %}
                 </button>
                 <button type="submit" name="action" value="crear_y_asociar" class="btn btn-primary d-inline-flex align-items-center ms-2"> {# ms-2 para un pequeño margen #}
-                    <i class="fas fa-user-plus me-2"></i> Crear y Asociar Usuario
+                    <i class="fas fa-user-plus me-2"></i> {% translate "Crear y asociar usuario" %}
                 </button>
             {% else %}
                 {# Botón para MODIFICAR (solo aparece si SÍ estamos modificando un jugador existente) #}
                 <button type="submit" class="btn btn-info d-inline-flex align-items-center">
-                    <i class="fas fa-edit me-2"></i> Guardar Cambios
+                    <i class="fas fa-edit me-2"></i> {% translate "Guardar cambios" %}
                 </button>
             {% endif %}
 
         </div>
                     <a href="{% url 'gestionar_jugadores_liga' liga.id %}" class="btn btn-outline-secondary d-inline-flex align-items-center">
-                <i class="fas fa-arrow-left me-2"></i> Volver a Gestión
+                <i class="fas fa-arrow-left me-2"></i> {% translate "Volver a gestión" %}
             </a>
     </form>
 {% endblock form_content %}

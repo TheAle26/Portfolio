@@ -1,14 +1,15 @@
 {% extends 'AppFulbo/base.html' %}
+{% load i18n %}
 {% block content %}
-<h2>Puntuar jugadores del partido {{ partido }}</h2>
+<h2>{% blocktranslate with match=partido %}Puntuar jugadores del partido {{ match }}{% endblocktranslate %}</h2>
 
 <form method="post">
     {% csrf_token %}
     <table class="table">
         <thead>
             <tr>
-                <th>Jugador</th>
-                <th>Puntaje</th>
+                <th>{% translate "Jugador" %}</th>
+                <th>{% translate "Puntaje" %}</th>
             </tr>
         </thead>
         <tbody>
@@ -23,6 +24,6 @@
         </tbody>
     </table>
     
-    <button type="submit" class="btn btn-success">Guardar Puntajes</button>
+    <button type="submit" class="btn btn-success">{% translate "Guardar puntajes" %}</button>
 </form>
 {% endblock %}

@@ -4,144 +4,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ supermarket.name }} Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --rojo: #d52b1e;
             --azul: {{ supermarket.primary_color }};
             --amarillo: {{ supermarket.accent_color }};
-            --verde: #2e7d32;
-            --gris-fondo: #f4f4f4;
-            --gris-texto: #555;
+            --papel: #f6f5f2;
+            --tinta: #17171a;
+            --tinta2: #6f6d68;
+            --linea: #e4e2dc;
+            --oferta: #ffe14d;   /* amarillo cartel, fijo entre tiendas */
+            --verde: #1d7a34;
+            --rojo: #d52b1e;
+            --display: 'Oswald', 'Arial Narrow', sans-serif;
+            --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--gris-fondo); color: #222; }
+        body { font-family: system-ui, 'Segoe UI', Roboto, sans-serif; background: var(--papel); color: var(--tinta); }
+        a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--tinta); outline-offset: 2px;
+        }
+
+        /* Tira de código de barras: la marca de la app (escanea códigos) */
+        .barcode {
+            height: 7px;
+            background: repeating-linear-gradient(90deg,
+                var(--tinta) 0 2px, transparent 2px 5px,
+                var(--tinta) 5px 6px, transparent 6px 8px,
+                var(--tinta) 8px 12px, transparent 12px 15px,
+                var(--tinta) 15px 16px, transparent 16px 21px);
+        }
+
+        .stores {
+            display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto;
+            background: var(--papel); border-bottom: 1px solid var(--linea);
+        }
+        .stores a {
+            font-family: var(--display); font-weight: 500; font-size: .8rem;
+            text-transform: uppercase; letter-spacing: .06em;
+            color: var(--tinta); text-decoration: none; white-space: nowrap;
+            padding: 6px 12px; border: 1px solid var(--linea); border-radius: 4px;
+            background: #fff;
+        }
+        .stores a.active { color: #fff; background: var(--azul); border-color: var(--azul); }
 
         header {
-            background: var(--azul);
-            color: #fff;
-            padding: 14px 24px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 16px;
+            background: var(--azul); color: #fff;
+            padding: 16px 20px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
         }
-        header h1 { font-size: 1.3rem; font-weight: 700; }
+        header h1 {
+            font-family: var(--display); font-weight: 700; font-size: 1.45rem;
+            text-transform: uppercase; letter-spacing: .04em; line-height: 1;
+        }
         header h1 span { color: var(--amarillo); }
-        header .total { font-size: .85rem; opacity: .9; }
+        header .total { font-family: var(--mono); font-size: .75rem; opacity: .85; }
         header .scan-link {
-            color: #fff; text-decoration: none; font-size: .85rem; font-weight: 700;
-            background: rgba(255,255,255,.18); padding: 7px 14px; border-radius: 18px;
+            color: var(--tinta); text-decoration: none; font-size: .8rem; font-weight: 700;
+            background: var(--amarillo); padding: 8px 14px; border-radius: 4px;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
         }
-        header .scan-link:hover { background: rgba(255,255,255,.3); }
+        header .scan-link:hover { filter: brightness(1.06); }
 
-        form.filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-left: auto;
-        }
+        form.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
         form.filters input[type=text], form.filters select {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 20px;
-            font-size: .9rem;
-            min-width: 200px;
+            padding: 9px 12px; border: none; border-radius: 4px;
+            font-size: .9rem; min-width: 200px; background: #fff; color: var(--tinta);
         }
         form.filters button {
-            background: var(--amarillo);
-            border: none;
-            border-radius: 20px;
-            padding: 8px 18px;
-            font-weight: 700;
-            cursor: pointer;
+            background: var(--tinta); color: #fff; border: none; border-radius: 4px;
+            padding: 9px 18px; font-weight: 700; cursor: pointer;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-            gap: 14px;
-            padding: 20px;
-            max-width: 1500px;
-            margin: 0 auto;
+            grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+            gap: 12px; padding: 18px 16px; max-width: 1500px; margin: 0 auto;
         }
         .card {
-            color: inherit;
-            text-decoration: none;
-            background: #fff;
-            border-radius: 10px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            box-shadow: 0 1px 3px rgba(0,0,0,.08);
-            transition: transform .12s ease, box-shadow .12s ease;
+            color: inherit; text-decoration: none; background: #fff;
+            border: 1px solid var(--linea); border-radius: 6px; padding: 12px;
+            display: flex; flex-direction: column; position: relative;
+            transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
         }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: var(--azul);
+            box-shadow: 0 6px 16px rgba(23,23,26,.10);
+        }
 
+        /* Cartel de oferta: amarillo con tinta, como en la góndola real */
         .badge-off {
-            position: absolute;
-            top: 10px; left: 10px;
-            background: var(--rojo);
-            color: #fff;
-            font-size: .75rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 4px;
-            z-index: 1;
+            position: absolute; top: 8px; left: 8px; z-index: 1;
+            background: var(--oferta); color: var(--tinta);
+            font-family: var(--display); font-weight: 700; font-size: .8rem;
+            padding: 2px 7px; border-radius: 3px;
         }
         .badge-promo {
-            position: absolute;
-            top: 10px; right: 10px;
-            background: var(--verde);
-            color: #fff;
-            font-size: .68rem;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 4px;
-            max-width: 55%;
-            z-index: 1;
+            position: absolute; top: 8px; right: 8px; z-index: 1;
+            background: var(--verde); color: #fff;
+            font-size: .62rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .03em; padding: 3px 7px; border-radius: 3px; max-width: 55%;
         }
-        .card img {
-            width: 100%;
-            height: 140px;
-            object-fit: contain;
-            margin-bottom: 8px;
-            background: #fff;
-        }
+        .card img { width: 100%; height: 138px; object-fit: contain; margin-bottom: 8px; background: #fff; }
         .card .no-img {
-            width: 100%; height: 140px;
-            display: flex; align-items: center; justify-content: center;
-            color: #bbb; font-size: .8rem; margin-bottom: 8px;
+            width: 100%; height: 138px; display: flex; align-items: center; justify-content: center;
+            color: #c6c3bc; font-size: .78rem; margin-bottom: 8px;
+            border: 1px dashed var(--linea); border-radius: 4px;
         }
-        .card .brand { font-size: .7rem; text-transform: uppercase; color: var(--gris-texto); letter-spacing: .5px; }
-        .card .name { font-size: .88rem; line-height: 1.25; margin: 2px 0 8px; flex-grow: 1; }
-        .card .list-price { font-size: .78rem; color: #999; text-decoration: line-through; }
-        .card .price { font-size: 1.25rem; font-weight: 800; color: #222; }
-        .card .promo-line { font-size: .78rem; color: var(--verde); font-weight: 700; margin-top: 2px; }
-        .card .ref { font-size: .65rem; color: #aaa; margin-top: 6px; }
-        .card .stale { font-size: .68rem; color: #c77700; margin-top: 4px; }
+        .card .brand { font-size: .66rem; text-transform: uppercase; color: var(--tinta2); letter-spacing: .08em; }
+        .card .name { font-size: .87rem; line-height: 1.3; margin: 2px 0 10px; flex-grow: 1; }
+        .card .list-price { font-family: var(--mono); font-size: .74rem; color: var(--tinta2); text-decoration: line-through; }
+        .card .price {
+            font-family: var(--display); font-weight: 600; font-size: 1.5rem;
+            line-height: 1.05; color: var(--tinta);
+        }
+        .price .mon { font-size: .6em; font-weight: 500; vertical-align: .35em; margin-right: 1px; color: var(--tinta2); }
+        .card .promo-line { font-size: .74rem; color: var(--verde); font-weight: 700; margin-top: 3px; }
+        .card .ref {
+            font-family: var(--mono); font-size: .62rem; color: #a5a29a;
+            margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--linea);
+            letter-spacing: .04em;
+        }
 
         .pagination {
             display: flex; justify-content: center; align-items: center;
-            gap: 10px; padding: 10px 0 30px; font-size: .9rem;
+            gap: 12px; padding: 10px 0 34px; font-size: .85rem;
+            font-family: var(--mono);
         }
         .pagination a {
-            background: var(--azul); color: #fff; text-decoration: none;
-            padding: 7px 14px; border-radius: 18px;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+            background: var(--tinta); color: #fff; text-decoration: none;
+            padding: 8px 16px; border-radius: 4px; font-size: .8rem;
         }
-        .pagination a:hover { background: #005ba1; }
+        .pagination a:hover { background: var(--azul); }
 
-        .empty { text-align: center; padding: 60px 20px; color: var(--gris-texto); }
-        .stores {
-            display: flex; gap: 8px; padding: 12px 20px; overflow-x: auto;
-            background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        .empty { text-align: center; padding: 70px 20px; color: var(--tinta2); }
+        .empty h2 { font-family: var(--display); text-transform: uppercase; color: var(--tinta); margin-bottom: 8px; }
+        .empty code { font-family: var(--mono); background: #fff; border: 1px solid var(--linea); padding: 2px 6px; border-radius: 3px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .card, .card:hover { transition: none; transform: none; }
         }
-        .stores a {
-            color: #333; text-decoration: none; font-weight: 700; font-size: .85rem;
-            padding: 7px 14px; border-radius: 18px; white-space: nowrap;
-            border: 1px solid #ddd;
-        }
-        .stores a.active { color: #fff; background: var(--azul); border-color: var(--azul); }
     </style>
 </head>
 <body>
@@ -151,6 +158,7 @@
             <a href="{% url 'changomas:store_product_list' store.slug %}"
                class="{% if store.slug == supermarket.slug %}active{% endif %}">{{ store.name }}</a>
         {% endfor %}
+        <a href="{% url 'changomas:comparador_list' %}">⚖️ {% translate "Comparador" %}</a>
     </nav>
     <header>
         <h1>{{ supermarket.name }} <span>Tracker</span></h1>
@@ -167,6 +175,7 @@
             <button type="submit">{% translate "Buscar" %}</button>
         </form>
     </header>
+    <div class="barcode" aria-hidden="true"></div>
 
     {% if page.object_list %}
     <div class="grid">
@@ -194,7 +203,7 @@
                 {% if product.today.list_price and product.today.discount_percent %}
                     <div class="list-price">$ {{ product.today.list_price|precio }}</div>
                 {% endif %}
-                <div class="price">$ {{ product.today.price|precio }}</div>
+                <div class="price"><span class="mon">$</span>{{ product.today.price|precio }}</div>
                 {% if product.today.promo_price %}
                     <div class="promo-line">
                         {% translate "Precio promo" %}: $ {{ product.today.promo_price|precio }} {% translate "c/u" %}

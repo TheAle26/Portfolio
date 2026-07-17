@@ -1,0 +1,217 @@
+{% load i18n changomas_extras %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% translate "Comparador" %} - Super Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --papel: #f6f5f2; --tinta: #17171a; --tinta2: #6f6d68; --linea: #e4e2dc;
+            --oferta: #ffe14d; --verde: #1d7a34;
+            --display: 'Oswald', 'Arial Narrow', sans-serif;
+            --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, 'Segoe UI', Roboto, sans-serif; background: var(--papel); color: var(--tinta); }
+        a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+
+        /* Colores por cadena: mismos que las líneas del gráfico */
+        .tienda-changomas { color: #0071ce; }
+        .tienda-carrefour { color: #16a34a; }
+        .tienda-disco { color: #ed1c24; }
+
+        .barcode {
+            height: 7px;
+            background: repeating-linear-gradient(90deg,
+                var(--tinta) 0 2px, transparent 2px 5px,
+                var(--tinta) 5px 6px, transparent 6px 8px,
+                var(--tinta) 8px 12px, transparent 12px 15px,
+                var(--tinta) 15px 16px, transparent 16px 21px);
+        }
+
+        .stores {
+            display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto;
+            background: var(--papel); border-bottom: 1px solid var(--linea);
+        }
+        .stores a {
+            font-family: var(--display); font-weight: 500; font-size: .8rem;
+            text-transform: uppercase; letter-spacing: .06em;
+            color: var(--tinta); text-decoration: none; white-space: nowrap;
+            padding: 6px 12px; border: 1px solid var(--linea); border-radius: 4px; background: #fff;
+        }
+        .stores a.active { color: var(--oferta); background: var(--tinta); border-color: var(--tinta); }
+
+        header {
+            background: var(--tinta); color: #fff; padding: 16px 20px;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+        }
+        header h1 {
+            font-family: var(--display); font-weight: 700; font-size: 1.45rem;
+            text-transform: uppercase; letter-spacing: .04em; line-height: 1;
+        }
+        header h1 span { color: var(--oferta); }
+        header .total { font-family: var(--mono); font-size: .75rem; opacity: .8; }
+        header .scan-link {
+            color: var(--tinta); text-decoration: none; font-size: .8rem; font-weight: 700;
+            background: var(--oferta); padding: 8px 14px; border-radius: 4px;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+        }
+        header .scan-link:hover { filter: brightness(1.06); }
+        form.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+        form.filters input[type=text] {
+            padding: 9px 12px; border: none; border-radius: 4px;
+            font-size: .9rem; min-width: 200px; background: #fff; color: var(--tinta);
+        }
+        form.filters button {
+            background: var(--oferta); color: var(--tinta); border: none; border-radius: 4px;
+            padding: 9px 18px; font-weight: 700; cursor: pointer;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px; padding: 18px 16px; max-width: 1500px; margin: 0 auto;
+        }
+        .card {
+            color: inherit; text-decoration: none; background: #fff;
+            border: 1px solid var(--linea); border-radius: 6px; padding: 12px;
+            display: flex; flex-direction: column; position: relative;
+            transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px); border-color: var(--tinta);
+            box-shadow: 0 6px 16px rgba(23,23,26,.10);
+        }
+        .badge-stores {
+            position: absolute; top: 8px; left: 8px; z-index: 1;
+            background: var(--tinta); color: var(--oferta);
+            font-family: var(--mono); font-size: .6rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em;
+            padding: 3px 7px; border-radius: 3px;
+        }
+        .card img { width: 100%; height: 128px; object-fit: contain; margin-bottom: 8px; }
+        .card .no-img {
+            width: 100%; height: 128px; display: flex; align-items: center; justify-content: center;
+            color: #c6c3bc; font-size: .78rem; margin-bottom: 8px;
+            border: 1px dashed var(--linea); border-radius: 4px;
+        }
+        .card .brand { font-size: .66rem; text-transform: uppercase; color: var(--tinta2); letter-spacing: .08em; }
+        .card .name { font-size: .87rem; line-height: 1.3; margin: 2px 0 10px; flex-grow: 1; }
+        .card .best-label {
+            font-family: var(--mono); font-size: .6rem; color: var(--tinta2);
+            text-transform: uppercase; letter-spacing: .06em;
+        }
+        .card .price {
+            font-family: var(--display); font-weight: 600; font-size: 1.55rem; line-height: 1.05;
+        }
+        .price .mon { font-size: .6em; font-weight: 500; vertical-align: .35em; margin-right: 1px; color: var(--tinta2); }
+        .card .best-store { font-size: .8rem; font-weight: 700; }
+        .card .others {
+            margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--linea);
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .card .others div {
+            font-family: var(--mono); font-size: .7rem; color: var(--tinta2);
+            display: flex; justify-content: space-between;
+        }
+        .card .ref {
+            font-family: var(--mono); font-size: .62rem; color: #a5a29a;
+            margin-top: 8px; letter-spacing: .04em;
+        }
+
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 12px; padding: 10px 0 34px; font-size: .85rem; font-family: var(--mono);
+        }
+        .pagination a {
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
+            background: var(--tinta); color: #fff; text-decoration: none;
+            padding: 8px 16px; border-radius: 4px; font-size: .8rem;
+        }
+        .pagination a:hover { color: var(--oferta); }
+
+        .empty { text-align: center; padding: 70px 20px; color: var(--tinta2); }
+        .empty h2 { font-family: var(--display); text-transform: uppercase; color: var(--tinta); margin-bottom: 8px; }
+        .empty code { font-family: var(--mono); background: #fff; border: 1px solid var(--linea); padding: 2px 6px; border-radius: 3px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .card, .card:hover { transition: none; transform: none; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/language_toggle.html' %}
+    <nav class="stores" aria-label="{% translate 'Supermercados' %}">
+        {% for store in supermarkets %}
+            <a href="{% url 'changomas:store_product_list' store.slug %}">{{ store.name }}</a>
+        {% endfor %}
+        <a class="active" href="{% url 'changomas:comparador_list' %}">⚖️ {% translate "Comparador" %}</a>
+    </nav>
+    <header>
+        <h1>⚖️ {% translate "Comparador" %} <span>{% translate "de precios" %}</span></h1>
+        <div class="total">{% blocktranslate count counter=total %}{{ counter }} producto{% plural %}{{ counter }} productos{% endblocktranslate %}</div>
+        <a class="scan-link" href="{% url 'changomas:comparador_scan' %}">📷 {% translate "Escanear" %}</a>
+        <form class="filters" method="get">
+            <input type="text" name="q" value="{{ query }}" placeholder="{% translate 'Buscar producto...' %}">
+            <button type="submit">{% translate "Buscar" %}</button>
+        </form>
+    </header>
+    <div class="barcode" aria-hidden="true"></div>
+
+    {% if groups %}
+    <div class="grid">
+        {% for group in groups %}
+        <a class="card" href="{% url 'changomas:comparador_detail' group.ean %}">
+            <span class="badge-stores">
+                {% blocktranslate count counter=group.store_count %}en {{ counter }} tienda{% plural %}en {{ counter }} tiendas{% endblocktranslate %}
+            </span>
+
+            {% if group.product.image_url %}
+                <img src="{{ group.product.image_url }}" alt="{{ group.product.name }}" loading="lazy">
+            {% else %}
+                <div class="no-img">{% translate "Sin imagen" %}</div>
+            {% endif %}
+
+            <div class="brand">{{ group.product.brand }}</div>
+            <div class="name">{{ group.product.name }}</div>
+
+            <div class="best-label">{% translate "Mejor precio" %}</div>
+            <div class="price"><span class="mon">$</span>{{ group.best.effective|precio }}</div>
+            <div class="best-store"><span class="tienda-{{ group.best.product.supermarket.slug }}">{{ group.best.product.supermarket.name }}</span></div>
+
+            {% if group.offers|length > 1 %}
+            <div class="others">
+                {% for offer in group.offers %}
+                    {% if not forloop.first %}
+                    <div><span>{{ offer.product.supermarket.name }}</span><span>$ {{ offer.effective|precio }}</span></div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="ref">EAN: {{ group.ean }}</div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if page.has_previous %}
+            <a href="?page={{ page.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">&laquo; {% translate "Anterior" %}</a>
+        {% endif %}
+        <span>{% blocktranslate with number=page.number num_pages=page.paginator.num_pages %}Página {{ number }} de {{ num_pages }}{% endblocktranslate %}</span>
+        {% if page.has_next %}
+            <a href="?page={{ page.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}">{% translate "Siguiente" %} &raquo;</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <h2>{% translate "No hay productos comparables todavía" %}</h2>
+        <p>{% blocktranslate trimmed %}Ejecutá <code>python manage.py scrape_supermarkets</code> para poblar la base.{% endblocktranslate %}</p>
+    </div>
+    {% endif %}
+</body>
+</html>

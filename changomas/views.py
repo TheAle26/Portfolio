@@ -11,6 +11,44 @@ from .models import PriceRecord, Product, Supermarket
 
 PRODUCTS_PER_PAGE = 48
 MAX_QUERY_LENGTH = 100
+MAX_SEARCH_TOKENS = 6
+
+# Clases de caracteres para búsqueda insensible a acentos: "pure" matchea
+# "Puré" y viceversa. Funciona igual en SQLite (re de Python) y Postgres (~*).
+_ACCENT_CLASSES = {
+    'a': '[aá]', 'á': '[aá]',
+    'e': '[eé]', 'é': '[eé]',
+    'i': '[ií]', 'í': '[ií]',
+    'o': '[oó]', 'ó': '[oó]',
+    'u': '[uúü]', 'ú': '[uúü]', 'ü': '[uúü]',
+    'n': '[nñ]', 'ñ': '[nñ]',
+}
+
+
+def _accent_insensitive_pattern(token):
+    """Regex literal (sin cuantificadores: inmune a ReDoS) que matchea el
+    token ignorando acentos. Los metacaracteres del usuario se escapan."""
+    return ''.join(
+        _ACCENT_CLASSES.get(char, re.escape(char))
+        for char in token.lower()
+    )
+
+
+def build_search_filter(query, fields=('name', 'brand')):
+    """
+    Filtro de búsqueda flexible: cada palabra del query debe aparecer en
+    alguno de los campos (nombre o marca), en cualquier orden y sin
+    importar acentos. 'pure tomate arcor' encuentra 'Puré De Tomate' de
+    marca Arcor aunque icontains literal no lo haría.
+    """
+    combined = Q()
+    for token in query.split()[:MAX_SEARCH_TOKENS]:
+        pattern = _accent_insensitive_pattern(token)
+        token_q = Q()
+        for field in fields:
+            token_q |= Q(**{f'{field}__iregex': pattern})
+        combined &= token_q
+    return combined
 CATEGORIES_CACHE_KEY = 'changomas:top_categories'
 CATEGORIES_CACHE_TTL = 60 * 60 * 6  # el dato cambia una vez por día
 
@@ -56,7 +94,7 @@ def product_list(request, store='changomas'):
 
     query = request.GET.get('q', '').strip()[:MAX_QUERY_LENGTH]
     if query:
-        products = products.filter(name__icontains=query)
+        products = products.filter(build_search_filter(query))
 
     category = request.GET.get('cat', '').strip()[:MAX_QUERY_LENGTH]
     if category:

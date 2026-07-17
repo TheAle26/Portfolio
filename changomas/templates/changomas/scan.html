@@ -3,25 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% translate "Escanear producto" %} - {{ supermarket.name }} Tracker</title>
+    <title>{% translate "Escanear producto" %} - {% if supermarket %}{{ supermarket.name }} Tracker{% else %}{% translate "Comparador" %}{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --azul: {{ supermarket.primary_color }}; --amarillo: {{ supermarket.accent_color }}; }
+        :root {
+            --azul: {{ supermarket.primary_color|default:'#17171a' }};
+            --amarillo: {{ supermarket.accent_color|default:'#ffe14d' }};
+            --display: 'Oswald', 'Arial Narrow', sans-serif;
+            --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
             background: #111; color: #fff;
             min-height: 100vh; display: flex; flex-direction: column;
         }
+        a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
         header {
             background: var(--azul); padding: 12px 18px;
             display: flex; align-items: center; gap: 12px;
         }
-        header h1 { font-size: 1.1rem; }
+        header h1 {
+            font-family: var(--display); font-weight: 700; font-size: 1.15rem;
+            text-transform: uppercase; letter-spacing: .04em;
+        }
         header h1 span { color: var(--amarillo); }
         header a {
-            margin-left: auto; color: #fff; text-decoration: none;
-            background: rgba(255,255,255,.18); padding: 7px 14px; border-radius: 18px;
-            font-size: .85rem;
+            margin-left: auto; color: #17171a; text-decoration: none;
+            background: var(--amarillo); padding: 7px 12px; border-radius: 4px;
+            font-size: .78rem; font-weight: 700;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .04em;
         }
         .viewport {
             position: relative; flex-grow: 1;
@@ -42,6 +55,7 @@
             animation: scanline 1.6s ease-in-out infinite alternate;
         }
         @keyframes scanline { from { transform: translateY(-55px); } to { transform: translateY(55px); } }
+        @media (prefers-reduced-motion: reduce) { .frame::after { animation: none; } }
         .status {
             position: absolute; bottom: 14px; left: 0; right: 0; z-index: 2;
             text-align: center; font-size: .9rem; color: #ddd; padding: 0 16px;
@@ -53,12 +67,13 @@
         .manual p { font-size: .85rem; color: #aaa; }
         .manual form { display: flex; gap: 8px; width: 100%; max-width: 420px; }
         .manual input {
-            flex-grow: 1; padding: 11px 14px; border-radius: 22px; border: none;
-            font-size: 1rem; text-align: center;
+            flex-grow: 1; padding: 11px 14px; border-radius: 4px; border: none;
+            font-size: 1rem; text-align: center; font-family: var(--mono);
         }
         .manual button {
-            background: var(--amarillo); border: none; border-radius: 22px;
-            padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: .95rem;
+            background: var(--amarillo); color: #17171a; border: none; border-radius: 4px;
+            padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: .9rem;
+            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
         }
         .error { color: #ff9c9c; }
     </style>
@@ -67,7 +82,11 @@
     {% include 'includes/language_toggle.html' %}
     <header>
         <h1>📷 {% translate "Escanear" %} <span>{% translate "código de barras" %}</span></h1>
-        <a href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {{ supermarket.name }}</a>
+        {% if supermarket %}
+            <a href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {{ supermarket.name }}</a>
+        {% else %}
+            <a href="{% url 'changomas:comparador_list' %}">⚖️ {% translate "Comparador" %}</a>
+        {% endif %}
     </header>
 
     <div class="viewport">
@@ -93,7 +112,7 @@
     {% translate "Tu navegador no soporta la detección de códigos y no se pudo cargar el detector alternativo. Ingresá el código manualmente." as detector_unsupported %}
     <script>
     (function () {
-        var DETAIL_URL = "{% url 'changomas:store_product_detail' supermarket.slug 'CODE' %}";
+        var DETAIL_URL = "{% if supermarket %}{% url 'changomas:store_product_detail' supermarket.slug 'CODE' %}{% else %}{% url 'changomas:comparador_detail' 'CODE' %}{% endif %}";
         var statusEl = document.getElementById('status');
         var video = document.getElementById('video');
         var found = false;

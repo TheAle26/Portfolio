@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from changomas.models import PriceRecord, Product, Supermarket
+from changomas.models import GTIN_RE, PriceRecord, Product, Supermarket
 from changomas.scraper import (
     STORE_CONFIGS,
     MasOnlineClient,
@@ -90,6 +90,7 @@ class Command(BaseCommand):
                         if parsed['vtex_sku_id'] in seen_sku_ids:
                             continue
                         seen_sku_ids.add(parsed['vtex_sku_id'])
+                        parsed['is_comparable'] = bool(GTIN_RE.match(parsed['ean'] or ''))
                         batch.append(parsed)
             except ScrapeError as exc:
                 category_failed = True
@@ -203,10 +204,12 @@ class Command(BaseCommand):
 
         create_fields = ('reference_code', 'ean', 'vtex_sku_id',
                           'product_reference', 'measurement_unit', 'unit_multiplier', 'name',
-                          'brand', 'category', 'image_url', 'link', 'is_available')
+                          'brand', 'category', 'image_url', 'link', 'is_available',
+                          'is_comparable')
         update_fields = ('vtex_product_id', 'ean', 'vtex_sku_id',
                          'product_reference', 'measurement_unit', 'unit_multiplier', 'name',
-                         'brand', 'category', 'image_url', 'link', 'is_available')
+                         'brand', 'category', 'image_url', 'link', 'is_available',
+                         'is_comparable')
         to_create = []
         unchanged_ids = []
         for parsed in batch:

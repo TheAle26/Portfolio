@@ -1,4 +1,14 @@
+import re
+
+from django.core.exceptions import ValidationError
 from django.db import models
+
+# Largo GTIN válido: EAN-8, UPC-A (12), EAN-13, GTIN-14. Solo estos EANs
+# sirven para matchear el mismo producto entre tiendas.
+GTIN_RE = re.compile(r'^(\d{8}|\d{12}|\d{13}|\d{14})$')
+
+# Segmentos de URL que no pueden usarse como slug de tienda.
+RESERVED_SLUGS = {'comparador'}
 
 
 class Supermarket(models.Model):
@@ -21,6 +31,12 @@ class Supermarket(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.slug in RESERVED_SLUGS:
+            raise ValidationError(
+                {'slug': f"'{self.slug}' está reservado por las URLs del comparador."}
+            )
 
 
 class Product(models.Model):
@@ -53,6 +69,9 @@ class Product(models.Model):
     image_url = models.URLField(max_length=500, blank=True, default='')
     link = models.URLField(max_length=500, blank=True, default='')
     is_available = models.BooleanField(default=True)
+    # Precalculado al scrapear (EAN con largo GTIN válido): el comparador
+    # filtra por este flag indexado en vez de evaluar un regex por request.
+    is_comparable = models.BooleanField(default=False, db_index=True)
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
 

@@ -36,8 +36,10 @@ STORE_CONFIGS = {
     for config in (
         StoreConfig('changomas', 'ChangoMás', 'https://www.masonline.com.ar'),
         StoreConfig('carrefour', 'Carrefour', 'https://www.carrefour.com.ar'),
-        # Disco publica ocasionalmente ListPrice desfasados por dos ordenes de
-        # magnitud. No se muestran como descuento si superan 10x el precio.
+        # Disco publica ListPrice desfasados de forma casi sistematica: para la
+        # gran mayoria de los items ListPrice ~= 82x el Price real (dato basura,
+        # no un precio de lista). El guard de 10x los descarta para no inventar
+        # descuentos; en la practica Disco casi nunca deja un list_price usable.
         StoreConfig(
             'disco', 'Disco', 'https://www.disco.com.ar',
             max_list_price_multiplier=Decimal('10'),

@@ -8,7 +8,7 @@ from django.test import TestCase, SimpleTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import PriceRecord, Product, Supermarket
+from .models import GTIN_RE, PriceRecord, Product, Supermarket
 from .scraper import (
     ScrapeError,
     VtexClient,
@@ -283,6 +283,45 @@ class ViewTests(TestCase):
         self.assertContains(response, 'Leche Entera')
         self.assertNotContains(response, 'Pan Lactal')
 
+    def test_busqueda_flexible(self):
+        Product.objects.create(
+            reference_code='c', vtex_product_id='3',
+            name='Puré De Tomate Arcor 520 G', brand='Arcor')
+        Product.objects.create(
+            reference_code='d', vtex_product_id='4',
+            name='Café Torrado La Virginia', brand='La Virginia')
+        Product.objects.create(
+            reference_code='e', vtex_product_id='5', name='Pan Lactal')
+
+        # Palabras en cualquier orden y sin la preposición
+        response = self.client.get(reverse('changomas:product_list'), {'q': 'tomate pure'})
+        self.assertContains(response, 'Puré De Tomate')
+        self.assertNotContains(response, 'Pan Lactal')
+
+        # Sin acento encuentra el acentuado (y viceversa)
+        response = self.client.get(reverse('changomas:product_list'), {'q': 'cafe'})
+        self.assertContains(response, 'Café Torrado')
+        response = self.client.get(reverse('changomas:product_list'), {'q': 'café'})
+        self.assertContains(response, 'Café Torrado')
+
+        # Busca también por marca
+        response = self.client.get(reverse('changomas:product_list'), {'q': 'virginia'})
+        self.assertContains(response, 'Café Torrado')
+
+        # Mezcla nombre + marca en el mismo query
+        response = self.client.get(reverse('changomas:product_list'), {'q': 'arcor tomate'})
+        self.assertContains(response, 'Puré De Tomate')
+        self.assertNotContains(response, 'Café Torrado')
+
+    def test_busqueda_con_metacaracteres_no_rompe(self):
+        Product.objects.create(reference_code='f', vtex_product_id='6', name='Gaseosa 2.25 L')
+        response = self.client.get(
+            reverse('changomas:product_list'), {'q': 'c++ (test) [x]'})
+        self.assertEqual(response.status_code, 200)
+        # El punto se trata como literal, no como comodín
+        response = self.client.get(reverse('changomas:product_list'), {'q': '2.25'})
+        self.assertContains(response, 'Gaseosa 2.25 L')
+
     def test_catalogos_estan_aislados_por_supermercado(self):
         carrefour = Supermarket.objects.get(slug='carrefour')
         Product.objects.create(
@@ -502,6 +541,16 @@ class ScrapeCommandTests(TestCase):
             client.iter_category_products.side_effect = iterate
             call_command('scrape_masonline', verbosity=0)
 
+    def test_is_comparable_se_recalcula_si_cambia_el_ean(self):
+        # Primera corrida con EAN de largo inválido: no comparable
+        self._run_command([('1', 'Almacén')], {'1': [_raw('10', '123')]})
+        product = Product.objects.get(vtex_product_id='10')
+        self.assertFalse(product.is_comparable)
+        # El catálogo corrige el EAN: el flag debe recalcularse en el update
+        self._run_command([('1', 'Almacén')], {'1': [_raw('10', '7790000000135')]})
+        product.refresh_from_db()
+        self.assertTrue(product.is_comparable)
+
     def test_ean_duplicado_en_el_mismo_lote_no_rompe(self):
         # Dos productos NUEVOS con el mismo EAN en la misma categoría:
         # el segundo debe caer al código vtex- sin abortar la corrida.
@@ -706,3 +755,204 @@ class ScrapeAllCommandTests(SimpleTestCase):
             with self.assertRaises(CommandError):
                 call_command('scrape_supermarkets', verbosity=0)
         self.assertEqual(nested_call.call_count, 3)
+
+
+class ComparadorTests(TestCase):
+    """Vista Comparador: agrupación por EAN entre tiendas, mejor precio,
+    stats combinadas y resolución de códigos."""
+
+    def setUp(self):
+        cache.clear()
+        self.changomas = Supermarket.objects.get(slug='changomas')
+        self.carrefour = Supermarket.objects.get(slug='carrefour')
+        self.disco = Supermarket.objects.get(slug='disco')
+
+    def _make(self, store, ean, name, price, promo_price=None, promo_text='',
+              days_ago=0, available=True, reference_code=None):
+        product, _ = Product.objects.get_or_create(
+            supermarket=store,
+            reference_code=reference_code or ean or f'ref-{store.slug}-{name}',
+            defaults={
+                'ean': ean,
+                'vtex_product_id': f'{store.slug}-{ean or name}',
+                'name': name,
+                'is_available': available,
+                'is_comparable': bool(GTIN_RE.match(ean or '')),
+            },
+        )
+        PriceRecord.objects.create(
+            product=product,
+            date=timezone.localdate() - timezone.timedelta(days=days_ago),
+            price=Decimal(price),
+            promo_price=Decimal(promo_price) if promo_price else None,
+            promo_text=promo_text,
+        )
+        return product
+
+    def test_agrupa_por_ean_y_muestra_el_mejor_precio(self):
+        self._make(self.changomas, '7790000000012', 'Leche Entera 1L', '1500')
+        self._make(self.carrefour, '7790000000012', 'Leche Entera 1L', '1200')
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '1.200,00')
+        self.assertContains(response, 'Carrefour')
+        self.assertContains(response, 'en 2 tiendas')
+        # un solo card para el grupo (un solo link al detalle)
+        detail_url = reverse('changomas:comparador_detail', args=['7790000000012'])
+        self.assertContains(response, detail_url, count=1)
+
+    def test_promo_cuenta_para_el_mejor_precio(self):
+        self._make(self.changomas, '7790000000029', 'Galletitas', '1000')
+        self._make(self.carrefour, '7790000000029', 'Galletitas', '1100',
+                   promo_price='800', promo_text='2da al 50%')
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertContains(response, '800,00')
+        # El mejor precio es el efectivo de la promo de Carrefour
+        content = response.content.decode()
+        best_pos = content.find('class="best-store"')
+        self.assertIn('Carrefour', content[best_pos:best_pos + 200])
+
+    def test_producto_de_una_sola_tienda_aparece(self):
+        self._make(self.disco, '7790000000036', 'Yerba Especial', '5000')
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertContains(response, 'Yerba Especial')
+        self.assertContains(response, 'en 1 tienda')
+
+    def test_ean_invalido_o_vacio_queda_fuera(self):
+        self._make(self.changomas, '', 'Sin EAN', '100', reference_code='vtex-991')
+        self._make(self.changomas, '12345', 'EAN corto', '100', reference_code='12345')
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertNotContains(response, 'Sin EAN')
+        self.assertNotContains(response, 'EAN corto')
+
+    def test_no_disponible_no_participa(self):
+        self._make(self.changomas, '7790000000043', 'Aceite', '2000')
+        self._make(self.disco, '7790000000043', 'Aceite', '20', available=False)
+        response = self.client.get(reverse('changomas:comparador_list'))
+        # El precio basura del SKU no disponible de Disco no gana
+        self.assertContains(response, '2.000,00')
+        self.assertContains(response, 'en 1 tienda')
+
+    def test_busqueda(self):
+        self._make(self.changomas, '7790000000050', 'Pan Lactal', '3000')
+        self._make(self.changomas, '7790000000067', 'Arroz Largo', '2000')
+        response = self.client.get(reverse('changomas:comparador_list'), {'q': 'pan'})
+        self.assertContains(response, 'Pan Lactal')
+        self.assertNotContains(response, 'Arroz Largo')
+
+    def test_busqueda_flexible_en_comparador(self):
+        self._make(self.changomas, '7790000000149', 'Puré De Tomate Salsati', '1500')
+        self._make(self.disco, '7790000000149', 'Puré De Tomate Salsati', '1400')
+        self._make(self.changomas, '7790000000156', 'Arroz Largo', '2000')
+        # multi-palabra, sin acentos y en otro orden
+        response = self.client.get(
+            reverse('changomas:comparador_list'), {'q': 'tomate pure'})
+        self.assertContains(response, 'Puré De Tomate Salsati')
+        self.assertNotContains(response, 'Arroz Largo')
+
+    def test_detalle_combina_las_tiendas(self):
+        # Historia en dos tiendas: el mínimo vive en Carrefour (900, hace 10
+        # días) y el máximo en ChangoMás (1800, hace 5); hoy gana Carrefour.
+        self._make(self.changomas, '7790000000074', 'Café Molido', '1500')
+        self._make(self.changomas, '7790000000074', 'Café Molido', '1800', days_ago=5)
+        self._make(self.carrefour, '7790000000074', 'Café Molido', '1300')
+        self._make(self.carrefour, '7790000000074', 'Café Molido', '900', days_ago=10)
+        response = self.client.get(
+            reverse('changomas:comparador_detail', args=['7790000000074']))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '900,00')    # mínimo combinado
+        self.assertContains(response, '1.800,00')  # máximo combinado
+        self.assertContains(response, '1.300,00')  # mejor precio hoy
+        self.assertContains(response, 'MÁS BARATO')
+        # Gráfico con una línea por tienda
+        self.assertContains(response, 'polyline', count=2)
+        # Links a las fichas por tienda
+        self.assertContains(response, reverse(
+            'changomas:store_product_detail', args=['changomas', '7790000000074']))
+        self.assertContains(response, reverse(
+            'changomas:store_product_detail', args=['carrefour', '7790000000074']))
+
+    def test_detalle_por_codigo_propio_de_una_tienda(self):
+        # El producto de Disco no tiene el EAN como reference_code, pero
+        # escanear su código interno tiene que llegar al grupo completo.
+        self._make(self.changomas, '7790000000081', 'Queso Cremoso', '4000')
+        self._make(self.disco, '7790000000081', 'Queso Cremoso', '3500',
+                   reference_code='vtex-disco-55')
+        response = self.client.get(
+            reverse('changomas:comparador_detail', args=['vtex-disco-55']))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'ChangoMás')
+        self.assertContains(response, 'Disco')
+        self.assertContains(response, '3.500,00')
+
+    def test_detalle_codigo_inexistente_404_y_cache_negativa(self):
+        url = reverse('changomas:comparador_detail', args=['0000000000000'])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        with self.assertNumQueries(0):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'comparador', status_code=404)
+
+    def test_escaner_del_comparador(self):
+        response = self.client.get(reverse('changomas:comparador_scan'))
+        self.assertEqual(response.status_code, 200)
+        # El escáner apunta al detalle del comparador, no al de una tienda
+        self.assertContains(response, '/changomas/comparador/producto/')
+        self.assertContains(response, reverse('changomas:comparador_list'))
+
+    def test_listado_linkea_al_comparador_y_viceversa(self):
+        response = self.client.get(
+            reverse('changomas:store_product_list', args=['changomas']))
+        self.assertContains(response, reverse('changomas:comparador_list'))
+        self._make(self.changomas, '7790000000098', 'Fideos', '1000')
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertContains(response, reverse(
+            'changomas:store_product_list', args=['changomas']))
+
+    def test_ean_duplicado_en_la_misma_tienda_no_duplica_ofertas(self):
+        # Dos publicaciones del mismo EAN dentro de ChangoMás (SKUs
+        # duplicados del catálogo): el comparador debe mostrar UNA sola
+        # oferta para la tienda, con el precio más barato de las dos.
+        self._make(self.changomas, '7790000000104', 'Leche Pack A', '1000')
+        duplicate = Product.objects.create(
+            supermarket=self.changomas, reference_code='vtex-dup-2',
+            ean='7790000000104', vtex_product_id='dup-2',
+            vtex_sku_id='dup-2-sku', name='Leche Pack B', is_comparable=True)
+        PriceRecord.objects.create(
+            product=duplicate, date=timezone.localdate(), price=Decimal('900'))
+
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertContains(response, 'en 1 tienda')   # una sola cadena real
+        self.assertContains(response, '900,00')        # gana el más barato
+
+        response = self.client.get(
+            reverse('changomas:comparador_detail', args=['7790000000104']))
+        content = response.content.decode()
+        self.assertEqual(content.count('class="offer"'), 1)
+        self.assertEqual(content.count('ChangoMás</span>'), 1)
+
+    def test_disponible_sin_precio_reciente_queda_fuera_del_listado(self):
+        # Producto que sigue "disponible" pero cuyo último precio es de hace
+        # 40 días (fuera de la ventana): no debe contarse ni renderizarse,
+        # así el total del header y la paginación quedan consistentes.
+        self._make(self.changomas, '7790000000111', 'Producto Viejo', '1000',
+                   days_ago=40)
+        response = self.client.get(reverse('changomas:comparador_list'))
+        self.assertNotContains(response, 'Producto Viejo')
+        self.assertContains(response, 'No hay productos comparables')
+
+    def test_grafico_con_un_solo_punto_por_tienda_dibuja_circulos(self):
+        self._make(self.changomas, '7790000000128', 'Té Verde', '2000')
+        self._make(self.disco, '7790000000128', 'Té Verde', '1900')
+        response = self.client.get(
+            reverse('changomas:comparador_detail', args=['7790000000128']))
+        content = response.content.decode()
+        # 1 registro por tienda: dos círculos, ninguna línea
+        self.assertEqual(content.count('<circle'), 2)
+        self.assertNotIn('<polyline', content)
+
+    def test_la_ruta_comparador_no_la_captura_el_slug_de_tienda(self):
+        # 'comparador' también matchea <slug:store>; el orden de URLs debe
+        # ganarle y responder con la vista del comparador, no un 404 de tienda.
+        response = self.client.get('/changomas/comparador/')
+        self.assertEqual(response.status_code, 200)

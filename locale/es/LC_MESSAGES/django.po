@@ -81,8 +81,8 @@ msgstr "Coordiné con subcontratistas asegurando el cumplimiento de plazos y esp
 msgid "Credentials (DEMO)"
 msgstr "Credenciales (DEMO)"
 
-msgid "Daily scraper tracking the full MasOnline (ChangoMás) catalog through its VTEX API. It keeps a 30-day history with real promotion-adjusted prices. Scan any barcode with your phone camera to see the product's price evolution, minimum and maximum."
-msgstr "Scraper diario que releva el catálogo completo de MasOnline (ChangoMás) mediante su API VTEX. Conserva 30 días de historial con precios reales ajustados por promociones. Escaneá cualquier código con la cámara para ver la evolución, el mínimo y el máximo del producto."
+msgid "Daily scraper tracking the full MasOnline (ChangoMás), Carrefour and Disco catalog through the VTEX API. It keeps a 30-day history with real promotion-adjusted prices. Scan any barcode with your phone camera to see the product's price evolution, minimum and maximum."
+msgstr "Scraper diario que releva el catálogo completo de MasOnline (ChangoMás), Carrefour y disco mediante sus API VTEX. Conserva 30 días de historial con precios reales ajustados por promociones. Escaneá cualquier código con la cámara para ver la evolución, el mínimo y el máximo del producto."
 
 msgid "Dear user,"
 msgstr "Hola,"

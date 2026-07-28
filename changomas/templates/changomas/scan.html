@@ -1,207 +1,303 @@
-{% load i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% translate "Escanear producto" %} - {% if supermarket %}{{ supermarket.name }} Tracker{% else %}{% translate "Comparador" %}{% endif %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --azul: {{ supermarket.primary_color|default:'#17171a' }};
-            --amarillo: {{ supermarket.accent_color|default:'#ffe14d' }};
-            --display: 'Oswald', 'Arial Narrow', sans-serif;
-            --mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-            background: #111; color: #fff;
-            min-height: 100vh; display: flex; flex-direction: column;
-        }
-        a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--amarillo); outline-offset: 2px; }
-        header {
-            background: var(--azul); padding: 12px 18px;
-            display: flex; align-items: center; gap: 12px;
-        }
-        header h1 {
-            font-family: var(--display); font-weight: 700; font-size: 1.15rem;
-            text-transform: uppercase; letter-spacing: .04em;
-        }
-        header h1 span { color: var(--amarillo); }
-        header a {
-            margin-left: auto; color: #17171a; text-decoration: none;
-            background: var(--amarillo); padding: 7px 12px; border-radius: 4px;
-            font-size: .78rem; font-weight: 700;
-            font-family: var(--display); text-transform: uppercase; letter-spacing: .04em;
-        }
-        .viewport {
-            position: relative; flex-grow: 1;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; background: #000;
-            min-height: 300px;
-        }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
-        .frame {
-            position: relative; z-index: 1;
-            width: min(75vw, 340px); height: 170px;
-            border: 3px solid var(--amarillo); border-radius: 12px;
-            box-shadow: 0 0 0 100vmax rgba(0,0,0,.45);
-        }
-        .frame::after {
-            content: ''; position: absolute; left: 6%; right: 6%; top: 50%;
-            height: 2px; background: rgba(255, 60, 60, .85);
-            animation: scanline 1.6s ease-in-out infinite alternate;
-        }
-        @keyframes scanline { from { transform: translateY(-55px); } to { transform: translateY(55px); } }
-        @media (prefers-reduced-motion: reduce) { .frame::after { animation: none; } }
-        .status {
-            position: absolute; bottom: 14px; left: 0; right: 0; z-index: 2;
-            text-align: center; font-size: .9rem; color: #ddd; padding: 0 16px;
-        }
-        .manual {
-            background: #1c1c1c; padding: 16px 18px 24px;
-            display: flex; flex-direction: column; gap: 10px; align-items: center;
-        }
-        .manual p { font-size: .85rem; color: #aaa; }
-        .manual form { display: flex; gap: 8px; width: 100%; max-width: 420px; }
-        .manual input {
-            flex-grow: 1; padding: 11px 14px; border-radius: 4px; border: none;
-            font-size: 1rem; text-align: center; font-family: var(--mono);
-        }
-        .manual button {
-            background: var(--amarillo); color: #17171a; border: none; border-radius: 4px;
-            padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: .9rem;
-            font-family: var(--display); text-transform: uppercase; letter-spacing: .05em;
-        }
-        .error { color: #ff9c9c; }
-    </style>
-</head>
-<body>
-    {% include 'includes/language_toggle.html' %}
-    <header>
-        <h1>📷 {% translate "Escanear" %} <span>{% translate "código de barras" %}</span></h1>
-        {% if supermarket %}
-            <a href="{% url 'changomas:store_product_list' supermarket.slug %}">🛒 {{ supermarket.name }}</a>
-        {% else %}
-            <a href="{% url 'changomas:comparador_list' %}">⚖️ {% translate "Comparador" %}</a>
-        {% endif %}
-    </header>
+{% extends 'changomas/base.html' %}
+{% load i18n %}
 
-    <div class="viewport">
-        <video id="video" autoplay muted playsinline></video>
-        <div class="frame"></div>
-        <div class="status" id="status">{% translate "Iniciando cámara..." %}</div>
+{% block title %}{% translate "Escanear producto" %} - {% if supermarket %}{{ supermarket.name }} Tracker{% else %}{% translate "Comparador" %}{% endif %}{% endblock %}
+{% block og_title %}{% translate "Escanear código de barras" %}{% endblock %}
+{% block meta_description %}{% translate "Apuntá la cámara al código de barras del producto y mirá su histórico de precios al instante." %}{% endblock %}
+
+{% block body_class %}on-dark scan{% endblock %}
+
+{% block page_css %}
+<style>
+    {% if supermarket %}
+    :root { --store: {{ supermarket.primary_color }}; --store-accent: {{ supermarket.accent_color }}; }
+    {% endif %}
+
+    /* Pantalla de captura: es la única vista oscura de la app y lo es por una
+       razón —el visor de la cámara manda. Off-black tibio, no #000. */
+    .scan {
+        background: #131316; color: #f4f2ee;
+        min-height: 100dvh; display: flex; flex-direction: column;
+    }
+    .scan .grain { opacity: .08; mix-blend-mode: overlay; }
+    .scan .topbar { background: rgba(0,0,0,.35); box-shadow: inset 0 -1px 0 rgba(255,255,255,.09); }
+
+    .viewport {
+        position: relative; flex: 1; min-height: 320px;
+        display: grid; place-items: center; overflow: hidden;
+        background: #0b0b0d;
+    }
+    .viewport video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* Marco de puntería: cuatro esquinas, no una caja cerrada — deja ver
+       el producto y se lee como visor y no como borde decorativo. */
+    .reticle {
+        position: relative; z-index: 1;
+        width: min(78vw, 360px); aspect-ratio: 2 / 1;
+        box-shadow: 0 0 0 100vmax rgba(11,11,13,.58);
+        border-radius: 14px;
+    }
+    .reticle i {
+        position: absolute; width: 26px; height: 26px;
+        border: 3px solid var(--store-accent);
+    }
+    .reticle i:nth-child(1) { top: -3px; left: -3px;  border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .reticle i:nth-child(2) { top: -3px; right: -3px; border-left: 0;  border-bottom: 0; border-radius: 0 12px 0 0; }
+    .reticle i:nth-child(3) { bottom: -3px; left: -3px;  border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+    .reticle i:nth-child(4) { bottom: -3px; right: -3px; border-left: 0;  border-top: 0; border-radius: 0 0 12px 0; }
+    .reticle::after {
+        content: ''; position: absolute; left: 5%; right: 5%; top: 50%;
+        height: 2px; border-radius: 2px;
+        background: linear-gradient(90deg, transparent, var(--store-accent), transparent);
+        animation: sweep 1.9s var(--ease) infinite alternate;
+        will-change: transform;
+    }
+    @keyframes sweep {
+        from { transform: translateY(-46%) scaleX(.9); opacity: .55; }
+        to   { transform: translateY(46%)  scaleX(1);  opacity: 1; }
+    }
+
+    .status {
+        position: absolute; z-index: 2; bottom: 18px; left: 16px; right: 16px;
+        display: flex; justify-content: center;
+    }
+    .status span {
+        font-size: .84rem; font-weight: 500; text-align: center;
+        color: #e8e5de; background: rgba(11,11,13,.7);
+        padding: 8px 14px; border-radius: 999px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+        backdrop-filter: blur(6px);
+        max-width: 100%;
+    }
+    .status .is-error { color: #ffc9c4; box-shadow: inset 0 0 0 1px rgba(255,120,110,.4); }
+
+    /* Alternativa manual: no es un plan B escondido, es la mitad de los casos */
+    .manual {
+        background: #1a1a1e; box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+        padding: 20px clamp(16px, 5vw, 28px) 30px;
+    }
+    .manual__inner { max-width: 460px; margin: 0 auto; }
+    .manual__label {
+        font-family: var(--mono); font-size: .64rem; font-weight: 500;
+        text-transform: uppercase; letter-spacing: .12em;
+        color: rgba(244,242,238,.5); margin-bottom: 10px;
+    }
+    .manual form { display: flex; gap: 8px; }
+    .manual input {
+        flex: 1; min-width: 0;
+        padding: 12px 14px; border: none; border-radius: var(--r-sm);
+        background: #0e0e10; color: #f4f2ee;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.14);
+        font: 500 1rem var(--mono); letter-spacing: .06em; text-align: center;
+        transition: box-shadow .18s var(--ease);
+    }
+    .manual input::placeholder { color: rgba(244,242,238,.3); letter-spacing: .04em; }
+    .manual input:focus { box-shadow: inset 0 0 0 2px var(--store-accent); outline: none; }
+    .manual input[aria-invalid="true"] { box-shadow: inset 0 0 0 2px #ff7b70; }
+    .manual button {
+        flex-shrink: 0; border: none; cursor: pointer;
+        padding: 0 20px; border-radius: var(--r-sm);
+        background: var(--store-accent); color: var(--ink);
+        font-family: var(--display); font-weight: 600; font-size: .84rem;
+        text-transform: uppercase; letter-spacing: .05em;
+        transition: filter .18s var(--ease), transform .12s var(--ease);
+    }
+    .manual button:hover { filter: brightness(1.08); }
+    .manual button:active { transform: scale(.97); }
+    /* Error inline junto al campo: nunca un window.alert */
+    .manual__error {
+        min-height: 1.25em; margin-top: 8px;
+        font-size: .78rem; color: #ffa9a1;
+    }
+    .manual__hint { margin-top: 8px; font-size: .74rem; color: rgba(244,242,238,.42); }
+
+    .scan .foot {
+        border-top-color: rgba(255,255,255,.08);
+        color: rgba(244,242,238,.4); padding-bottom: 26px;
+    }
+    .scan .foot a { color: rgba(244,242,238,.6); }
+    .scan .foot a:hover { color: #fff; }
+
+    @media (prefers-reduced-motion: reduce) { .reticle::after { animation: none; transform: none; } }
+</style>
+{% endblock %}
+
+{% block storenav %}{% endblock %}
+
+{% block header %}
+<header class="topbar">
+    <div class="topbar__brand">
+        <h1>{% translate "Escanear" %} <em>{% translate "código de barras" %}</em></h1>
     </div>
+    <div class="topbar__actions">
+        {% if supermarket %}
+            <a class="btn btn--quiet" href="{% url 'changomas:store_product_list' supermarket.slug %}">{{ supermarket.name }}</a>
+        {% else %}
+            <a class="btn btn--quiet" href="{% url 'changomas:comparador_list' %}">{% translate "Comparador" %}</a>
+        {% endif %}
+    </div>
+</header>
+{% endblock %}
 
-    <div class="manual">
-        <p>{% translate "¿No funciona la cámara? Ingresá el código de barras manualmente:" %}</p>
-        <form id="manual-form">
-            <input id="manual-code" type="text" inputmode="numeric" autocomplete="off"
-                   placeholder="Ej: 7790580146115" maxlength="64">
+{% block content %}
+<main id="main" class="viewport">
+    <video id="video" autoplay muted playsinline aria-hidden="true"></video>
+    <div class="reticle" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p class="status" role="status" aria-live="polite">
+        <span id="status">{% translate "Iniciando cámara..." %}</span>
+    </p>
+</main>
+
+<section class="manual" aria-label="{% translate 'Ingreso manual del código' %}">
+    <div class="manual__inner">
+        <p class="manual__label">{% translate "O ingresá el código a mano" %}</p>
+        <form id="manual-form" novalidate>
+            <input id="manual-code" name="code" type="text" inputmode="numeric" autocomplete="off"
+                   pattern="[0-9]{6,14}" maxlength="64" aria-describedby="manual-error"
+                   aria-label="{% translate 'Código de barras' %}" placeholder="7790580146115">
             <button type="submit">{% translate "Buscar" %}</button>
         </form>
+        <p class="manual__error" id="manual-error" role="alert"></p>
+        <p class="manual__hint">{% translate "Son los números impresos debajo de las barras (entre 6 y 14 dígitos)." %}</p>
     </div>
+</section>
+{% endblock %}
 
-    {% translate "Código detectado:" as detected_label %}
-    {% translate "Este navegador no permite usar la cámara (se necesita HTTPS). Podés ingresar el código manualmente." as camera_unsupported %}
-    {% translate "Apuntá al código de barras del producto" as point_camera %}
-    {% translate "No se pudo acceder a la cámara. Revisá los permisos o ingresá el código manualmente." as camera_denied %}
-    {% translate "No se pudo iniciar el detector. Ingresá el código manualmente." as detector_failed %}
-    {% translate "Tu navegador no soporta la detección de códigos y no se pudo cargar el detector alternativo. Ingresá el código manualmente." as detector_unsupported %}
-    <script>
-    (function () {
-        var DETAIL_URL = "{% if supermarket %}{% url 'changomas:store_product_detail' supermarket.slug 'CODE' %}{% else %}{% url 'changomas:comparador_detail' 'CODE' %}{% endif %}";
-        var statusEl = document.getElementById('status');
-        var video = document.getElementById('video');
-        var found = false;
-        var activeStream = null;
-        var detectionStarted = false;
+{% block footer %}{% endblock %}
 
-        function goTo(code) {
-            code = String(code || '').trim().slice(0, 64);
-            if (!code || found) return;
-            found = true;
-            statusEl.textContent = '{{ detected_label|escapejs }} ' + code;
-            if (activeStream) {
-                // apagamos la cámara antes de navegar
-                activeStream.getTracks().forEach(function (t) { t.stop(); });
-            }
-            window.location.href = DETAIL_URL.replace('CODE', encodeURIComponent(code));
+{% block scripts %}
+{% translate "Código detectado:" as detected_label %}
+{% translate "Este navegador no permite usar la cámara (se necesita HTTPS). Podés ingresar el código manualmente." as camera_unsupported %}
+{% translate "Apuntá al código de barras del producto" as point_camera %}
+{% translate "No se pudo acceder a la cámara. Revisá los permisos o ingresá el código manualmente." as camera_denied %}
+{% translate "No se pudo iniciar el detector. Ingresá el código manualmente." as detector_failed %}
+{% translate "Tu navegador no soporta la detección de códigos y no se pudo cargar el detector alternativo. Ingresá el código manualmente." as detector_unsupported %}
+{% translate "Ingresá el código de barras." as err_empty %}
+{% translate "El código debe tener entre 6 y 14 dígitos, sin letras ni espacios." as err_format %}
+<script>
+(function () {
+    var DETAIL_URL = "{% if supermarket %}{% url 'changomas:store_product_detail' supermarket.slug 'CODE' %}{% else %}{% url 'changomas:comparador_detail' 'CODE' %}{% endif %}";
+    var statusEl = document.getElementById('status');
+    var video = document.getElementById('video');
+    var form = document.getElementById('manual-form');
+    var input = document.getElementById('manual-code');
+    var errorEl = document.getElementById('manual-error');
+    var found = false;
+    var activeStream = null;
+    var detectionStarted = false;
+
+    function setStatus(message, isError) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle('is-error', !!isError);
+    }
+
+    function setError(message) {
+        errorEl.textContent = message || '';
+        if (message) {
+            input.setAttribute('aria-invalid', 'true');
+        } else {
+            input.removeAttribute('aria-invalid');
         }
+    }
 
-        document.getElementById('manual-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            goTo(document.getElementById('manual-code').value);
-        });
+    function goTo(code) {
+        code = String(code || '').trim().slice(0, 64);
+        if (!code || found) return;
+        found = true;
+        setStatus('{{ detected_label|escapejs }} ' + code);
+        if (activeStream) {
+            // apagamos la cámara antes de navegar
+            activeStream.getTracks().forEach(function (t) { t.stop(); });
+        }
+        window.location.href = DETAIL_URL.replace('CODE', encodeURIComponent(code));
+    }
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            statusEl.innerHTML = '<span class="error">{{ camera_unsupported|escapejs }}</span>';
+    // Validación inline: el error se muestra junto al campo, nunca en un alert
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var value = input.value.trim();
+        if (!value) {
+            setError('{{ err_empty|escapejs }}');
+            input.focus();
             return;
         }
-
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }, audio: false
-        }).then(function (stream) {
-            activeStream = stream;
-            video.srcObject = stream;
-            statusEl.textContent = '{{ point_camera|escapejs }}';
-            startDetection();
-        }).catch(function () {
-            statusEl.innerHTML = '<span class="error">{{ camera_denied|escapejs }}</span>';
-        });
-
-        function startDetection() {
-            if ('BarcodeDetector' in window) {
-                var detector = new window.BarcodeDetector({
-                    formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
-                });
-                var scanNative = function () {
-                    if (found) return;
-                    detector.detect(video).then(function (codes) {
-                        if (codes.length && codes[0].rawValue) {
-                            goTo(codes[0].rawValue);
-                        } else {
-                            setTimeout(scanNative, 180);
-                        }
-                    }).catch(function () { setTimeout(scanNative, 400); });
-                };
-                var startNative = function () {
-                    if (detectionStarted) return;  // evita dos loops en paralelo
-                    detectionStarted = true;
-                    scanNative();
-                };
-                video.addEventListener('loadeddata', startNative);
-                if (video.readyState >= 2) startNative();
-                return;
-            }
-            // Fallback (ej. Safari de iOS): librería ZXing desde CDN
-            var script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
-            // SRI: si el CDN o el paquete se comprometen, el navegador rechaza el script
-            script.integrity = 'sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
-            script.crossOrigin = 'anonymous';
-            script.onload = function () {
-                try {
-                    var reader = new window.ZXing.BrowserMultiFormatReader();
-                    var loop = function () {
-                        if (found) return;
-                        reader.decodeOnceFromVideoElement(video).then(function (result) {
-                            goTo(result.getText());
-                        }).catch(function () { setTimeout(loop, 300); });
-                    };
-                    loop();
-                } catch (err) {
-                    statusEl.innerHTML = '<span class="error">{{ detector_failed|escapejs }}</span>';
-                }
-            };
-            script.onerror = function () {
-                statusEl.innerHTML = '<span class="error">{{ detector_unsupported|escapejs }}</span>';
-            };
-            document.head.appendChild(script);
+        if (!/^[0-9]{6,14}$/.test(value)) {
+            setError('{{ err_format|escapejs }}');
+            input.focus();
+            return;
         }
-    })();
-    </script>
-</body>
-</html>
+        setError('');
+        goTo(value);
+    });
+    input.addEventListener('input', function () {
+        if (errorEl.textContent) setError('');
+    });
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setStatus('{{ camera_unsupported|escapejs }}', true);
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }, audio: false
+    }).then(function (stream) {
+        activeStream = stream;
+        video.srcObject = stream;
+        setStatus('{{ point_camera|escapejs }}');
+        startDetection();
+    }).catch(function () {
+        setStatus('{{ camera_denied|escapejs }}', true);
+    });
+
+    function startDetection() {
+        if ('BarcodeDetector' in window) {
+            var detector = new window.BarcodeDetector({
+                formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+            });
+            var scanNative = function () {
+                if (found) return;
+                detector.detect(video).then(function (codes) {
+                    if (codes.length && codes[0].rawValue) {
+                        goTo(codes[0].rawValue);
+                    } else {
+                        setTimeout(scanNative, 180);
+                    }
+                }).catch(function () { setTimeout(scanNative, 400); });
+            };
+            var startNative = function () {
+                if (detectionStarted) return;  // evita dos loops en paralelo
+                detectionStarted = true;
+                scanNative();
+            };
+            video.addEventListener('loadeddata', startNative);
+            if (video.readyState >= 2) startNative();
+            return;
+        }
+        // Fallback (ej. Safari de iOS): librería ZXing desde CDN
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+        // SRI: si el CDN o el paquete se comprometen, el navegador rechaza el script
+        script.integrity = 'sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
+        script.crossOrigin = 'anonymous';
+        script.onload = function () {
+            try {
+                var reader = new window.ZXing.BrowserMultiFormatReader();
+                var loop = function () {
+                    if (found) return;
+                    reader.decodeOnceFromVideoElement(video).then(function (result) {
+                        goTo(result.getText());
+                    }).catch(function () { setTimeout(loop, 300); });
+                };
+                loop();
+            } catch (err) {
+                setStatus('{{ detector_failed|escapejs }}', true);
+            }
+        };
+        script.onerror = function () {
+            setStatus('{{ detector_unsupported|escapejs }}', true);
+        };
+        document.head.appendChild(script);
+    }
+})();
+</script>
+{% endblock %}

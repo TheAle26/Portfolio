@@ -12,8 +12,12 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    # Bind to loopback only: "5432:5432" would publish Postgres on every interface,
+    # so it is internet-facing the moment the router forwards that port. Other
+    # containers reach it as db:5432 over the compose network regardless of this.
+    # To connect a GUI client from a laptop, tunnel it: ssh -N -L 5432:localhost:5432 pi@host
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
   web:
     build: .

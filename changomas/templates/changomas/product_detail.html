@@ -154,7 +154,7 @@
     {% else %}
     <div class="blank">
         <div class="blank__mark" aria-hidden="true">▮▯▮</div>
-        <h2>{% translate "Sin precios registrados" %}</h2>
+        <h2>{% translate "Todavía no hay precios registrados" %}</h2>
         <p>{% translate "Encontramos el producto pero todavía no tenemos ninguna foto de precio. Aparecerá después del próximo relevamiento." %}</p>
         <div class="blank__actions">
             <a class="btn btn--outline" href="{% url 'changomas:store_product_list' supermarket.slug %}">{% translate "Volver al catálogo" %}</a>

@@ -1,0 +1,414 @@
+{% extends 'changomas/base.html' %}
+{% load i18n changomas_extras %}
+
+{% block title %}{% translate "Carrito" %} - Super Tracker{% endblock %}
+{% block og_title %}{% translate "Armá tu carrito y comprá al mejor precio" %}{% endblock %}
+{% block meta_description %}{% translate "Armá tu lista de compras y calculá cuánto sale en cada cadena de supermercado y cómo comprarla al precio más bajo." %}{% endblock %}
+
+{% block page_css %}
+<style>
+    /* ---- veredicto -------------------------------------------------------- */
+    .verdict {
+        display: grid; gap: 12px; margin-bottom: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .verdict__card {
+        background: var(--card); border-radius: var(--r-lg);
+        box-shadow: var(--sh-1), inset 0 0 0 1px var(--line);
+        padding: clamp(14px, 2.4vw, 20px);
+    }
+    .verdict__card--best { box-shadow: var(--sh-2), inset 0 0 0 1px var(--yellow-deep); }
+    .verdict__card .price { margin-top: 6px; }
+    .verdict__note { font-size: .82rem; color: var(--ink-2); margin-top: 12px; }
+
+    .cart-warn {
+        font-size: .82rem; color: var(--red); font-weight: 500;
+        background: rgba(189,47,36,.07); border-radius: var(--r-sm);
+        padding: 9px 13px; margin-bottom: 14px; max-width: none;
+    }
+    /* Productos que quedaron sin precio: se listan para poder sacarlos, si
+       no siguen contando en el carrito sin entrar en ninguna cuenta. */
+    .cart-gone ul { list-style: none; margin-top: 8px; }
+    .cart-gone li {
+        display: flex; align-items: center; gap: 8px;
+        padding: 4px 0; font-weight: 400; color: var(--ink-2);
+    }
+    .cart-gone li span {
+        flex: 1; min-width: 0;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cart-gone button {
+        flex-shrink: 0; border: none; background: none; cursor: pointer;
+        color: var(--red); font-size: 1.05rem; line-height: 1; padding: 0 4px;
+    }
+    .cart-gone button:hover { color: var(--ink); }
+
+    /* ---- matriz del carrito ----------------------------------------------- */
+    /* El botón "vaciar" vive en el h2 del panel, que ya es un flex con la
+       etiqueta y el contador; se empuja al extremo opuesto. */
+    .cart-clear {
+        margin-left: auto; border: none; cursor: pointer; background: none;
+        font-family: var(--mono); font-size: .64rem; letter-spacing: .06em;
+        text-transform: uppercase; color: var(--ink-3);
+        text-decoration: underline; text-underline-offset: 3px;
+    }
+    .cart-clear:hover { color: var(--red); }
+
+    .ticket--cart th[scope="col"] { white-space: nowrap; }
+    /* Con 3 cadenas la tabla no entra en un celular y el contenedor
+       scrollea. La columna del producto queda fija para que se vea siempre
+       de qué fila es el precio que estás mirando; que la cadena siguiente
+       asome cortada es lo que avisa que hay más a la derecha. */
+    .ticket--cart th[scope="col"]:first-child,
+    .ticket--cart .cartrow__name,
+    .ticket--cart tfoot th {
+        position: sticky; left: 0; z-index: 1;
+        background: var(--card);
+        box-shadow: 1px 0 0 var(--line);
+    }
+    /* Reparto del ancho: sin esto la columna del producto se queda con todo
+       el espacio sobrante y las cadenas quedan apretadas contra el borde. */
+    .ticket--cart th[scope="col"]:first-child { width: 38%; }
+    .ticket--cart td { min-width: 116px; }
+    .ticket--cart td b { font-weight: 600; font-size: .84rem; }
+    .ticket--cart td small, .ticket--cart tfoot small {
+        display: block; font-size: .64rem; color: var(--ink-3); margin-top: 2px;
+    }
+    /* La celda ganadora es la única marcada: si además pintáramos la fila
+       o la columna, el amarillo dejaría de significar "acá conviene". */
+    .ticket--cart td.is-best {
+        background: rgba(255,225,77,.28);
+        box-shadow: inset 2px 0 0 var(--yellow-deep);
+    }
+    .ticket--cart td.is-best b { font-weight: 700; }
+    .ticket--cart tfoot th, .ticket--cart tfoot td {
+        border-top: 2px solid var(--ink); padding-top: 12px;
+        font-weight: 700; font-size: .9rem;
+    }
+    .ticket--cart tfoot .is-gap { color: var(--red); font-weight: 500; }
+
+    .cartrow__name {
+        min-width: 180px; font-weight: 500; text-align: left;
+        display: flex; align-items: baseline; gap: 8px;
+    }
+    .cartrow__name span {
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .cartrow__drop {
+        margin-left: auto; border: none; background: none; cursor: pointer;
+        color: var(--ink-4); font-size: 1.05rem; line-height: 1; padding: 0 2px;
+    }
+    .cartrow__drop:hover { color: var(--red); }
+    .cartrow__qty .addbox__step { display: inline-flex; width: 104px; }
+
+    /* ---- matriz apilada en pantallas angostas ----------------------------- */
+    /* Con tres cadenas la matriz no entra en un celular: scrollear de costado
+       dejaría los precios —lo único que importa acá— fuera de la pantalla y
+       sin nada que avise que están. Cada producto pasa a ser una ficha y cada
+       celda un renglón de ticket que dice de qué cadena es. */
+    @media (max-width: 700px) {
+        .ticket--cart, .ticket--cart tbody, .ticket--cart tfoot,
+        .ticket--cart tr, .ticket--cart th, .ticket--cart td { display: block; }
+        .ticket--cart thead { display: none; }
+        .table-scroll { overflow-x: visible; }
+
+        /* En bloque ya no hay columna que fijar */
+        .ticket--cart th[scope="col"]:first-child,
+        .ticket--cart .cartrow__name,
+        .ticket--cart tfoot th { position: static; box-shadow: none; }
+
+        .ticket--cart tbody tr {
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--line-2);
+        }
+        .ticket--cart tbody tr:last-child { border-bottom: none; }
+        /* Se vuelve a declarar el flex: la regla que apila la tabla pone
+           todos los th en block y le gana en especificidad, y sin esto la
+           cruz de borrar cae sola en el renglón de abajo. */
+        .ticket--cart .cartrow__name { display: flex; padding: 0 0 8px; }
+        .cartrow__name span { -webkit-line-clamp: 3; }
+        .cartrow__qty { padding: 0 0 10px; }
+
+        /* data-store reemplaza al encabezado de columna que ya no está */
+        .ticket--cart tbody td, .ticket--cart tfoot td {
+            display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+            padding: 5px 8px; border-radius: var(--r-xs);
+            text-align: right;
+        }
+        .ticket--cart tbody td::before, .ticket--cart tfoot td::before {
+            content: attr(data-store) '';
+            flex: 1 1 auto; min-width: 5.5em; text-align: left;
+            font-size: .68rem; color: var(--ink-2);
+        }
+        .ticket--cart td small { display: inline; margin: 0 0 0 6px; }
+        /* La promo se lleva su propio renglón: en línea apretaba el nombre
+           de la cadena hasta dejarlo en "Car…". */
+        .ticket--cart td small.is-promo {
+            display: block; width: 100%; margin: 2px 0 0; text-align: right;
+        }
+        .ticket--cart td.is-best { box-shadow: none; }
+
+        .ticket--cart tfoot tr {
+            border-top: 2px solid var(--ink); margin-top: 4px; padding-top: 10px;
+        }
+        .ticket--cart tfoot th { padding: 0 0 6px; border-top: none; }
+        .ticket--cart tfoot td { border-top: none; padding: 5px 8px; }
+    }
+
+    /* ---- reparto ---------------------------------------------------------- */
+    .split { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .split__stop {
+        border-radius: var(--r-md); padding: 12px 14px;
+        box-shadow: inset 0 0 0 1px var(--line);
+        border-left: 5px solid var(--chain, var(--line-2));
+    }
+    .split__head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        gap: 10px; margin-bottom: 9px; color: var(--ink);
+    }
+    .split__head b { font-family: var(--display); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .split__stop ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .split__stop li {
+        display: flex; align-items: baseline; gap: 6px;
+        font-family: var(--mono); font-size: .68rem; color: var(--ink-2);
+        font-variant-numeric: tabular-nums;
+    }
+    .split__stop li > span:first-child {
+        max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .split__stop .leader { flex: 1; height: 0; border-bottom: 1px dotted var(--line-2); transform: translateY(-3px); }
+
+    /* ---- buscador --------------------------------------------------------- */
+    .adder { margin-top: 32px; padding-top: 26px; border-top: 1px dashed var(--line-2); }
+    .adder__card {
+        flex: 1; display: flex; flex-direction: column;
+        background: var(--card); border-radius: var(--r-md); padding: 12px;
+        box-shadow: var(--sh-1), inset 0 0 0 1px var(--line);
+    }
+    .adder__card .card__name { margin-bottom: 8px; }
+    .adder__card .card__name a { color: inherit; text-decoration: none; }
+    .adder__card .card__name a:hover { text-decoration: underline; text-underline-offset: 2px; }
+    .adder__card .card__foot { margin-top: auto; }
+
+    /* ---- barra fija de celular -------------------------------------------- */
+    /* En el celular la cotización queda arriba y los resultados abajo: sin
+       esta barra, agregar un producto no muestra ningún cambio. */
+    .cartbar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav);
+        display: none; align-items: center; gap: 12px;
+        padding: 11px clamp(14px, 4vw, 28px);
+        padding-bottom: calc(11px + env(safe-area-inset-bottom, 0px));
+        background: var(--ink); color: #fff;
+        box-shadow: 0 -6px 20px -10px rgba(58,50,34,.5);
+    }
+    .cartbar b { font-family: var(--display); font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+    .cartbar span { font-family: var(--mono); font-size: .66rem; color: rgba(255,255,255,.7); }
+    .cartbar a { margin-left: auto; }
+    /* La clase la pone el JS en <body>: la barra está DESPUÉS de <main> en
+       el DOM, así que ningún selector de hermanos puede reservarle el
+       espacio desde acá. */
+    @media (max-width: 860px) {
+        .cartbar.is-on { display: flex; }
+        body.has-cartbar .wrap { padding-bottom: 96px; }
+    }
+
+    #cart.is-loading { opacity: .5; transition: opacity .2s var(--ease); }
+</style>
+{% endblock %}
+
+{% block header %}
+<header class="topbar topbar--search">
+    <div class="topbar__brand">
+        <h1>{% translate "Tu" %} <em>{% translate "carrito" %}</em></h1>
+        <span class="topbar__count">{% translate "Cuánto sale en cada cadena" %}</span>
+    </div>
+    <div class="topbar__actions">
+        <a class="btn btn--quiet" href="{% url 'changomas:comparador_scan' %}">
+            <span aria-hidden="true">▮▯▮</span> {% translate "Escanear" %}
+        </a>
+    </div>
+    <form class="search" method="get" role="search" action="{% url 'changomas:cart' %}">
+        <div class="search__fields">
+            <input type="text" name="q" value="{{ query }}" aria-label="{% translate 'Buscar producto para agregar' %}"
+                   placeholder="{% translate 'Buscar producto para agregar...' %}">
+            <button type="submit">{% translate "Buscar" %}</button>
+        </div>
+    </form>
+</header>
+<div class="barcode" aria-hidden="true"></div>
+{% endblock %}
+
+{% block content %}
+<main id="main" class="wrap">
+    <noscript>
+        <p class="cart-warn">{% translate "El carrito se guarda en tu navegador y necesita JavaScript activado." %}</p>
+    </noscript>
+
+    {# Lo llena cart_quote() con el contenido guardado en el navegador #}
+    <section id="cart" aria-live="polite" aria-busy="false">
+        <div class="blank">
+            <div class="blank__mark" aria-hidden="true">▤</div>
+            <h2>{% translate "Cargando tu carrito…" %}</h2>
+        </div>
+    </section>
+
+    <section class="adder">
+        {% if groups %}
+            <p class="section-label">
+                {% blocktranslate with term=query count counter=results_total %}{{ counter }} resultado para “{{ term }}”{% plural %}{{ counter }} resultados para “{{ term }}”{% endblocktranslate %}
+            </p>
+            <ul class="grid">
+                {% for group in groups %}
+                <li>
+                    <div class="card adder__card">
+                        <div class="card__media {% if not group.product.image_url %}card__media--empty{% endif %}">
+                            {% if group.product.image_url %}
+                                <img src="{{ group.product.image_url }}" alt="{{ group.product.brand }} {{ group.product.name }}" loading="lazy" decoding="async">
+                            {% else %}
+                                <span>{% translate "Sin imagen" %}</span>
+                            {% endif %}
+                        </div>
+                        <div class="card__brand">{{ group.product.brand|default:"—" }}</div>
+                        <div class="card__name">
+                            <a href="{% url 'changomas:comparador_detail' group.ean %}" title="{{ group.product.name }}">{{ group.product.name }}</a>
+                        </div>
+                        <div class="card__foot">
+                            <div class="section-label section-label--tight">{% translate "Mejor precio" %}</div>
+                            <div class="price"><span class="mon">$</span>{{ group.best.effective|precio }}</div>
+                            <div class="store-name store-name--sm chain chain-{{ group.best.product.supermarket.slug }}">{{ group.best.product.supermarket.name }}</div>
+                            <div class="addbox" data-cart-control data-ean="{{ group.ean }}">
+                                <button type="button" class="addbox__add" data-cart-add>{% translate "Agregar" %}</button>
+                                <span class="addbox__step" data-cart-stepper hidden>
+                                    <button type="button" data-cart-dec aria-label="{% translate 'Restar uno' %}">&minus;</button>
+                                    <output data-cart-count>0</output>
+                                    <button type="button" data-cart-inc aria-label="{% translate 'Sumar uno' %}">+</button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+
+            {% if page.has_previous or page.has_next %}
+            <nav class="pager" aria-label="{% translate 'Paginación' %}">
+                {% if page.has_previous %}
+                    <a class="btn btn--outline" href="?q={{ query|urlencode }}&page={{ page.previous_page_number }}">&larr; {% translate "Anterior" %}</a>
+                {% endif %}
+                <span class="pager__page">{% blocktranslate with number=page.number num_pages=page.paginator.num_pages %}Página {{ number }} de {{ num_pages }}{% endblocktranslate %}</span>
+                {% if page.has_next %}
+                    <a class="btn btn--outline" href="?q={{ query|urlencode }}&page={{ page.next_page_number }}">{% translate "Siguiente" %} &rarr;</a>
+                {% endif %}
+            </nav>
+            {% endif %}
+
+        {% elif query %}
+            <div class="blank">
+                <div class="blank__mark" aria-hidden="true">🔍</div>
+                <h2>{% translate "Sin resultados" %}</h2>
+                <p>{% blocktranslate with term=query %}Ningún producto comparable coincide con “{{ term }}”. Al carrito sólo entran los productos que podemos precificar en las cadenas.{% endblocktranslate %}</p>
+            </div>
+        {% else %}
+            <div class="blank">
+                <div class="blank__mark" aria-hidden="true">＋</div>
+                <h2>{% translate "Agregá productos" %}</h2>
+                <p>{% blocktranslate %}Buscá por nombre o marca ahí arriba, o escaneá el código de barras. Podés cargar hasta {{ max_items }} productos.{% endblocktranslate %}</p>
+                <div class="blank__actions">
+                    <a class="btn btn--outline" href="{% url 'changomas:comparador_list' %}">{% translate "Ver el comparador" %}</a>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+</main>
+
+<div class="cartbar" id="cartbar" aria-hidden="true">
+    <div>
+        <b data-bar-total>$ 0,00</b>
+        <span data-bar-units></span>
+    </div>
+    <a class="btn btn--accent" href="#cart">{% translate "Ver carrito" %}</a>
+</div>
+{# Token para el POST de la cotización; lo lee el script de abajo #}
+{% csrf_token %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    'use strict';
+
+    var QUOTE_URL = "{% url 'changomas:cart_quote' %}";
+    var container = document.getElementById('cart');
+    var bar = document.getElementById('cartbar');
+    var token = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    var pending = null;
+    var latest = 0;
+
+    function paintBar() {
+        var total = container.querySelector('[data-cart-total]');
+        var unitsEl = container.querySelector('[data-cart-units]');
+        /* Total y unidades salen los dos de la última cotización. Sin
+           cotización no hay nada que mostrar: con el carrito lleno sólo de
+           productos sin precio vigente, la barra quedaba anunciando el
+           "$ 0,00" del placeholder al lado de un contador distinto de cero. */
+        var units = unitsEl ? parseInt(unitsEl.textContent, 10) : 0;
+        var show = units > 0 && total !== null;
+        bar.classList.toggle('is-on', show);
+        document.body.classList.toggle('has-cartbar', show);
+        bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+        if (total) { bar.querySelector('[data-bar-total]').textContent = total.textContent; }
+        bar.querySelector('[data-bar-units]').textContent = units === 1
+            ? "{% translate 'unidad' %}"
+            : units + " {% translate 'unidades' %}";
+    }
+
+    /* El debounce agrupa los clicks seguidos pero no impide que haya dos
+       pedidos en vuelo: alcanza con tocar "+", esperar el debounce y volver
+       a tocar. Si el primero tarda más que el segundo (carrito grande en la
+       Raspberry), su respuesta llega última y pisa la buena con totales
+       viejos. Cada pedido saca número y sólo el último puede pintar. */
+    function quote() {
+        var ticket = ++latest;
+        container.setAttribute('aria-busy', 'true');
+        container.classList.add('is-loading');
+        fetch(QUOTE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+            body: JSON.stringify({ items: window.ChangoCart.items() })
+        }).then(function (response) {
+            if (!response.ok) { throw new Error(response.status); }
+            return response.text();
+        }).then(function (html) {
+            if (ticket !== latest) { return; }
+            container.innerHTML = html;
+            window.ChangoCart.repaint();
+            paintBar();
+        }).catch(function () {
+            if (ticket !== latest) { return; }
+            container.innerHTML = '<p class="cart-warn">'
+                + "{% translate 'No pudimos calcular el carrito. Revisá la conexión y volvé a probar.' %}"
+                + '</p>';
+        }).then(function () {
+            if (ticket !== latest) { return; }
+            container.setAttribute('aria-busy', 'false');
+            container.classList.remove('is-loading');
+        });
+    }
+
+    /* Agrupamos los cambios: tocar "+" cuatro veces seguidas tiene que
+       cotizar una vez, no cuatro. Las cantidades de la pantalla ya las
+       actualizó el script compartido, así que la espera no se nota. */
+    function schedule() {
+        window.clearTimeout(pending);
+        pending = window.setTimeout(quote, 250);
+    }
+
+    document.addEventListener('changocart:change', function () {
+        paintBar();
+        schedule();
+    });
+    quote();
+}());
+</script>
+{% endblock %}

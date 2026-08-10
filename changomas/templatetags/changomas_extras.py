@@ -5,6 +5,15 @@ from django import template
 register = template.Library()
 
 
+@register.simple_tag
+def cart_limits():
+    """Topes del carrito, para que el JS del navegador use los mismos que el
+    servidor. El script vive en base.html (está en todas las páginas) y no
+    tiene una vista propia que se los pase por contexto."""
+    from ..cart import MAX_CART_ITEMS, MAX_QUANTITY
+    return {'items': MAX_CART_ITEMS, 'quantity': MAX_QUANTITY}
+
+
 @register.filter
 def precio(value):
     """Formatea un precio al estilo argentino: 18999.5 -> '18.999,50'."""

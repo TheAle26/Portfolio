@@ -48,6 +48,21 @@
                 {% endif %}
             </div>
 
+            {% comment %}
+                Sólo los comparables entran al carrito: un producto sin EAN
+                GTIN no se puede precificar en las otras cadenas.
+            {% endcomment %}
+            {% if group.product.is_comparable %}
+            <div class="addbox addbox--sheet" data-cart-control data-ean="{{ group.product.ean }}">
+                <button type="button" class="addbox__add" data-cart-add>{% translate "Agregar al carrito" %}</button>
+                <span class="addbox__step" data-cart-stepper hidden>
+                    <button type="button" data-cart-dec aria-label="{% translate 'Restar uno' %}">&minus;</button>
+                    <output data-cart-count>0</output>
+                    <button type="button" data-cart-inc aria-label="{% translate 'Sumar uno' %}">+</button>
+                </span>
+            </div>
+            {% endif %}
+
             <div class="sheet__ref">EAN {{ group.product.ean|default:group.product.reference_code }}</div>
         </div>
     </article>

@@ -109,13 +109,15 @@ def _build_group(members):
     }
 
 
-@cache_page(60 * 15)
-def product_list(request):
-    """Listado del comparador: un card por identidad de producto (EAN),
-    mostrando el precio más bajo entre las tiendas."""
-    base = _comparable_products()
+def search_groups(query, page_number, per_page=PRODUCTS_PER_PAGE):
+    """Búsqueda paginada sobre las identidades comparables.
 
-    query = request.GET.get('q', '').strip()[:MAX_QUERY_LENGTH]
+    Devuelve ``(page, groups)``: el objeto de paginación (para el contador y
+    los links) y los grupos ya armados de la página pedida. Lo usan tanto el
+    listado del comparador como el buscador del carrito, que necesitan
+    exactamente el mismo conjunto de productos.
+    """
+    base = _comparable_products()
     if query:
         base = base.filter(build_search_filter(query))
 
@@ -129,8 +131,8 @@ def product_list(request):
         .order_by('display_name')
     )
 
-    paginator = Paginator(identities, PRODUCTS_PER_PAGE)
-    page = paginator.get_page(request.GET.get('page'))
+    paginator = Paginator(identities, per_page)
+    page = paginator.get_page(page_number)
 
     page_eans = [row['ean'] for row in page]
     members_by_ean = {}
@@ -144,12 +146,21 @@ def product_list(request):
         if group is not None:
             group['ean'] = row['ean']
             groups.append(group)
+    return page, groups
+
+
+@cache_page(60 * 15)
+def product_list(request):
+    """Listado del comparador: un card por identidad de producto (EAN),
+    mostrando el precio más bajo entre las tiendas."""
+    query = request.GET.get('q', '').strip()[:MAX_QUERY_LENGTH]
+    page, groups = search_groups(query, request.GET.get('page'))
 
     context = {
         'page': page,
         'groups': groups,
         'query': query,
-        'total': paginator.count,
+        'total': page.paginator.count,
         'supermarkets': Supermarket.objects.filter(is_active=True),
     }
     return render(request, 'changomas/comparador_list.html', context)

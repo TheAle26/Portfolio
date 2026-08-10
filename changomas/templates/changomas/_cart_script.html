@@ -1,0 +1,174 @@
+{% load changomas_extras %}{% cart_limits as limits %}
+{% comment %}
+    Carrito del lado del cliente.
+
+    Vive en localStorage porque la app no tiene cuentas y el resto de las
+    vistas se cachean 15 minutos: guardar el carrito en el servidor obligaría
+    a cookies de sesión y a desactivar el caché en todas las páginas.
+    Acá sólo está el almacenamiento (agregar, cantidad, borrar) y los
+    controles que aparecen en cualquier página; la cotización la arma el
+    servidor y la pide carrito.html.
+{% endcomment %}
+<script>
+(function () {
+    'use strict';
+
+    var KEY = 'changomas:cart:v1';
+    var MAX_ITEMS = {{ limits.items }};
+    var MAX_QTY = {{ limits.quantity }};
+    // Mismos largos GTIN que acepta el servidor (GTIN_RE en models.py):
+    // lo que no matchea acá tampoco se podría cotizar.
+    var GTIN = /^(\d{8}|\d{12}|\d{13}|\d{14})$/;
+
+    /* El storage puede fallar (modo privado, cuota llena, cookies de sitio
+       bloqueadas). En ese caso el carrito funciona igual dentro de la
+       pestaña y simplemente no sobrevive a la recarga. */
+    var memory = null;
+
+    function read() {
+        if (memory) { return memory; }
+        var raw;
+        try {
+            raw = JSON.parse(window.localStorage.getItem(KEY) || '[]');
+        } catch (err) {
+            raw = [];
+        }
+        memory = sanitize(raw);
+        return memory;
+    }
+
+    function sanitize(raw) {
+        if (!Array.isArray(raw)) { return []; }
+        var items = [];
+        var seen = {};
+        for (var i = 0; i < raw.length && items.length < MAX_ITEMS; i++) {
+            var entry = raw[i];
+            if (!entry || !GTIN.test(String(entry.ean)) || seen[entry.ean]) { continue; }
+            var qty = parseInt(entry.qty, 10);
+            if (!(qty > 0)) { qty = 1; }
+            seen[entry.ean] = true;
+            items.push({ ean: String(entry.ean), qty: Math.min(qty, MAX_QTY) });
+        }
+        return items;
+    }
+
+    function write(items) {
+        memory = items;
+        try {
+            window.localStorage.setItem(KEY, JSON.stringify(items));
+        } catch (err) { /* sin persistencia; seguimos en memoria */ }
+        document.dispatchEvent(new CustomEvent('changocart:change'));
+    }
+
+    var Cart = {
+        items: function () { return read().slice(); },
+        isFull: function () { return read().length >= MAX_ITEMS; },
+        units: function () {
+            return read().reduce(function (sum, item) { return sum + item.qty; }, 0);
+        },
+        qty: function (ean) {
+            var items = read();
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].ean === ean) { return items[i].qty; }
+            }
+            return 0;
+        },
+        /* Una sola puerta de escritura: fijar la cantidad. Agregar es
+           "sumar 1" y borrar es "poner en 0", así no hay tres caminos que
+           puedan discrepar sobre los topes. */
+        set: function (ean, qty) {
+            if (!GTIN.test(String(ean))) { return; }
+            var items = read().slice();
+            qty = Math.max(0, Math.min(parseInt(qty, 10) || 0, MAX_QTY));
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].ean !== ean) { continue; }
+                if (qty === 0) { items.splice(i, 1); } else { items[i].qty = qty; }
+                write(items);
+                return;
+            }
+            if (qty > 0 && items.length < MAX_ITEMS) {
+                items.push({ ean: String(ean), qty: qty });
+                write(items);
+            }
+        },
+        add: function (ean) { this.set(ean, this.qty(ean) + 1); },
+        clear: function () { write([]); },
+        /* Vuelve a aplicar los estados que pone el cliente sobre HTML que
+           acaba de llegar del servidor. Lo usa carrito.html después de
+           inyectar la cotización: esa inyección reemplaza el DOM y se lleva
+           puestos los disabled/hidden que había puesto paint(). No dispara
+           'changocart:change' a propósito, porque eso encadenaría otra
+           cotización y no termina más. */
+        repaint: function () { paint(); }
+    };
+
+    window.ChangoCart = Cart;
+
+    /* ---- controles: un botón "agregar" que se vuelve contador ---------- */
+    function paint() {
+        var units = Cart.units();
+
+        var badges = document.querySelectorAll('[data-cart-badge]');
+        for (var i = 0; i < badges.length; i++) {
+            badges[i].textContent = units;
+            badges[i].hidden = units === 0;
+        }
+
+        var controls = document.querySelectorAll('[data-cart-control]');
+        for (var j = 0; j < controls.length; j++) {
+            var box = controls[j];
+            var qty = Cart.qty(box.getAttribute('data-ean'));
+            var addBtn = box.querySelector('[data-cart-add]');
+            var stepper = box.querySelector('[data-cart-stepper]');
+            var output = box.querySelector('[data-cart-count]');
+            var inc = box.querySelector('[data-cart-inc]');
+            if (output) { output.textContent = qty; }
+            if (addBtn) {
+                addBtn.hidden = qty > 0;
+                addBtn.disabled = qty === 0 && Cart.isFull();
+            }
+            // En el tope, Cart.set recorta en silencio: sin esto el "+" se
+            // sigue viendo activo y clickearlo no hace nada.
+            if (inc) { inc.disabled = qty >= MAX_QTY; }
+            if (stepper) { stepper.hidden = qty === 0; }
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        if (!event.target || !event.target.closest) { return; }
+        var trigger = event.target.closest(
+            '[data-cart-add], [data-cart-inc], [data-cart-dec], [data-cart-remove], [data-cart-clear]'
+        );
+        if (!trigger) { return; }
+        event.preventDefault();
+
+        if (trigger.hasAttribute('data-cart-clear')) { Cart.clear(); return; }
+
+        var box = trigger.closest('[data-ean]');
+        if (!box) { return; }
+        var ean = box.getAttribute('data-ean');
+
+        if (trigger.hasAttribute('data-cart-remove')) {
+            Cart.set(ean, 0);
+        } else if (trigger.hasAttribute('data-cart-dec')) {
+            Cart.set(ean, Cart.qty(ean) - 1);
+        } else {
+            Cart.add(ean);
+        }
+    });
+
+    // Dos pestañas abiertas comparten el mismo carrito.
+    window.addEventListener('storage', function (event) {
+        if (event.key !== KEY) { return; }
+        memory = null;
+        document.dispatchEvent(new CustomEvent('changocart:change'));
+    });
+
+    document.addEventListener('changocart:change', paint);
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', paint);
+    } else {
+        paint();
+    }
+}());
+</script>

@@ -109,7 +109,12 @@
         min-height: 1.25em; margin-top: 8px;
         font-size: .78rem; color: #ffa9a1;
     }
-    .manual__hint { margin-top: 8px; font-size: .74rem; color: rgba(244,242,238,.42); }
+    /* Esta pantalla no tiene pie, así que el selector de idioma (fijo abajo a
+       la derecha) cae justo sobre la ayuda: le dejamos su lugar. */
+    .manual__hint {
+        margin-top: 8px; padding-right: 96px;
+        font-size: .74rem; color: rgba(244,242,238,.42);
+    }
 
     .scan .foot {
         border-top-color: rgba(255,255,255,.08);

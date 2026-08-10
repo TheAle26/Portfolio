@@ -118,9 +118,10 @@
 
     /* ---- identidad de cadena ---------------------------------------------- */
     /* Espejo de CHART_COLORS en comparador.py. No usamos Supermarket.primary_color
-       para identificar cadenas porque ChangoMás (#0071ce) y Carrefour (#005baa)
-       son dos azules indistinguibles; esta paleta sí se diferencia, y así el
-       punto del menú, la raya de la oferta y la línea del gráfico coinciden.
+       para identificar cadenas: dos de las cadenas tienen azules casi idénticos
+       (#0071ce y #005baa) y como puntos de color serían indistinguibles. Esta
+       paleta sí se diferencia, y así el punto del menú, la raya de la oferta y
+       la línea del gráfico coinciden.
        Si agregás una cadena, sumala también acá y en CHART_COLORS. */
     .chain-changomas { --chain: #0071ce; }
     .chain-carrefour { --chain: #16a34a; }
@@ -169,15 +170,27 @@
         transform: scaleX(0); transform-origin: center;
         transition: transform .22s var(--ease);
     }
-    /* El comparador no es una cadena: sin punto de color y separado del grupo */
-    .stores .stores__compare { margin-left: 6px; padding-left: 20px; }
-    .stores .stores__compare::before {
+    /* Comparador y carrito no son cadenas: sin punto de color y separados
+       del grupo de tiendas por un margen. */
+    .stores .stores__tool { margin-left: 6px; padding-left: 20px; }
+    .stores .stores__tool::before {
         width: auto; height: auto; border-radius: 0;
-        background: none; content: '⇄'; font-size: .95rem; line-height: 1;
+        background: none; font-size: .95rem; line-height: 1;
         color: var(--ink-3); transform: none;
     }
-    .stores .stores__compare[aria-current="page"]::before { color: var(--ink); }
-    .stores .stores__compare:hover::before { transform: none; }
+    .stores .stores__compare::before { content: '⇄'; }
+    .stores .stores__cart::before { content: '▤'; }
+    .stores .stores__cart { margin-left: 0; padding-left: 14px; }
+    .stores .stores__tool[aria-current="page"]::before { color: var(--ink); }
+    .stores .stores__tool:hover::before { transform: none; }
+    /* Contador de ítems: pastilla amarilla, se esconde sola con [hidden] */
+    .stores__cart b {
+        background: var(--yellow); color: var(--ink);
+        font-family: var(--mono); font-size: .6rem; font-weight: 700;
+        line-height: 1; padding: 3px 5px; border-radius: 999px;
+        font-variant-numeric: tabular-nums;
+    }
+    [data-cart-badge][hidden] { display: none; }
     .stores a:hover { color: var(--ink); background: rgba(22,22,26,.035); }
     .stores a:hover::before { transform: scale(1.25); }
     .stores a:hover::after { transform: scaleX(.4); }
@@ -440,6 +453,44 @@
         flex: 1; height: 0; border-bottom: 1px dotted var(--line-2);
         transform: translateY(-3px);
     }
+
+    /* ---- agregar al carrito ----------------------------------------------- */
+    /* El mismo control en la góndola y en el buscador del carrito: botón
+       hasta que el ítem entra, contador después. Ocupan el mismo alto para
+       que la fila no salte al agregar. */
+    .addbox { display: flex; margin-top: 10px; min-height: 34px; }
+    .addbox__add {
+        flex: 1; cursor: pointer; border: none;
+        padding: 8px 12px; border-radius: var(--r-sm);
+        background: var(--ink); color: #fff;
+        font-family: var(--display); font-weight: 600; font-size: .74rem;
+        text-transform: uppercase; letter-spacing: .06em;
+        transition: background-color .18s var(--ease), transform .12s var(--ease);
+    }
+    .addbox__add:hover { background: var(--ink-2); }
+    .addbox__add:active { transform: scale(.98); }
+    .addbox__add:disabled { background: var(--line-2); color: var(--ink-3); cursor: not-allowed; }
+    .addbox__step {
+        flex: 1; display: flex; align-items: center; justify-content: space-between;
+        background: var(--yellow); border-radius: var(--r-sm);
+        box-shadow: 0 2px 0 var(--yellow-deep);
+    }
+    .addbox__step button {
+        width: 34px; height: 34px; flex-shrink: 0;
+        border: none; background: none; cursor: pointer;
+        color: var(--ink); font-size: 1.1rem; line-height: 1;
+        border-radius: var(--r-sm);
+        transition: background-color .16s var(--ease);
+    }
+    .addbox__step button:hover { background: rgba(22,22,26,.1); }
+    .addbox__step button:disabled { opacity: .35; cursor: not-allowed; background: none; }
+    .addbox__step output {
+        font-family: var(--display); font-weight: 700; font-size: .95rem;
+        font-variant-numeric: tabular-nums; color: var(--ink);
+    }
+    .addbox [hidden] { display: none; }
+    /* En la ficha el control no debe estirarse a todo el ancho de la columna */
+    .addbox--sheet { margin-top: 16px; max-width: 260px; }
 
     /* ---- entrada escalonada ---------------------------------------------- */
     @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -757,12 +808,19 @@
     }
     @media (max-width: 420px) {
         .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-        .search__fields { flex-direction: column; align-items: stretch; }
+        /* Apilados y con padding en el grupo: así el papel enmarca cada control.
+           Sin ese marco el botón (tinta) desaparecía sobre la cabecera del
+           comparador, que también es tinta. */
+        .search__fields { flex-direction: column; align-items: stretch; padding: 5px; gap: 5px; }
         /* En columna el flex-basis pasa a ser altura: sin esto el input
            se estira a 180px de alto. */
-        .search input[type=text], .search select { flex: 0 0 auto; }
-        .search select { max-width: none; box-shadow: inset 0 1px 0 var(--line); }
-        .search button { padding: 12px 18px; justify-content: center; }
+        .search input[type=text], .search select { flex: 0 0 auto; border-radius: var(--r-xs); }
+        .search input[type=text] { padding: 10px 11px; }
+        .search select {
+            max-width: none; box-shadow: none; padding: 10px 11px;
+            background: var(--paper-sunk);
+        }
+        .search button { padding: 11px 18px; justify-content: center; border-radius: var(--r-xs); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -795,9 +853,11 @@
                 <a class="chain-{{ store.slug }}" href="{% url 'changomas:store_product_list' store.slug %}"
                    {% if supermarket and store.slug == supermarket.slug %}aria-current="page"{% endif %}>{{ store.name }}</a>
             {% endfor %}
-            {# Sin `supermarket` en contexto estamos en el comparador #}
-            <a class="stores__compare" href="{% url 'changomas:comparador_list' %}"
-               {% if not supermarket %}aria-current="page"{% endif %}>{% translate "Comparador" %}</a>
+            {# Sin `supermarket` ni `is_cart` en contexto estamos en el comparador #}
+            <a class="stores__tool stores__compare" href="{% url 'changomas:comparador_list' %}"
+               {% if not supermarket and not is_cart %}aria-current="page"{% endif %}>{% translate "Comparador" %}</a>
+            <a class="stores__tool stores__cart" href="{% url 'changomas:cart' %}"
+               {% if is_cart %}aria-current="page"{% endif %}>{% translate "Carrito" %} <b data-cart-badge hidden></b></a>
         </nav>
         {% endif %}
     {% endblock %}
@@ -813,6 +873,7 @@
     </footer>
     {% endblock %}
 
+    {% include 'changomas/_cart_script.html' %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

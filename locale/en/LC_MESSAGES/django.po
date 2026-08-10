@@ -1777,8 +1777,8 @@ msgstr ""
 msgid "Sin precio"
 msgstr "No price"
 
-msgid "Sin precios registrados"
-msgstr "No prices recorded"
+msgid "Todavía no hay precios registrados"
+msgstr "No prices recorded yet"
 
 msgid "Sin resultados"
 msgstr "No results"
@@ -1789,7 +1789,7 @@ msgstr "These are the digits printed under the bars (6 to 14 of them)."
 msgid "Todavía no hay precios cargados"
 msgstr "No prices loaded yet"
 
-msgid "Todavía no hay productos comparables"
+msgid "No hay productos comparables todavía"
 msgstr "No comparable products yet"
 
 msgid "Todos los comparables"
@@ -1826,3 +1826,222 @@ msgstr "clear filters"
 
 msgid "últimos 30 días"
 msgstr "last 30 days"
+
+#: changomas/templates/changomas/carrito.html:5
+msgid "Armá tu carrito y comprá al mejor precio"
+msgstr "Build your cart and shop at the best price"
+
+#: changomas/templates/changomas/carrito.html:6
+msgid ""
+"Armá tu lista de compras y calculá cuánto sale en cada cadena de "
+"supermercado y cómo comprarla al precio más bajo."
+msgstr ""
+"Build your shopping list and see what it costs at each supermarket chain, "
+"and how to buy it for the lowest price."
+
+#: changomas/templates/changomas/carrito.html:135
+msgid "Tu"
+msgstr "Your"
+
+#: changomas/templates/changomas/carrito.html:5
+msgid "carrito"
+msgstr "cart"
+
+#: changomas/templates/changomas/carrito.html:136
+msgid "Cuánto sale en cada cadena"
+msgstr "What it costs at each chain"
+
+#: changomas/templates/changomas/carrito.html:145
+msgid "Buscar producto para agregar"
+msgstr "Search for a product to add"
+
+#: changomas/templates/changomas/carrito.html:146
+msgid "Buscar producto para agregar..."
+msgstr "Search for a product to add..."
+
+#: changomas/templates/changomas/carrito.html:157
+msgid "El carrito se guarda en tu navegador y necesita JavaScript activado."
+msgstr "Your cart is stored in your browser and needs JavaScript enabled."
+
+#: changomas/templates/changomas/carrito.html:164
+msgid "Cargando tu carrito…"
+msgstr "Loading your cart…"
+
+#: changomas/templates/changomas/carrito.html:171
+msgid "%(counter)s resultado para “%(term)s”"
+msgid_plural "%(counter)s resultados para “%(term)s”"
+msgstr[0] "%(counter)s result for “%(term)s”"
+msgstr[1] "%(counter)s results for “%(term)s”"
+
+#: changomas/templates/changomas/carrito.html:193
+msgid "Agregar"
+msgstr "Add"
+
+#: changomas/templates/changomas/carrito.html:195
+msgid "Restar uno"
+msgstr "Remove one"
+
+#: changomas/templates/changomas/carrito.html:197
+msgid "Sumar uno"
+msgstr "Add one"
+
+#: changomas/templates/changomas/carrito.html:222
+msgid ""
+"Ningún producto comparable coincide con “%(term)s”. Al carrito sólo entran "
+"los productos que podemos precificar en las cadenas."
+msgstr ""
+"No comparable product matches “%(term)s”. Only products we can price across "
+"the chains can go in the cart."
+
+#: changomas/templates/changomas/carrito.html:227
+msgid "Agregá productos"
+msgstr "Add products"
+
+#: changomas/templates/changomas/carrito.html:228
+msgid ""
+"Buscá por nombre o marca ahí arriba, o escaneá el código de barras. Podés "
+"cargar hasta %(max_items)s productos."
+msgstr ""
+"Search by name or brand up there, or scan the barcode. You can load up to "
+"%(max_items)s products."
+
+#: changomas/templates/changomas/carrito.html:230
+msgid "Ver el comparador"
+msgstr "Go to Compare"
+
+#: changomas/templates/changomas/carrito.html:265
+msgid "unidad"
+msgstr "unit"
+
+#: changomas/templates/changomas/carrito.html:266
+msgid "unidades"
+msgstr "units"
+
+#: changomas/templates/changomas/carrito.html:284
+msgid "No pudimos calcular el carrito. Revisá la conexión y volvé a probar."
+msgstr "We could not work out your cart. Check your connection and try again."
+
+#: changomas/templates/changomas/carrito_quote.html:10
+msgid "Tu carrito está vacío"
+msgstr "Your cart is empty"
+
+#: changomas/templates/changomas/carrito_quote.html:11
+msgid ""
+"Buscá productos acá abajo y agregalos. Cuando tengas la lista armada te "
+"decimos cuánto sale en cada cadena y cómo comprarla al mejor precio."
+msgstr ""
+"Search for products below and add them. Once your list is ready we tell you "
+"what it costs at each chain and how to buy it at the best price."
+
+#: changomas/templates/changomas/carrito_quote.html:23
+msgid "Compra óptima"
+msgstr "Optimal buy"
+
+#: changomas/templates/changomas/carrito_quote.html:26
+msgid "Comprando cada producto donde está más barato, en %(counter)s tienda."
+msgid_plural ""
+"Comprando cada producto donde está más barato, repartido en %(counter)s "
+"tiendas."
+msgstr[0] "Buying each product where it is cheapest, at %(counter)s store."
+msgstr[1] ""
+"Buying each product where it is cheapest, split across %(counter)s stores."
+
+#: changomas/templates/changomas/carrito_quote.html:32
+msgid "En una sola tienda"
+msgstr "At a single store"
+
+#: changomas/templates/changomas/carrito_quote.html:37
+msgid "Pagás $%(amount)s de más por hacer un solo viaje."
+msgstr "You pay $%(amount)s extra to make a single trip."
+
+#: changomas/templates/changomas/carrito_quote.html:39
+msgid "Comparado sobre los productos que sí tiene: le falta %(counter)s."
+msgid_plural ""
+"Comparado sobre los productos que sí tiene: le faltan %(counter)s."
+msgstr[0] ""
+"Compared over the products it does carry: it is missing %(counter)s."
+msgstr[1] ""
+"Compared over the products it does carry: it is missing %(counter)s."
+
+#: changomas/templates/changomas/carrito_quote.html:42
+msgid "Ya es el mejor precio: no hay nada que ganar repartiendo la compra."
+msgstr "That is already the best price: splitting the trip gains you nothing."
+
+#: changomas/templates/changomas/carrito_quote.html:44
+msgid "Es la tienda con mejor precio, pero le falta %(counter)s producto."
+msgid_plural ""
+"Es la tienda con mejor precio, pero le faltan %(counter)s productos."
+msgstr[0] ""
+"It is the store with the best price, but it is missing %(counter)s product."
+msgstr[1] ""
+"It is the store with the best price, but it is missing %(counter)s products."
+
+#: changomas/templates/changomas/carrito_quote.html:60
+msgid "Tu lista"
+msgstr "Your list"
+
+#: changomas/templates/changomas/carrito_quote.html:61
+msgid "%(counter)s unidad"
+msgid_plural "%(counter)s unidades"
+msgstr[0] "%(counter)s unit"
+msgstr[1] "%(counter)s units"
+
+#: changomas/templates/changomas/carrito_quote.html:62
+msgid "Vaciar"
+msgstr "Clear"
+
+#: changomas/templates/changomas/carrito_quote.html:67
+msgid ""
+"Precio de cada producto en cada cadena, por la cantidad que pediste. En "
+"amarillo, dónde conviene."
+msgstr ""
+"Price of each product at each chain, for the quantity you picked. In yellow,"
+" where it is cheapest."
+
+#: changomas/templates/changomas/carrito_quote.html:70
+msgid "Producto"
+msgstr "Product"
+
+#: changomas/templates/changomas/carrito_quote.html:71
+msgid "Cant."
+msgstr "Qty"
+
+#: changomas/templates/changomas/carrito_quote.html:3
+msgid "Sacar %(name)s del carrito"
+msgstr "Remove %(name)s from the cart"
+
+#: changomas/templates/changomas/carrito_quote.html:102
+msgid "No lo encontramos en esta cadena"
+msgstr "We did not find it at this chain"
+
+#: changomas/templates/changomas/carrito_quote.html:110
+msgid "Total de la tienda"
+msgstr "Store total"
+
+#: changomas/templates/changomas/carrito_quote.html:39
+msgid "falta %(counter)s"
+msgid_plural "faltan %(counter)s"
+msgstr[0] "missing %(counter)s"
+msgstr[1] "missing %(counter)s"
+
+#: changomas/templates/changomas/carrito_quote.html:128
+msgid "Cómo se reparte la compra óptima"
+msgstr "How the optimal buy splits up"
+
+#: changomas/templates/changomas/comparador_detail.html:55
+msgid "Agregar al carrito"
+msgstr "Add to cart"
+
+#: changomas/templates/changomas/carrito_quote.html:16
+msgid ""
+"1 producto de tu carrito ya no tiene precio vigente en ninguna cadena, así "
+"que no entra en las cuentas."
+msgid_plural ""
+"%(counter)s productos de tu carrito ya no tienen precio vigente en ninguna "
+"cadena, así que no entran en las cuentas."
+msgstr[0] ""
+"1 product in your cart no longer has a current price at any chain, so it is "
+"left out of the totals."
+msgstr[1] ""
+"%(counter)s products in your cart no longer have a current price at any "
+"chain, so they are left out of the totals."

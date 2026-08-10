@@ -1,13 +1,16 @@
+import json
 from decimal import Decimal
 from unittest import mock
 
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, SimpleTestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from .cart import MAX_CART_ITEMS, MAX_QUANTITY, parse_items, quote
 from .models import GTIN_RE, PriceRecord, Product, Supermarket
 from .scraper import (
     ScrapeError,
@@ -341,7 +344,8 @@ class ViewTests(TestCase):
             HTTP_ACCEPT_LANGUAGE='en',
         )
         self.assertContains(response, 'Supermarkets')
-        self.assertContains(response, 'Run <code>python manage.py scrape_supermarkets</code>')
+        self.assertContains(response, 'Run the scraper to populate the database')
+        self.assertContains(response, '<code>python manage.py scrape_supermarkets</code>')
 
 
 class ProductDetailViewTests(TestCase):
@@ -809,7 +813,8 @@ class ComparadorTests(TestCase):
         self.assertContains(response, '800,00')
         # El mejor precio es el efectivo de la promo de Carrefour
         content = response.content.decode()
-        best_pos = content.find('class="best-store"')
+        best_pos = content.find('class="store-name')
+        self.assertNotEqual(best_pos, -1, 'no se encontró la etiqueta de tienda')
         self.assertIn('Carrefour', content[best_pos:best_pos + 200])
 
     def test_producto_de_una_sola_tienda_aparece(self):
@@ -927,9 +932,11 @@ class ComparadorTests(TestCase):
 
         response = self.client.get(
             reverse('changomas:comparador_detail', args=['7790000000104']))
-        content = response.content.decode()
-        self.assertEqual(content.count('class="offer"'), 1)
-        self.assertEqual(content.count('ChangoMás</span>'), 1)
+        # Contamos dentro del bloque de ofertas: el nombre de la cadena también
+        # aparece en la ficha de arriba, así que un count global no dice nada.
+        offers = response.content.decode().split('class="offers"', 1)[1]
+        self.assertEqual(offers.count('class="offer__store"'), 1)
+        self.assertEqual(offers.count('ChangoMás'), 1)
 
     def test_disponible_sin_precio_reciente_queda_fuera_del_listado(self):
         # Producto que sigue "disponible" pero cuyo último precio es de hace
@@ -956,3 +963,569 @@ class ComparadorTests(TestCase):
         # ganarle y responder con la vista del comparador, no un 404 de tienda.
         response = self.client.get('/changomas/comparador/')
         self.assertEqual(response.status_code, 200)
+
+
+class CartParseItemsTests(SimpleTestCase):
+    """Saneado de la lista que manda el navegador: nada de lo que llega por
+    POST se toca sin normalizar primero."""
+
+    def test_descarta_lo_que_no_es_ean_gtin(self):
+        items = parse_items([
+            {'ean': '7790000000012', 'qty': 1},
+            {'ean': '12345', 'qty': 1},          # largo inválido
+            {'ean': 'vtex-991', 'qty': 1},       # código interno
+            {'ean': '', 'qty': 1},
+            'no soy un dict',
+        ])
+        self.assertEqual(items, [('7790000000012', 1)])
+
+    def test_cantidad_se_acota_y_se_sanea(self):
+        items = parse_items([
+            {'ean': '7790000000012', 'qty': 0},
+            {'ean': '7790000000029', 'qty': -5},
+            {'ean': '7790000000036', 'qty': 999},
+            {'ean': '7790000000043', 'qty': 'dos'},
+            {'ean': '7790000000050'},
+        ])
+        self.assertEqual(items, [
+            ('7790000000012', 1),
+            ('7790000000029', 1),
+            ('7790000000036', MAX_QUANTITY),
+            # 'dos' no es un entero: la línea entera se descarta
+            ('7790000000050', 1),
+        ])
+
+    def test_deduplica_y_corta_en_el_tope(self):
+        repeated = parse_items([
+            {'ean': '7790000000012', 'qty': 2},
+            {'ean': '7790000000012', 'qty': 9},
+        ])
+        self.assertEqual(repeated, [('7790000000012', 2)])
+
+        many = [{'ean': f'{7790000000000 + i}', 'qty': 1} for i in range(200)]
+        self.assertEqual(len(parse_items(many)), MAX_CART_ITEMS)
+
+    def test_payload_que_no_es_lista(self):
+        self.assertEqual(parse_items({'ean': '7790000000012'}), [])
+        self.assertEqual(parse_items(None), [])
+
+
+class CartQuoteTests(TestCase):
+    """El cálculo del carrito: total por cadena, compra óptima repartida
+    y comparación honesta cuando a una tienda le faltan productos."""
+
+    LECHE = '7790000000012'
+    PAN = '7790000000029'
+    YERBA = '7790000000036'
+
+    def setUp(self):
+        cache.clear()
+        self.changomas = Supermarket.objects.get(slug='changomas')
+        self.carrefour = Supermarket.objects.get(slug='carrefour')
+        self.disco = Supermarket.objects.get(slug='disco')
+
+    def _make(self, store, ean, name, price, promo_price=None, promo_text=''):
+        product, _ = Product.objects.get_or_create(
+            supermarket=store,
+            reference_code=ean,
+            defaults={
+                'ean': ean,
+                'vtex_product_id': f'{store.slug}-{ean}',
+                'name': name,
+                'is_comparable': bool(GTIN_RE.match(ean)),
+            },
+        )
+        PriceRecord.objects.create(
+            product=product,
+            date=timezone.localdate(),
+            price=Decimal(price),
+            promo_price=Decimal(promo_price) if promo_price else None,
+            promo_text=promo_text,
+        )
+        return product
+
+    def _stores_by_slug(self, cart):
+        return {row['supermarket'].slug: row for row in cart['stores']}
+
+    def test_total_por_tienda_respeta_las_cantidades(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1200')
+        cart = quote([(self.LECHE, 3)])
+
+        stores = self._stores_by_slug(cart)
+        self.assertEqual(stores['changomas']['total'], Decimal('3000'))
+        self.assertEqual(stores['carrefour']['total'], Decimal('3600'))
+        self.assertEqual(cart['optimal']['total'], Decimal('3000'))
+        self.assertEqual(cart['unit_count'], 3)
+        self.assertEqual(cart['item_count'], 1)
+
+    def test_optimo_reparte_y_calcula_el_ahorro(self):
+        # La leche conviene en ChangoMás y el pan en Carrefour: comprar todo
+        # en la mejor tienda única sale más caro que repartir.
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1200')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+        self._make(self.carrefour, self.PAN, 'Pan', '500')
+
+        cart = quote([(self.LECHE, 1), (self.PAN, 1)])
+        self.assertEqual(cart['optimal']['total'], Decimal('1500'))
+        self.assertEqual(cart['optimal']['store_count'], 2)
+        # Mejor tienda única: Carrefour (1700) contra ChangoMás (1900)
+        self.assertEqual(cart['best_single']['supermarket'], self.carrefour)
+        self.assertEqual(cart['best_single']['total'], Decimal('1700'))
+        self.assertTrue(cart['best_single']['is_complete'])
+        self.assertEqual(cart['savings'], Decimal('200'))
+
+    def test_tienda_incompleta_suma_lo_que_tiene_y_declara_los_faltantes(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '800')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+
+        cart = quote([(self.LECHE, 1), (self.PAN, 1)])
+        stores = self._stores_by_slug(cart)
+        self.assertEqual(stores['carrefour']['total'], Decimal('800'))
+        self.assertEqual(stores['carrefour']['covered_count'], 1)
+        self.assertEqual(stores['carrefour']['missing_count'], 1)
+        self.assertFalse(stores['carrefour']['is_complete'])
+        self.assertTrue(stores['changomas']['is_complete'])
+
+    def test_la_mejor_tienda_unica_prioriza_cobertura_sobre_precio(self):
+        # Carrefour es más barato en lo único que tiene, pero le falta el pan:
+        # rankearlo primero por total pelado sería mentir.
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '800')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+
+        cart = quote([(self.LECHE, 1), (self.PAN, 1)])
+        self.assertEqual(cart['best_single']['supermarket'], self.changomas)
+        self.assertEqual(cart['best_single']['total'], Decimal('1900'))
+        # El ahorro se mide sólo sobre lo que ChangoMás sí cubre (todo, acá):
+        # la leche conviene en Carrefour a 800 -> 1900 - 1700
+        self.assertEqual(cart['savings'], Decimal('200'))
+
+    def test_ahorro_cero_cuando_una_sola_tienda_ya_es_lo_mejor(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1100')
+        self._make(self.carrefour, self.PAN, 'Pan', '950')
+
+        cart = quote([(self.LECHE, 1), (self.PAN, 1)])
+        self.assertEqual(cart['savings'], Decimal('0'))
+        self.assertEqual(cart['optimal']['store_count'], 1)
+        self.assertEqual(cart['best_single']['supermarket'], self.changomas)
+
+    def test_la_promo_define_donde_conviene(self):
+        # Carrefour es más caro de lista pero su promo lo deja abajo.
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1100',
+                   promo_price='750', promo_text='2da al 50%')
+
+        cart = quote([(self.LECHE, 2)])
+        self.assertEqual(cart['optimal']['total'], Decimal('1500'))
+        self.assertEqual(cart['best_single']['supermarket'], self.carrefour)
+
+    def test_producto_sin_precio_vigente_va_a_faltantes(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        cart = quote([(self.LECHE, 1), (self.YERBA, 1)])
+        self.assertEqual([item['ean'] for item in cart['missing']], [self.YERBA])
+        self.assertEqual(cart['item_count'], 1)
+
+    def test_los_faltantes_traen_su_nombre_cuando_lo_sabemos(self):
+        """Se listan para que el usuario los saque; con el EAN pelado no
+        podría reconocer qué está descartando."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        # Existe en la tabla pero su último precio quedó fuera de la ventana
+        viejo = self._make(self.changomas, self.YERBA, 'Yerba Playadito', '5000')
+        viejo.prices.all().delete()
+        PriceRecord.objects.create(
+            product=viejo,
+            date=timezone.localdate() - timezone.timedelta(days=40),
+            price=Decimal('5000'),
+        )
+
+        cart = quote([(self.LECHE, 1), (self.YERBA, 2)])
+        self.assertEqual(cart['missing'], [
+            {'ean': self.YERBA, 'name': 'Yerba Playadito'},
+        ])
+
+    def test_faltante_desconocido_queda_sin_nombre(self):
+        """Un EAN que nunca vimos igual se lista: el usuario tiene que poder
+        sacarlo aunque no sepamos cómo se llama."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        cart = quote([(self.LECHE, 1), (self.YERBA, 1)])
+        self.assertEqual(cart['missing'], [{'ean': self.YERBA, 'name': ''}])
+
+    def test_carrito_sin_nada_cotizable(self):
+        cart = quote([(self.YERBA, 1)])
+        self.assertEqual(cart['lines'], [])
+        self.assertEqual(cart['stores'], [])
+        self.assertIsNone(cart['optimal'])
+        self.assertIsNone(cart['best_single'])
+        # Mismas claves que una cotización con contenido: quien consuma el
+        # dict no tiene que preguntarse si el carrito estaba vacío.
+        self.assertIsNone(cart['savings'])
+
+    def test_celdas_alineadas_con_las_columnas_de_tiendas(self):
+        # La matriz de la UI se arma en Python: una celda por tienda, en el
+        # mismo orden, con None donde la cadena no tiene el producto.
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '800')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+
+        cart = quote([(self.LECHE, 2), (self.PAN, 1)])
+        columns = [row['supermarket'].slug for row in cart['stores']]
+        leche, pan = cart['lines']
+        self.assertEqual(len(leche['cells']), len(columns))
+        self.assertEqual(len(pan['cells']), len(columns))
+
+        cells = dict(zip(columns, leche['cells']))
+        self.assertEqual(cells['carrefour']['subtotal'], Decimal('1600'))
+        self.assertTrue(cells['carrefour']['is_best'])
+        self.assertFalse(cells['changomas']['is_best'])
+        # Carrefour no tiene el pan: celda sin oferta, pero con su tienda
+        # (la vista apilada de celular la usa como etiqueta del renglón).
+        empty = dict(zip(columns, pan['cells']))['carrefour']
+        self.assertIsNone(empty['offer'])
+        self.assertIsNone(empty['subtotal'])
+        self.assertFalse(empty['is_best'])
+        self.assertEqual(empty['store'], self.carrefour)
+
+    def test_empate_marca_las_dos_tiendas(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1000')
+        cart = quote([(self.LECHE, 1)])
+        self.assertEqual([cell['is_best'] for cell in cart['lines'][0]['cells']],
+                         [True, True])
+
+
+class CartViewTests(TestCase):
+    """Vistas del carrito: la página con el buscador y el endpoint que
+    cotiza la lista guardada en el navegador."""
+
+    LECHE = '7790000000012'
+    PAN = '7790000000029'
+
+    def setUp(self):
+        cache.clear()
+        self.changomas = Supermarket.objects.get(slug='changomas')
+        self.carrefour = Supermarket.objects.get(slug='carrefour')
+
+    def _make(self, store, ean, name, price):
+        product, _ = Product.objects.get_or_create(
+            supermarket=store, reference_code=ean,
+            defaults={
+                'ean': ean, 'vtex_product_id': f'{store.slug}-{ean}',
+                'name': name, 'is_comparable': True,
+            },
+        )
+        PriceRecord.objects.create(
+            product=product, date=timezone.localdate(), price=Decimal(price))
+        return product
+
+    def _post(self, items):
+        return self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': items}),
+            content_type='application/json',
+        )
+
+    def test_pagina_del_carrito_abre_vacia(self):
+        response = self.client.get(reverse('changomas:cart'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Agregá productos')
+        self.assertContains(response, reverse('changomas:cart_quote'))
+
+    def test_la_ruta_carrito_no_la_captura_el_slug_de_tienda(self):
+        response = self.client.get('/changomas/carrito/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_buscador_ofrece_agregar_solo_comparables(self):
+        self._make(self.changomas, self.LECHE, 'Leche Entera', '1000')
+        Product.objects.create(
+            supermarket=self.changomas, reference_code='vtex-77',
+            ean='', vtex_product_id='77', name='Leche Suelta',
+            is_comparable=False)
+
+        response = self.client.get(reverse('changomas:cart'), {'q': 'leche'})
+        self.assertContains(response, 'Leche Entera')
+        self.assertNotContains(response, 'Leche Suelta')
+        self.assertContains(response, f'data-ean="{self.LECHE}"')
+        self.assertContains(response, 'data-cart-add')
+
+    def test_cotizacion_devuelve_los_totales_renderizados(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1200')
+        self._make(self.changomas, self.PAN, 'Pan', '900')
+        self._make(self.carrefour, self.PAN, 'Pan', '500')
+
+        response = self._post([
+            {'ean': self.LECHE, 'qty': 1},
+            {'ean': self.PAN, 'qty': 2},
+        ])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '2.000,00')   # óptima: 1000 + 2x500
+        self.assertContains(response, '2.200,00')   # Carrefour: 1200 + 1000
+        self.assertContains(response, '2.800,00')   # ChangoMás: 1000 + 1800
+        self.assertContains(response, 'Cómo se reparte')
+        # Django sólo saca los {# #} que empiezan y terminan en la misma
+        # línea: uno multilínea se imprime como texto en la página.
+        self.assertNotContains(response, '{#')
+
+    def test_cotizacion_de_un_carrito_vacio(self):
+        response = self._post([])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'carrito está vacío')
+
+    def test_cotizacion_ignora_eans_basura(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        response = self._post([
+            {'ean': self.LECHE, 'qty': 1},
+            {'ean': "'; DROP TABLE", 'qty': 1},
+            {'ean': '999', 'qty': 1},
+        ])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '1.000,00')
+
+    def test_cotizacion_rechaza_get_y_json_invalido(self):
+        self.assertEqual(
+            self.client.get(reverse('changomas:cart_quote')).status_code, 405)
+        response = self.client.post(
+            reverse('changomas:cart_quote'),
+            data='esto no es json', content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_cotizacion_rechaza_json_patologicamente_anidado(self):
+        """Un JSON muy anidado hace que json.loads tire RecursionError, que
+        NO es subclase de ValueError: si el except no lo incluye, un body de
+        40 KB (muy por debajo del tope de 2,5 MB de Django) saca un 500."""
+        payload = '[' * 5000 + ']' * 5000
+        response = self.client.post(
+            reverse('changomas:cart_quote'),
+            data=payload, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_el_carrito_aparece_en_la_navegacion(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        for url in (
+            reverse('changomas:store_product_list', args=['changomas']),
+            reverse('changomas:comparador_list'),
+        ):
+            self.assertContains(self.client.get(url), reverse('changomas:cart'))
+
+    def test_carrito_es_slug_reservado(self):
+        store = Supermarket(slug='carrito', name='X', base_url='https://x.com')
+        with self.assertRaises(ValidationError):
+            store.clean()
+
+
+class CartRegressionTests(TestCase):
+    """Regresiones de bugs que la suite no veía porque no rompían el cálculo:
+    sólo se notaban mirando la página renderizada."""
+
+    LECHE = '7790000000012'
+    PAN = '7790000000029'
+
+    def setUp(self):
+        cache.clear()
+        self.changomas = Supermarket.objects.get(slug='changomas')
+        self.carrefour = Supermarket.objects.get(slug='carrefour')
+        self.disco = Supermarket.objects.get(slug='disco')
+
+    def _make(self, store, ean, name, price):
+        product, _ = Product.objects.get_or_create(
+            supermarket=store, reference_code=ean,
+            defaults={
+                'ean': ean, 'vtex_product_id': f'{store.slug}-{ean}',
+                'name': name, 'is_comparable': True,
+            },
+        )
+        # Idempotente a propósito: hay un precio por producto por día, así
+        # que sembrar dos veces en el mismo test reventaría el UNIQUE.
+        PriceRecord.objects.update_or_create(
+            product=product, date=timezone.localdate(),
+            defaults={'price': Decimal(price)},
+        )
+        return product
+
+    def _quote_html(self):
+        """La cotización con leche en las tres cadenas y pan sin Disco."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1200')
+        self._make(self.disco, self.LECHE, 'Leche', '900')
+        self._make(self.changomas, self.PAN, 'Pan', '800')
+        self._make(self.carrefour, self.PAN, 'Pan', '700')
+        return self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': [
+                {'ean': self.LECHE, 'qty': 1},
+                {'ean': self.PAN, 'qty': 1},
+            ]}),
+            content_type='application/json',
+        )
+
+    def test_ninguna_pagina_imprime_comentarios_de_template(self):
+        """Django sólo saca los ``{# #}`` que abren y cierran en la MISMA
+        línea: uno multilínea se renderiza como texto visible. Pasó con el
+        encabezado del parcial del carrito y con el script compartido, que
+        va incluido en todas las páginas desde base.html."""
+        quote = self._quote_html()  # además siembra el catálogo
+
+        pages = [
+            reverse('changomas:cart'),
+            reverse('changomas:cart') + '?q=leche',
+            reverse('changomas:comparador_list'),
+            reverse('changomas:comparador_detail', args=[self.LECHE]),
+            reverse('changomas:comparador_scan'),
+            reverse('changomas:store_product_list', args=['changomas']),
+            reverse('changomas:store_product_detail',
+                    args=['changomas', self.LECHE]),
+            reverse('changomas:store_scan', args=['changomas']),
+        ]
+        for url in pages:
+            with self.subTest(url=url):
+                self.assertNotContains(self.client.get(url), '{#')
+        self.assertNotContains(quote, '{#')
+
+    def test_cada_celda_de_precio_declara_su_cadena(self):
+        """En pantallas angostas la tabla se apila y cada celda pasa a ser un
+        renglón rotulado con ``data-store``; sin encabezado de columna que lo
+        explique, una celda sin el atributo muestra un precio sin decir de
+        qué cadena es. Las celdas vacías ('—') también lo necesitan."""
+        response = self._quote_html()
+        content = response.content.decode()
+
+        # 2 productos + el renglón de totales = 3 celdas por cadena, incluso
+        # para Disco, que no tiene el pan.
+        for store in (self.changomas, self.carrefour, self.disco):
+            with self.subTest(store=store.slug):
+                self.assertEqual(
+                    content.count(f'data-store="{store.name}"'), 3,
+                    f'faltan celdas rotuladas para {store.name}')
+
+        # La celda faltante de Disco existe y está marcada como vacía
+        self.assertIn('is-empty', content)
+
+    def test_la_explicacion_de_la_tabla_va_afuera_de_la_tabla(self):
+        """Como <caption> formaba parte del ancho de la tabla, en el celular
+        se cortaba con el scroll horizontal en lugar de partirse en varios
+        renglones. Ahora es un <p> afuera, atado con aria-describedby."""
+        response = self._quote_html()
+        self.assertNotContains(response, '<caption>')
+        self.assertContains(response, 'id="cart-table-help"')
+        self.assertContains(response, 'aria-describedby="cart-table-help"')
+
+    def _con_faltante(self, qty_faltante=2):
+        """Carrito con un producto cotizable y otro cuyo precio quedó viejo."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        self._make(self.carrefour, self.LECHE, 'Leche', '1200')
+        viejo = self._make(self.changomas, self.PAN, 'Pan Lactal', '800')
+        viejo.prices.all().delete()
+        PriceRecord.objects.create(
+            product=viejo,
+            date=timezone.localdate() - timezone.timedelta(days=40),
+            price=Decimal('800'),
+        )
+        return self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': [
+                {'ean': self.LECHE, 'qty': 1},
+                {'ean': self.PAN, 'qty': qty_faltante},
+            ]}),
+            content_type='application/json',
+        )
+
+    def test_los_faltantes_se_pueden_sacar_del_carrito(self):
+        """Los ítems sin precio vigente siguen ocupando lugar en el carrito
+        del navegador. Si el HTML no los nombra ni les da botón, inflan el
+        contador para siempre sin aparecer en ninguna cuenta, y la única
+        salida es 'Vaciar' (que borra todo)."""
+        response = self._con_faltante()
+        content = response.content.decode()
+
+        self.assertContains(response, 'Pan Lactal')
+        # El bloque de faltantes trae el EAN y su propio botón de borrado
+        bloque = content.split('cart-gone', 1)[1].split('</div>', 1)[0]
+        self.assertIn(f'data-ean="{self.PAN}"', bloque)
+        self.assertIn('data-cart-remove', bloque)
+        # ...y no se cuela como una línea cotizable de la tabla
+        self.assertNotIn(f'<tr data-cart-control data-ean="{self.PAN}"', content)
+
+    def test_carrito_solo_con_faltantes_no_publica_un_total(self):
+        """Sin líneas cotizables no hay total que mostrar. Si el parcial no
+        emite data-cart-total, la barra fija del celular se queda con el
+        '$ 0,00' del placeholder al lado de un contador distinto de cero;
+        el JS la esconde justamente porque el total no está."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        viejo = self._make(self.changomas, self.PAN, 'Pan Lactal', '800')
+        viejo.prices.all().delete()
+        PriceRecord.objects.create(
+            product=viejo,
+            date=timezone.localdate() - timezone.timedelta(days=40),
+            price=Decimal('800'),
+        )
+        response = self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': [{'ean': self.PAN, 'qty': 2}]}),
+            content_type='application/json',
+        )
+        self.assertNotContains(response, 'data-cart-total')
+        self.assertContains(response, 'data-cart-remove')   # igual se puede sacar
+        self.assertContains(response, 'Pan Lactal')
+
+    def test_la_barra_de_celular_se_apaga_sin_cotizacion(self):
+        """La barra sólo se enciende si hay un total confirmado por el
+        servidor; el contador crudo del navegador no alcanza."""
+        response = self.client.get(reverse('changomas:cart'))
+        self.assertContains(response, 'units > 0 && total !== null')
+
+    def test_la_barra_cuenta_las_unidades_que_cubre_su_total(self):
+        """El total sólo cubre lo cotizable. Si las unidades salieran del
+        contador del navegador, con un producto sin precio en el carrito la
+        barra anunciaría más unidades de las que paga ese total."""
+        response = self._con_faltante(qty_faltante=4)
+        # 1 unidad cotizable; las 4 del faltante no entran
+        self.assertContains(response, '<span hidden data-cart-units>1</span>')
+
+    def test_el_mas_llega_deshabilitado_del_servidor_en_el_tope(self):
+        """En MAX_QUANTITY la cantidad ya no sube (Cart.set recorta en
+        silencio), así que el '+' tiene que venir apagado en el HTML."""
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        response = self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': [{'ean': self.LECHE, 'qty': MAX_QUANTITY}]}),
+            content_type='application/json',
+        )
+        fila = response.content.decode().split('cartrow__qty', 1)[1][:400]
+        self.assertIn('data-cart-inc', fila)
+        self.assertIn('disabled', fila)
+
+    def test_el_mas_sigue_activo_por_debajo_del_tope(self):
+        self._make(self.changomas, self.LECHE, 'Leche', '1000')
+        response = self.client.post(
+            reverse('changomas:cart_quote'),
+            data=json.dumps({'items': [{'ean': self.LECHE, 'qty': 3}]}),
+            content_type='application/json',
+        )
+        fila = response.content.decode().split('cartrow__qty', 1)[1][:400]
+        self.assertNotIn('disabled', fila)
+
+    def test_la_cotizacion_inyectada_se_vuelve_a_pintar(self):
+        """Inyectar la cotización reemplaza el DOM y se lleva puestos los
+        estados que había puesto el cliente (el '+' apagado en el tope, por
+        ejemplo). Hay que repintar después de cada inyección."""
+        response = self.client.get(reverse('changomas:cart'))
+        self.assertContains(response, 'ChangoCart.repaint()')
+        # Repintar NO puede disparar 'changocart:change': encadenaría otra
+        # cotización y no pararía más.
+        script = response.content.decode().split('repaint: function', 1)[1][:200]
+        self.assertNotIn('dispatchEvent', script)
+
+    def test_la_barra_de_celular_reserva_su_espacio(self):
+        """La barra fija está DESPUÉS de <main> en el DOM, así que ningún
+        selector de hermanos puede reservarle lugar: ``.cartbar.is-on ~ main``
+        no matcheaba nunca y la barra tapaba el final del contenido. El
+        espacio lo reserva una clase que el JS pone en <body>."""
+        response = self.client.get(reverse('changomas:cart'))
+        self.assertNotContains(response, '~ main')
+        self.assertContains(response, 'body.has-cartbar .wrap')
+        self.assertContains(response, "classList.toggle('has-cartbar'")

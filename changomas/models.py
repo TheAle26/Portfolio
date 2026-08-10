@@ -8,7 +8,7 @@ from django.db import models
 GTIN_RE = re.compile(r'^(\d{8}|\d{12}|\d{13}|\d{14})$')
 
 # Segmentos de URL que no pueden usarse como slug de tienda.
-RESERVED_SLUGS = {'comparador'}
+RESERVED_SLUGS = {'comparador', 'carrito'}
 
 
 class Supermarket(models.Model):

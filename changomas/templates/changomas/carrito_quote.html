@@ -1,0 +1,181 @@
+{% load i18n changomas_extras %}
+{% comment %}
+    Cotización del carrito. La devuelve cart_quote() ya renderizada y el JS
+    la inyecta tal cual: los precios formateados, los plurales y las
+    traducciones se resuelven donde ya viven, no en JavaScript.
+{% endcomment %}
+{% comment %}
+    Los faltantes se listan uno por uno y con botón para sacarlos, arriba de
+    todo y en los dos casos (con y sin líneas cotizables). Siguen ocupando
+    lugar en el carrito del navegador, así que si no se pueden ver ni sacar
+    quedan inflando el contador para siempre, sin aparecer en ninguna cuenta
+    y sin más salida que vaciar el carrito entero.
+{% endcomment %}
+{% if cart.missing %}
+<div class="cart-warn cart-gone">
+    <p>{% blocktranslate count counter=cart.missing|length %}1 producto de tu carrito ya no tiene precio vigente en ninguna cadena, así que no entra en las cuentas.{% plural %}{{ counter }} productos de tu carrito ya no tienen precio vigente en ninguna cadena, así que no entran en las cuentas.{% endblocktranslate %}</p>
+    <ul>
+        {% for item in cart.missing %}
+        <li data-ean="{{ item.ean }}">
+            <span>{{ item.name|default:item.ean }}</span>
+            <button type="button" data-cart-remove
+                    aria-label="{% blocktranslate with name=item.name|default:item.ean %}Sacar {{ name }} del carrito{% endblocktranslate %}">&times;</button>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if not cart or not cart.lines %}
+    <div class="blank">
+        <div class="blank__mark" aria-hidden="true">▤</div>
+        <h2>{% translate "Tu carrito está vacío" %}</h2>
+        <p>{% translate "Buscá productos acá abajo y agregalos. Cuando tengas la lista armada te decimos cuánto sale en cada cadena y cómo comprarla al mejor precio." %}</p>
+    </div>
+{% else %}
+
+{# ---- veredicto: repartir la compra vs. hacerla toda en un solo lugar ---- #}
+<div class="verdict">
+    <div class="verdict__card verdict__card--best">
+        <div class="section-label">{% translate "Compra óptima" %}</div>
+        <div class="price price--sign"><span class="mon">$</span>{{ cart.optimal.total|precio }}</div>
+        <p class="verdict__note">
+            {% blocktranslate count counter=cart.optimal.store_count %}Comprando cada producto donde está más barato, en {{ counter }} tienda.{% plural %}Comprando cada producto donde está más barato, repartido en {{ counter }} tiendas.{% endblocktranslate %}
+        </p>
+    </div>
+
+    {% if cart.best_single %}
+    <div class="verdict__card">
+        <div class="section-label">{% translate "En una sola tienda" %}</div>
+        <div class="price"><span class="mon">$</span>{{ cart.best_single.total|precio }}</div>
+        <div class="store-name store-name--sm chain chain-{{ cart.best_single.supermarket.slug }}">{{ cart.best_single.supermarket.name }}</div>
+        <p class="verdict__note">
+            {% if cart.savings > 0 %}
+                {% blocktranslate with amount=cart.savings|precio %}Pagás ${{ amount }} de más por hacer un solo viaje.{% endblocktranslate %}
+                {% if not cart.best_single.is_complete %}
+                    {% blocktranslate count counter=cart.best_single.missing_count %}Comparado sobre los productos que sí tiene: le falta {{ counter }}.{% plural %}Comparado sobre los productos que sí tiene: le faltan {{ counter }}.{% endblocktranslate %}
+                {% endif %}
+            {% elif cart.best_single.is_complete %}
+                {% translate "Ya es el mejor precio: no hay nada que ganar repartiendo la compra." %}
+            {% else %}
+                {% blocktranslate count counter=cart.best_single.missing_count %}Es la tienda con mejor precio, pero le falta {{ counter }} producto.{% plural %}Es la tienda con mejor precio, pero le faltan {{ counter }} productos.{% endblocktranslate %}
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+{# ---- la matriz: una fila por producto, una columna por cadena ---------- #}
+<div class="panel">
+    <h2>
+        {% translate "Tu lista" %}
+        <small>{% blocktranslate count counter=cart.item_count %}{{ counter }} producto{% plural %}{{ counter }} productos{% endblocktranslate %} · {% blocktranslate count counter=cart.unit_count %}{{ counter }} unidad{% plural %}{{ counter }} unidades{% endblocktranslate %}</small>
+        <button type="button" class="cart-clear" data-cart-clear>{% translate "Vaciar" %}</button>
+    </h2>
+
+    {% comment %}
+        La explicación va afuera del contenedor que scrollea: como <caption>
+        formaba parte del ancho de la tabla y en el celular se cortaba en
+        lugar de partirse en varios renglones.
+    {% endcomment %}
+    <p class="section-label" id="cart-table-help">{% translate "Precio de cada producto en cada cadena, por la cantidad que pediste. En amarillo, dónde conviene." %}</p>
+
+    <div class="table-scroll">
+        <table class="ticket ticket--cart" aria-describedby="cart-table-help">
+            <thead>
+                <tr>
+                    <th scope="col">{% translate "Producto" %}</th>
+                    <th scope="col">{% translate "Cant." %}</th>
+                    {% for row in cart.stores %}
+                    <th scope="col" class="chain chain-{{ row.supermarket.slug }}">{{ row.supermarket.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in cart.lines %}
+                {% comment %}
+                    data-cart-control: el script compartido actualiza el número
+                    de la fila apenas se toca +/-, sin esperar la cotización.
+                {% endcomment %}
+                <tr data-cart-control data-ean="{{ line.ean }}">
+                    <th scope="row" class="cartrow__name">
+                        <span title="{{ line.product.name }}">{{ line.product.name }}</span>
+                        <button type="button" class="cartrow__drop" data-cart-remove
+                                aria-label="{% blocktranslate with name=line.product.name %}Sacar {{ name }} del carrito{% endblocktranslate %}">&times;</button>
+                    </th>
+                    <td class="cartrow__qty">
+                        <span class="addbox__step">
+                            <button type="button" data-cart-dec aria-label="{% translate 'Restar uno' %}">&minus;</button>
+                            <output data-cart-count>{{ line.quantity }}</output>
+                            {# En el tope la cantidad ya no sube: que llegue deshabilitado del servidor evita el parpadeo de un "+" activo #}
+                            <button type="button" data-cart-inc aria-label="{% translate 'Sumar uno' %}"
+                                    {% if line.quantity >= max_quantity %}disabled{% endif %}>+</button>
+                        </span>
+                    </td>
+                    {% for cell in line.cells %}
+                        {% if cell.offer %}
+                        <td data-store="{{ cell.store.name }}" class="{% if cell.is_best %}is-best{% endif %}">
+                            <b>{{ cell.subtotal|precio }}</b>
+                            {% if line.quantity > 1 %}<small>{{ cell.offer.effective|precio }} c/u</small>{% endif %}
+                            {% if cell.offer.record.promo_text %}<small class="is-promo">{{ cell.offer.record.promo_text }}</small>{% endif %}
+                        </td>
+                        {% else %}
+                        <td data-store="{{ cell.store.name }}" class="is-empty" title="{% translate 'No lo encontramos en esta cadena' %}">&mdash;</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row" colspan="2">{% translate "Total de la tienda" %}</th>
+                    {% for row in cart.stores %}
+                    <td data-store="{{ row.supermarket.name }}">
+                        <b>{{ row.total|precio }}</b>
+                        {% if not row.is_complete %}
+                        <small class="is-gap">{% blocktranslate count counter=row.missing_count %}falta {{ counter }}{% plural %}faltan {{ counter }}{% endblocktranslate %}</small>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{# ---- el plan de compra que sale de elegir siempre el más barato -------- #}
+{% if cart.optimal.store_count > 1 %}
+<div class="panel">
+    <h2>{% translate "Cómo se reparte la compra óptima" %}</h2>
+    <div class="split">
+        {% for stop in cart.optimal.stops %}
+        <div class="split__stop chain chain-{{ stop.supermarket.slug }}">
+            <div class="split__head">
+                <span class="store-name store-name--sm">{{ stop.supermarket.name }}</span>
+                <b>$ {{ stop.subtotal|precio }}</b>
+            </div>
+            <ul>
+                {% for line in stop.lines %}
+                <li>
+                    <span>{% if line.quantity > 1 %}{{ line.quantity }}× {% endif %}{{ line.product.name }}</span>
+                    <span class="leader" aria-hidden="true"></span>
+                    <span>$ {{ line.best_subtotal|precio }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% comment %}
+    Lo que lee la barra fija del celular, sin volver a formatear en JS. Van
+    juntos a propósito: el total cubre sólo lo cotizable, así que las
+    unidades tienen que ser las mismas. Mezclarlo con el contador del
+    navegador hacía que la barra anunciara más unidades de las que paga ese
+    total cuando el carrito tenía productos sin precio vigente.
+{% endcomment %}
+<span hidden data-cart-total>$ {{ cart.optimal.total|precio }}</span>
+<span hidden data-cart-units>{{ cart.unit_count }}</span>
+{% endif %}

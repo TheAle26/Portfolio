@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import comparador, views
+from . import cart, comparador, views
 
 app_name = 'changomas'
 
@@ -18,6 +18,9 @@ urlpatterns = [
         comparador.product_detail,
         name='comparador_detail',
     ),
+    # Carrito. Igual que 'comparador', antes que <slug:store>/.
+    path('carrito/', cart.cart_page, name='cart'),
+    path('carrito/cotizar/', cart.cart_quote, name='cart_quote'),
     # Rutas explicitas por supermercado para evitar EAN ambiguos.
     path('<slug:store>/', views.product_list, name='store_product_list'),
     path('<slug:store>/escanear/', views.scan_page, name='store_scan'),

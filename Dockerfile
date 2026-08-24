@@ -43,8 +43,10 @@ WORKDIR /app
 # Copiar código fuente con dueño correcto
 COPY --chown=appuser:appuser . .
 
-# Dar permisos de ejecución MIENTRAS SOMOS ROOT
-RUN chmod +x /app/entrypoint.prod.sh
+# Los volúmenes nuevos heredan dueño/permisos de estos directorios de la imagen.
+RUN mkdir -p /app/staticfiles /app/media && \
+    chown -R appuser:appuser /app/staticfiles /app/media && \
+    chmod +x /app/entrypoint.prod.sh /app/run-background-service.sh
 
 # AHORA SÍ, cambiamos al usuario sin privilegios
 USER appuser

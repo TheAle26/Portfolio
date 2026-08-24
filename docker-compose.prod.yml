@@ -81,9 +81,8 @@ services:
     build: .
     restart: unless-stopped
     command: >
-      sh -c "python manage.py poblar_base && 
-             python manage.py simular_viaje 123456789012345 & 
-             python manage.py simular_viaje 987654321098765 & 
+      sh -c "python manage.py simular_viaje 123456789012345 &
+             python manage.py simular_viaje 987654321098765 &
              wait"
     depends_on:
       - db

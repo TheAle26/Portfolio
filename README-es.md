@@ -58,3 +58,9 @@ Seguimiento diario de catálogo, disponibilidad, promociones e historial de 30 d
 * **Email:** alejo.vincent26@gmail.com
 * **LinkedIn:** [Alejo Vincent](https://www.linkedin.com/in/alejo-vincent-37aa63220/)
 * **GitHub:** [@TheAle26](https://github.com/TheAle26)
+
+---
+
+## Despliegue con Coolify
+
+La definición preparada para Coolify está en `docker-compose.coolify.yml`. El procedimiento de respaldo, ensayo, corte y rollback se encuentra en [`docs/COOLIFY_MIGRATION.md`](docs/COOLIFY_MIGRATION.md).

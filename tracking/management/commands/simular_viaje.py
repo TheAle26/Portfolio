@@ -1,12 +1,10 @@
 import time
 import random
 import math
-import xml.etree.ElementTree as ET
-import os
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from django.conf import settings
 from tracking.models import Device, Telemetry
+from tracking.simulated_routes import SIMULATED_ROUTES
 
 def calcular_distancia(lat1, lon1, lat2, lon2):
     """Calcula la distancia real en kilómetros entre dos coordenadas (Fórmula de Haversine)"""
@@ -19,7 +17,7 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
     return R * c
 
 class Command(BaseCommand):
-    help = 'Simula un viaje en tiempo real usando una ruta GPX real'
+    help = 'Simula un viaje en tiempo real usando una ruta fija versionada en código'
 
     def add_arguments(self, parser):
         parser.add_argument('imei', type=str, help='IMEI del dispositivo a mover')
@@ -27,36 +25,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         device_imei = kwargs['imei']
-        
-        directorio_actual = os.path.dirname(os.path.abspath(__file__))
-        archivo_gpx = os.path.join(directorio_actual, f"{device_imei}.gpx")
-        
+
         try:
             device = Device.objects.get(imei=device_imei)
         except Device.DoesNotExist:
             self.stdout.write(self.style.ERROR(f"No existe el dispositivo con IMEI {device_imei}"))
             return
 
-        # 1. LEER EL ARCHIVO GPX
-        if not os.path.exists(archivo_gpx):
-            self.stdout.write(self.style.ERROR(f"No se encontró el archivo {archivo_gpx} en el directorio actual."))
-            return
-
-        # Parsea el XML (GPX)
-        arbol = ET.parse(archivo_gpx)
-        raiz = arbol.getroot()
-        
-        # El archivo GPX tiene un "namespace" que hay que declarar para buscar las etiquetas
-        espacio_nombres = {'gpx': 'http://www.topografix.com/GPX/1/1'}
-        puntos_ruta = []
-        
-        for trkpt in raiz.findall('.//gpx:trkpt', espacio_nombres):
-            lat = float(trkpt.get('lat'))
-            lon = float(trkpt.get('lon'))
-            puntos_ruta.append((lat, lon))
-
+        # 1. CARGAR LA RUTA FIJA VERSIONADA EN CÓDIGO
+        puntos_ruta = SIMULATED_ROUTES.get(device_imei)
         if not puntos_ruta:
-            self.stdout.write(self.style.ERROR("El archivo GPX está vacío o no tiene la estructura de OSRM."))
+            self.stdout.write(self.style.ERROR(f"No hay una ruta simulada configurada para el IMEI {device_imei}."))
             return
 
         self.stdout.write(self.style.SUCCESS(f"--- INICIANDO SIMULACIÓN PARA: {device.name} (IMEI: {device_imei}) ---"))

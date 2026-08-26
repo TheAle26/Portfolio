@@ -17,6 +17,9 @@ x-app-service: &app-service
   build: .
   restart: unless-stopped
   environment: *app-environment
+  networks:
+    - default
+    - coolify
 
 services:
   web:
@@ -47,6 +50,9 @@ services:
     volumes:
       - static_volume:/static:ro
       - media_volume:/media:ro
+    networks:
+      - default
+      - coolify
     depends_on:
       web:
         condition: service_healthy
@@ -79,3 +85,8 @@ services:
 volumes:
   static_volume:
   media_volume:
+
+networks:
+  # Recurso PostgreSQL separado de Coolify; existe y fue verificada en la Pi.
+  coolify:
+    external: true

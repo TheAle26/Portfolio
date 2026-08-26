@@ -31,7 +31,7 @@ services:
         - CMD
         - python
         - -c
-        - "import urllib.request; request = urllib.request.Request('http://127.0.0.1:8000/', headers={'X-Forwarded-Proto': 'https'}); urllib.request.urlopen(request, timeout=5)"
+        - "import socket; connection = socket.create_connection(('127.0.0.1', 8000), timeout=5); connection.close()"
       interval: 30s
       timeout: 10s
       retries: 5

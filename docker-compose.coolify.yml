@@ -60,15 +60,13 @@ services:
       retries: 3
       start_period: 15s
     depends_on:
-      web:
-        condition: service_healthy
+      - web
 
   worker:
     <<: *app-service
     command: /app/run-background-service.sh python manage.py sync_flespi
     depends_on:
-      web:
-        condition: service_healthy
+      - web
 
   generador_datos:
     <<: *app-service
@@ -78,15 +76,13 @@ services:
       "python manage.py simular_viaje 123456789012345 &
       python manage.py simular_viaje 987654321098765 & wait"
     depends_on:
-      web:
-        condition: service_healthy
+      - web
 
   scheduler_worker:
     <<: *app-service
     command: /app/run-background-service.sh python run_scheduler.py
     depends_on:
-      web:
-        condition: service_healthy
+      - web
 
 volumes:
   static_volume:

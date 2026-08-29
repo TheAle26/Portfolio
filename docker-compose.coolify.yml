@@ -54,7 +54,9 @@ services:
       - default
       - coolify
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      # Django fuerza HTTPS en producción. Simulamos los encabezados que agrega
+      # Traefik para no seguir una redirección HTTPS inexistente dentro de Nginx.
+      test: ["CMD-SHELL", "wget --header='Host: vincentalejo.myddns.me' --header='X-Forwarded-Proto: https' -q -O /dev/null http://127.0.0.1/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

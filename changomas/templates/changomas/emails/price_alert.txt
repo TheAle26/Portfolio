@@ -1,0 +1,9 @@
+Cambios en tus productos seguidos
+
+{% for event in events %}{{ event.product }} — {{ event.store }}
+{% if event.kind == 'promotion' %}Nueva promoción: {{ event.promo_text }}. {% else %}Alcanzó tu precio objetivo. {% endif %}
+Precio: ${{ event.price }}{% if event.effective_price %} (precio promo por unidad: ${{ event.effective_price }}){% endif %}
+{% if event.target_price %}Tu objetivo: ${{ event.target_price }}{% endif %}
+Ver producto: {{ event.url }}
+
+{% endfor %}Dejás de recibir alertas aquí: {{ unsubscribe_url }}

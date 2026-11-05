@@ -3,6 +3,8 @@ Cliente compartido para los catálogos públicos VTEX de ChangoMás,
 Carrefour y Disco, con parser de promociones por unidad.
 """
 import logging
+from datetime import date
+from django.utils import timezone
 import re
 import time
 from dataclasses import dataclass
@@ -36,6 +38,9 @@ STORE_CONFIGS = {
     for config in (
         StoreConfig('changomas', 'ChangoMás', 'https://www.masonline.com.ar'),
         StoreConfig('carrefour', 'Carrefour', 'https://www.carrefour.com.ar'),
+        StoreConfig('jumbo', 'Jumbo', 'https://www.jumbo.com.ar', max_list_price_multiplier=Decimal('10')),
+        StoreConfig('vea', 'Vea', 'https://www.vea.com.ar', max_list_price_multiplier=Decimal('10')),
+        StoreConfig('dia', 'Día', 'https://diaonline.supermercadosdia.com.ar'),
         # Disco publica ListPrice desfasados de forma casi sistematica: para la
         # gran mayoria de los items ListPrice ~= 82x el Price real (dato basura,
         # no un precio de lista). El guard de 10x los descarta para no inventar
@@ -219,6 +224,44 @@ def _normalize(obj):
     return obj
 
 
+def parse_promotion_rule(text):
+    """Only publicly applicable, unambiguous quantity rules affect totals."""
+    text = str(text or '')
+    restricted = bool(re.search(r'club|banco|tarjeta|cupon|cupón|socio|personal|seleccionad|combinad', text, re.I))
+    match = RE_N_X_M.search(text)
+    rule = {}
+    if match and not RE_PACK.search(text):
+        take, pay = map(int, match.groups())
+        if take > pay > 0 and 1 - Decimal(pay) / take <= MAX_QUANTITY_DISCOUNT:
+            rule = {'kind': 'nxm', 'take': take, 'pay': pay}
+    if not rule:
+        match = RE_SECOND_UNIT.search(text)
+        if match:
+            percent = int(match.group(1) or match.group(2))
+            if 0 < percent <= 100:
+                rule = {'kind': 'second_unit', 'percent': str(percent)}
+    if rule:
+        rule['restricted'] = restricted
+        period = re.search(r'(\d{1,2})/(\d{1,2})\s+al\s+(\d{1,2})/(\d{1,2})', text, re.I)
+        if period:
+            try:
+                sd, sm, ed, em = map(int, period.groups())
+                today = timezone.localdate()
+                year = today.year
+                wraps = (em, ed) < (sm, sd)
+                if wraps and (today.month, today.day) <= (em, ed):
+                    year -= 1
+                start = date(year, sm, sd)
+                end = date(year + int(wraps), em, ed)
+                if (start - today).days > 90:
+                    start = start.replace(year=start.year - 1)
+                    end = end.replace(year=end.year - 1)
+                rule.update(starts_on=start.isoformat(), ends_on=end.isoformat())
+            except ValueError:
+                rule['restricted'] = True
+    return rule
+
+
 def _promo_from_text(text, price):
     """
     Interpreta el texto de una promo y devuelve (precio_efectivo, texto) o None.
@@ -383,6 +426,7 @@ def _parse_item(raw, item, category_path, config):
         'list_price': list_price,
         'promo_price': promo_price,
         'promo_text': promo_text,
+        'promotion': parse_promotion_rule(promo_text),
     }
 
 

@@ -1,0 +1,33 @@
+name: Application checks
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: tracker_test
+          POSTGRES_USER: tracker
+          POSTGRES_PASSWORD: tracker-test-only
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_NAME: tracker_test
+      DB_USER: tracker
+      DB_PASSWORD: tracker-test-only
+      DB_HOST: localhost
+      DEBUG: 'True'
+      SUPERMARKET_EMAILS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python manage.py check --settings=mysiteFulbo.postgres_test_settings
+      - run: python manage.py makemigrations --check --dry-run --settings=mysiteFulbo.postgres_test_settings
+      - run: python manage.py test --settings=mysiteFulbo.postgres_test_settings
+      - run: node --check changomas/static/changomas/tracker.js
+      - run: node --test changomas/js_tests/*.test.js

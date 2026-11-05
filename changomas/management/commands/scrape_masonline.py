@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from changomas.models import GTIN_RE, PriceRecord, Product, Supermarket
+from changomas.models import GTIN_RE, PriceRecord, Product, Supermarket, SourceRun
 from changomas.scraper import (
     STORE_CONFIGS,
     MasOnlineClient,
@@ -51,6 +51,7 @@ class Command(BaseCommand):
         today = timezone.localdate()
         store_slug = options['store']
         supermarket = Supermarket.objects.get(slug=store_slug)
+        self.source_run = SourceRun.objects.create(supermarket=supermarket)
         client = (
             MasOnlineClient(delay=options['delay'])
             if store_slug == 'changomas'
@@ -59,7 +60,11 @@ class Command(BaseCommand):
 
         categories = client.get_leaf_categories()
         if not categories:
-            raise CommandError('No se pudo obtener el árbol de categorías.')
+            self.source_run.status = 'failed'
+            self.source_run.error = 'No se pudo obtener el árbol de categorías.'
+            self.source_run.finished_at = timezone.now()
+            self.source_run.save()
+            raise CommandError(self.source_run.error)
         if options['max_categories']:
             categories = categories[:options['max_categories']]
 
@@ -138,6 +143,14 @@ class Command(BaseCommand):
             f'sin oferta: {stats["skipped"]}, registros purgados: {purged}, '
             f'categorías con fallas: {len(failed_categories)}.'
         ))
+        self.source_run.status = 'partial' if failed_categories or options['max_categories'] else 'success'
+        self.source_run.product_count = stats['products']
+        self.source_run.finished_at = timezone.now()
+        self.source_run.error = '\n'.join(failed_categories)
+        self.source_run.save()
+        if self.source_run.status == 'success':
+            from changomas.notifications import evaluate_run
+            evaluate_run(self.source_run)
         if failed_categories:
             raise CommandError(
                 f'{supermarket.name}: {len(failed_categories)} categorías fallaron.'
@@ -247,23 +260,12 @@ class Command(BaseCommand):
                 vtex_sku_id__in=sku_ids,
             )
         }
-        price_rows = []
+        from changomas.pricing import record_observation
         for parsed in batch:
             product = products_by_sku.get(parsed['vtex_sku_id'])
-            if product is None:
-                continue
-            price_rows.append(PriceRecord(
-                product=product,
-                date=today,
-                price=parsed['price'],
-                list_price=parsed['list_price'],
-                promo_price=parsed['promo_price'],
-                promo_text=parsed['promo_text'],
-            ))
-        # ignore_conflicts: si el comando se corre dos veces el mismo día,
-        # se conserva el primer precio guardado.
-        created_prices = PriceRecord.objects.bulk_create(price_rows, ignore_conflicts=True)
-        stats['prices'] += len(created_prices)
+            if product is not None:
+                record_observation(product, parsed, run=getattr(self, 'source_run', None))
+                stats['prices'] += 1
         stats['products'] += len(batch)
 
     def _purge_old_records(self, today, keep_days, supermarket):

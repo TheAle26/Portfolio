@@ -1,0 +1,7 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Preferencias de email" %} · Supermarket Tracker{% endblock %}
+{% block content %}<section class="personal">
+{% if invalid %}<h1>{% translate "Enlace inválido" %}</h1><p>{% translate "El enlace no es válido o venció." %}</p>
+{% elif done %}<h1>{% translate "Notificaciones desactivadas" %}</h1><p>{% translate "No recibirás más alertas por email." %}</p>
+{% else %}<h1>{% translate "Confirmar baja" %}</h1><p>{% translate "¿Querés desactivar las alertas por email?" %}</p><form method="post">{% csrf_token %}<button type="submit">{% translate "Desactivar alertas" %}</button></form>{% endif %}
+</section>{% endblock %}

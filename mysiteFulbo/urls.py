@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from changomas import tracker as supermarket_tracker, personal as supermarket_personal
 from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
@@ -26,7 +27,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('AppFulbo/', include('AppFulbo.urls')),
     path('tracking/', include('tracking.urls')),
-    path('changomas/', include('changomas.urls')),
+    path('supermarket-tracker/', include('changomas.urls')),
+    path('changomas/', supermarket_tracker.legacy_redirect),
+    path('changomas/<path:suffix>', supermarket_tracker.legacy_redirect),
+    path('api/v2/supermarkets/products/', supermarket_tracker.catalog_api),
+    path('api/v2/supermarkets/quote/', supermarket_tracker.quote_api),
+    path('api/v2/supermarkets/me/cart/', supermarket_personal.cart_api),
+    path('api/v2/supermarkets/me/cart/items/<str:ean>/', supermarket_personal.cart_item_api),
+    path('api/v2/supermarkets/me/cart/import/', supermarket_personal.cart_import_api),
+    path('api/v2/supermarkets/me/subscriptions/', supermarket_personal.subscriptions_api),
     path('api/v1/supermarkets/', include('changomas.api_urls')),
     #el portal
     path('', portal_views.index, name='home'),

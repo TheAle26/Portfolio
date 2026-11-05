@@ -1,25 +1,4 @@
-"""
-Carrito: una lista de compra que se cotiza entera en cada cadena y contra la
-compra óptima repartida entre todas.
-
-Decisiones que vienen del resto de la app:
-
-- El carrito vive en el localStorage del navegador. La app no tiene cuentas
-  y todas las demás vistas son cacheables; el servidor no guarda nada, sólo
-  recibe la lista y devuelve la cotización armada. Así el cálculo (que es lo
-  que se puede equivocar) queda en Python y testeado, y no duplicado en JS.
-- Sólo entran identidades comparables (EAN de largo GTIN válido): son las
-  únicas que se pueden precificar en las tres cadenas. Es el mismo conjunto
-  que muestra el comparador.
-- Una tienda que no tiene todos los ítems igual cotiza: suma lo que sí tiene
-  y declara cuántos le faltan. Con catálogos parciales, exigir cobertura
-  total dejaría casi todos los carritos sin ninguna tienda que mostrar.
-- El precio unitario es el efectivo (promo si existe), igual que en el
-  comparador. Ojo: ``promo_price`` ya viene con el descuento prorrateado de
-  promos por cantidad ("2da al 50%" -> 25% real), así que una línea con
-  cantidad 1 se cotiza un poco por debajo de lo que se pagaría en la caja.
-  Es la misma convención que usa el resto de la app; la UI lo aclara.
-"""
+"""Quantity-aware shopping estimates; guest and account carts share this service."""
 import json
 
 from django.http import HttpResponseBadRequest
@@ -33,6 +12,9 @@ from .comparador import (
     search_groups,
 )
 from .models import GTIN_RE, Product, Supermarket
+from .pricing import line_total, normalize_gtin
+import re
+from django.db.models import Q
 from .views import MAX_QUERY_LENGTH
 
 # Techos del carrito. No son preferencias de UI: acotan el trabajo que un
@@ -55,7 +37,7 @@ def parse_items(payload):
         if not isinstance(entry, dict):
             continue
         ean = str(entry.get('ean', ''))[:32].strip()
-        if not GTIN_RE.match(ean) or ean in seen:
+        if not (GTIN_RE.fullmatch(ean) or re.fullmatch(r'listing-[0-9]{1,18}', ean)) or ean in seen:
             continue
         try:
             quantity = int(entry.get('qty', 1))
@@ -81,6 +63,8 @@ def _missing_details(eans):
         .exclude(name='')
         .values_list('ean', 'name')
     )
+    ids = [int(e[8:]) for e in eans if e.startswith('listing-') and e[8:].isdigit()]
+    names.update({'listing-' + str(pk): name for pk, name in Product.objects.filter(pk__in=ids).values_list('pk', 'name')})
     return [{'ean': ean, 'name': names.get(ean, '')} for ean in eans]
 
 
@@ -93,10 +77,19 @@ def _build_lines(items):
     para sacarlos: si no, quedan pesando en el contador del carrito sin
     aparecer en ninguna cuenta y sin forma de eliminarlos salvo vaciar todo.
     """
-    eans = [ean for ean, _ in items]
+    eans = [ean for ean, _ in items if not ean.startswith('listing-')]
+    listing_ids = [int(ean[8:]) for ean, _ in items if ean.startswith('listing-')]
     members_by_ean = {}
-    for member in _with_history(_comparable_products().filter(ean__in=eans)):
-        members_by_ean.setdefault(member.ean, []).append(member)
+    identities = {ean: normalize_gtin(ean) for ean in eans}
+    candidates = Product.objects.filter(Q(ean__in=eans) | Q(catalog_item__gtin__in=[gtin for gtin in identities.values() if gtin]), is_available=True, supermarket__is_active=True)
+    for member in _with_history(candidates):
+        member_gtin = normalize_gtin(member.ean)
+        for ean in eans:
+            if member.ean == ean or (member_gtin and identities[ean] == member_gtin):
+                members_by_ean.setdefault(ean, []).append(member)
+
+    for member in _with_history(Product.objects.filter(pk__in=listing_ids, is_available=True, supermarket__is_active=True)):
+        members_by_ean.setdefault('listing-' + str(member.pk), []).append(member)
 
     lines, missing = [], []
     for ean, quantity in items:
@@ -104,12 +97,16 @@ def _build_lines(items):
         if group is None:
             missing.append(ean)
             continue
+        for offer in group['offers']:
+            offer['subtotal'] = line_total(offer['record'], quantity)
+        group['offers'].sort(key=lambda offer: offer['subtotal'])
+        group['best'] = group['offers'][0]
         lines.append({
             'ean': ean,
             'quantity': quantity,
             'product': group['product'],
             'best': group['best'],
-            'best_subtotal': group['best']['effective'] * quantity,
+            'best_subtotal': group['best']['subtotal'],
             'offers': group['offers'],
             'offer_by_store': {
                 offer['product'].supermarket_id: offer
@@ -137,7 +134,7 @@ def _store_totals(lines):
         if not covered:
             continue
         total = sum(
-            line['offer_by_store'][supermarket.pk]['effective'] * line['quantity']
+            line['offer_by_store'][supermarket.pk]['subtotal']
             for line in covered
         )
         # Lo mismo que cubre esta tienda, pero comprando cada ítem donde
@@ -175,10 +172,10 @@ def _attach_cells(lines, stores):
             cells.append({
                 'store': row['supermarket'],
                 'offer': offer,
-                'subtotal': offer['effective'] * line['quantity'] if offer else None,
+                'subtotal': offer['subtotal'] if offer else None,
                 # Empate entre cadenas: se marcan las dos. Elegir una sola
                 # por el orden del ranking sería arbitrario y confuso.
-                'is_best': bool(offer) and offer['effective'] == line['best']['effective'],
+                'is_best': bool(offer) and offer['subtotal'] == line['best']['subtotal'],
             })
         line['cells'] = cells
 
@@ -223,7 +220,7 @@ def quote(items):
     optimal = _optimal_split(lines)
     # El "mejor precio en una sola tienda" es la primera de la lista: la de
     # mayor cobertura y, entre esas, la más barata.
-    best_single = stores[0] if stores else None
+    best_single = next((row for row in stores if row['is_complete'] and not missing), None)
     return {
         'lines': lines,
         'missing': missing,

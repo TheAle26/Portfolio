@@ -66,9 +66,8 @@ class ProductViewSet(ReadOnlyModelViewSet):
 
         query = self.request.query_params.get('q', '').strip()[:100]
         if query:
-            queryset = queryset.filter(
-                Q(name__icontains=query) | Q(brand__icontains=query)
-            )
+            from .search import search_products
+            queryset = search_products(queryset, query)
 
         category = self.request.query_params.get('category', '').strip()[:100]
         if category:

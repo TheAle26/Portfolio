@@ -37,3 +37,23 @@ class PriceRecordAdmin(admin.ModelAdmin):
     @admin.display(ordering='product__supermarket', description='Supermercado')
     def supermarket(self, obj):
         return obj.product.supermarket
+
+
+from .models import CatalogItem, SourceRun, PriceObservation
+from .personal_models import ShoppingCart, Subscription, NotificationPreference
+from .alert_models import PriceAlertEvent, EmailDelivery, JobLease
+
+@admin.register(SourceRun)
+class SourceRunAdmin(admin.ModelAdmin):
+    list_display = ('supermarket', 'kind', 'status', 'started_at', 'finished_at', 'product_count')
+    list_filter = ('status', 'supermarket', 'kind')
+    readonly_fields = ('started_at',)
+
+@admin.register(EmailDelivery)
+class EmailDeliveryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'state', 'attempts', 'created_at', 'sent_at')
+    list_filter = ('state',)
+    readonly_fields = ('batch_key', 'body_snapshot', 'events')
+
+for model in (CatalogItem, PriceObservation, ShoppingCart, Subscription, NotificationPreference, PriceAlertEvent, JobLease):
+    admin.site.register(model)

@@ -1,0 +1,15 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Ingresar" %} · Supermarket Tracker{% endblock %}
+{% block content %}
+<section class="personal">
+  <h1>{% translate "Ingresar" %}</h1>
+  <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    {{ form.non_field_errors }}
+    <label>{% translate "Email" %} {{ form.username }}{{ form.username.errors }}</label>
+    <label>{% translate "Contraseña" %} {{ form.password }}{{ form.password.errors }}</label>
+    <button type="submit">{% translate "Ingresar" %}</button>
+  </form>
+  <p><a href="{% url 'changomas:account_password_reset' %}">{% translate "Olvidé mi contraseña" %}</a></p>
+  <p><a href="{% url 'changomas:account_register' %}">{% translate "Crear cuenta" %}</a></p>
+</section>
+{% endblock %}

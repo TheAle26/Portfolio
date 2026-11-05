@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es">
+  <body style="margin:0;background:#f4f6f8;color:#202124;font-family:Arial,sans-serif">
+    <main style="max-width:600px;margin:24px auto;padding:24px;background:#fff;border-radius:12px">
+      <h1 style="font-size:22px">Cambios en tus productos seguidos</h1>
+      {% for event in events %}
+      <section style="padding:16px 0;border-top:1px solid #e5e7eb">
+        <h2 style="font-size:18px;margin:0 0 8px">{{ event.product|escape }}</h2>
+        <p style="margin:4px 0">{{ event.store|escape }} · {% if event.kind == 'promotion' %}Nueva promoción: {{ event.promo_text|escape }}{% else %}Alcanzó tu precio objetivo{% endif %}</p>
+        <p style="margin:4px 0">Precio: ${{ event.price|escape }}{% if event.effective_price %} · Promo por unidad: ${{ event.effective_price|escape }}{% endif %}</p>
+        {% if event.target_price %}<p style="margin:4px 0">Tu objetivo: ${{ event.target_price|escape }}</p>{% endif %}
+        <p><a href="{{ event.url|escape }}">Ver producto</a></p>
+      </section>
+      {% endfor %}
+      <p style="font-size:12px;color:#5f6368">Puedes <a href="{{ unsubscribe_url|escape }}">dejar de recibir estas alertas</a>.</p>
+    </main>
+  </body>
+</html>

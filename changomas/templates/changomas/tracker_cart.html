@@ -1,0 +1,15 @@
+{% extends 'changomas/app_base.html' %}{% load changomas_extras i18n %}
+{% block title %}{% translate "Mi carrito" %} · Supermarket Tracker{% endblock %}
+{% block content %}
+<section class="cart-page" data-quote-url="{% url 'changomas:tracker_quote' %}">
+  <div class="cart-heading"><div><h1>{% translate "Mi carrito" %}</h1><p>{% translate "Compará cuánto cuesta tu lista en cada supermercado." %}</p></div><div class="cart-heading__actions">{% if request.user.is_authenticated %}<button type="button" class="button button--quiet" data-import-guest>{% translate "Importar carrito de este dispositivo" %}</button>{% endif %}<button type="button" class="text-link" data-cart-clear>{% translate "Vaciar carrito" %}</button></div></div>
+  <div class="cart-status" data-cart-sync role="status" aria-live="polite" hidden></div>
+  <section class="quote-panel" aria-label="{% translate 'Cotización' %}"><div data-quote-content><div class="empty-state"><h2>{% translate "Preparando tu lista" %}</h2><p>{% translate "La cotización aparece acá cuando agregás productos." %}</p></div></div></section>
+  <section class="cart-search-section"><h2>{% translate "Sumar productos" %}</h2><form class="search-form" method="get" role="search"><label class="sr-only" for="cart-query">{% translate "Buscar productos" %}</label><input id="cart-query" type="search" name="q" value="{{ query }}" placeholder="{% translate 'Buscar por producto o marca' %}"><button class="button button--primary" type="submit">{% translate "Buscar" %}</button></form>
+    {% if groups %}<div class="product-grid product-grid--compact">{% for group in groups %}{% include 'changomas/_tracker_card.html' with group=group %}{% endfor %}</div>
+    {% elif query %}<div class="empty-state"><h3>{% translate "Sin coincidencias" %}</h3><p>{% translate "Probá con el nombre del producto o la marca." %}</p></div>
+    {% else %}<p class="helper-text">{% translate "Buscá un producto para sumarlo a la lista." %}</p>{% endif %}
+    {% if page.has_previous or page.has_next %}<nav class="pagination" aria-label="Paginación de productos">{% if page.has_previous %}<a class="button button--quiet" href="?q={{ query|urlencode }}&amp;page={{ page.previous_page_number }}">Anterior</a>{% endif %}<span>{{ results_total }} resultados</span>{% if page.has_next %}<a class="button button--quiet" href="?q={{ query|urlencode }}&amp;page={{ page.next_page_number }}">Siguiente</a>{% endif %}</nav>{% endif %}
+  </section>
+</section>
+{% endblock %}

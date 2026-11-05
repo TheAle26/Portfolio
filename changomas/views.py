@@ -70,6 +70,7 @@ def _get_top_categories(supermarket):
         paths = (
             Product.objects.filter(supermarket=supermarket, is_available=True)
             .exclude(category='')
+            .order_by()
             .values_list('category', flat=True)
             .distinct()
         )

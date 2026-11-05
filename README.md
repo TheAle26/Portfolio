@@ -61,3 +61,8 @@ Interested in my profile for a formal first experience in the IT sector as a Tra
 * **Email:** alejo.vincent26@gmail.com
 * **LinkedIn:** [Alejo Vincent](https://www.linkedin.com/in/alejo-vincent-37aa63220/)
 * **GitHub:** [@TheAle26](https://github.com/TheAle26)
+
+
+## Supermarket Tracker
+
+Global product search, account carts, watchlists and opt-in email alerts across six grocery chains. The public entry point is `/supermarket-tracker/`; legacy links redirect to it. See [operations and gradual rollout](docs/SUPERMARKET_TRACKER.md). Opportunity emails are disabled by default pending deployment validation.

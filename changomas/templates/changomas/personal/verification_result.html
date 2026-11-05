@@ -1,0 +1,3 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Verificación de email" %} · Supermarket Tracker{% endblock %}
+{% block content %}<section class="personal"><h1>{% if verified %}{% translate "Email verificado" %}{% else %}{% translate "Enlace inválido" %}{% endif %}</h1><p>{% if verified %}{% translate "Tu dirección quedó verificada. Activá las alertas desde preferencias cuando quieras." %}{% else %}{% translate "El enlace no es válido o venció." %}{% endif %}</p></section>{% endblock %}

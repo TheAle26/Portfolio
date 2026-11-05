@@ -64,3 +64,8 @@ Seguimiento diario de catálogo, disponibilidad, promociones e historial de 30 d
 ## Despliegue con Coolify
 
 La definición preparada para Coolify está en `docker-compose.coolify.yml`. El procedimiento de respaldo, ensayo, corte y rollback se encuentra en [`docs/COOLIFY_MIGRATION.md`](docs/COOLIFY_MIGRATION.md).
+
+
+## Supermarket Tracker renovado
+
+Búsqueda global, carrito por usuario, seguimientos y alertas por email para seis cadenas. La ruta pública es `/supermarket-tracker/`; los enlaces anteriores siguen funcionando mediante redirecciones. Ver [operación, pruebas y despliegue gradual](docs/SUPERMARKET_TRACKER.md). Los correos de oportunidades quedan desactivados por defecto hasta validar el entorno.

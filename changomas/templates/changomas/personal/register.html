@@ -1,0 +1,15 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Crear cuenta" %} · Supermarket Tracker{% endblock %}
+{% block content %}
+<section class="personal">
+  <h1>{% translate "Crear cuenta" %}</h1>
+  <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    {{ form.non_field_errors }}
+    <label>{% translate "Email" %} {{ form.email }}{{ form.email.errors }}</label>
+    <label>{% translate "Contraseña" %} {{ form.password1 }}{{ form.password1.errors }}</label>
+    <label>{% translate "Confirmar contraseña" %} {{ form.password2 }}{{ form.password2.errors }}</label>
+    <button type="submit">{% translate "Crear cuenta" %}</button>
+  </form>
+  <p>{% translate "¿Ya tenés cuenta?" %} <a href="{% url 'changomas:account_login' %}">{% translate "Ingresar" %}</a></p>
+</section>
+{% endblock %}

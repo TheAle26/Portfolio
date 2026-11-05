@@ -1,0 +1,36 @@
+{% load i18n static %}{% get_current_language as LANGUAGE_CODE %}<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f3e9">
+  <title>{% block title %}Supermarket Tracker{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'changomas/tracker.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body {% if request.user.is_authenticated %}data-cart-user="{{ request.user.pk }}" data-cart-api="{% url 'changomas:personal_cart_api' %}" data-item-api-template="{% url 'changomas:personal_cart_item_api' '0000000000000' %}" data-import-api="{% url 'changomas:personal_cart_import' %}"{% endif %}>
+  <a class="skip-link" href="#main">{% translate "Saltar al contenido" %}</a>
+  <header class="site-header">
+    <a class="brand" href="{% url 'changomas:product_list' %}" aria-label="{% translate 'Inicio de Supermarket Tracker' %}"><span class="brand-mark" aria-hidden="true">ST</span><span>Supermarket <b>Tracker</b></span></a>
+    <nav class="primary-nav" aria-label="{% translate 'Navegación principal' %}">
+      <a href="{% url 'changomas:product_list' %}" {% if request.resolver_match.url_name == 'product_list' %}aria-current="page"{% endif %}>{% translate "Buscar" %}</a>
+      <a href="{% url 'changomas:tracker_offers' %}" {% if request.resolver_match.url_name == 'tracker_offers' %}aria-current="page"{% endif %}>{% translate "Ofertas" %}</a>
+      <a href="{% url 'changomas:cart' %}" {% if request.resolver_match.url_name == 'cart' %}aria-current="page"{% endif %}>{% translate "Mi carrito" %} <span class="cart-badge" data-cart-badge hidden>0</span></a>
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'changomas:account_watchlist' %}">{% translate "Seguimientos" %}</a>
+        <a href="{% url 'changomas:account_settings' %}">{% translate "Mi cuenta" %}</a>
+      {% else %}
+        <a href="{% url 'changomas:account_login' %}?next={{ request.path|urlencode }}">{% translate "Mi cuenta" %}</a>
+      {% endif %}
+    </nav>
+  </header>
+  {% include 'includes/language_toggle.html' %}
+  <main id="main">{% block content %}{% endblock %}</main>
+  <div hidden>{% csrf_token %}</div>
+  <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+  {% include 'changomas/_cart_script.html' %}
+  <script src="{% static 'changomas/tracker.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

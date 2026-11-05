@@ -1,0 +1,26 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Mis seguimientos" %} · Supermarket Tracker{% endblock %}
+{% block content %}
+<section class="personal">
+  <h1>{% translate "Mis seguimientos" %}</h1>
+  {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
+  <p><a href="{% url 'changomas:personal_preferences' %}">{% translate "Preferencias de notificaciones" %}</a></p>
+  <p>{% translate "Seguí un producto desde el catálogo y elegí cuándo querés recibir un aviso. Si no seleccionás supermercados, se buscarán oportunidades en todas las cadenas activas." %}</p>
+  <p><a class="button button--primary" href="{% url 'changomas:product_list' %}">{% translate "Buscar productos para seguir" %}</a></p>
+  <ul>{% for row in subscriptions %}
+    <li><strong>{{ row.product.name }}</strong> — {{ row.product.supermarket.name }}
+      {% if row.target_price %}<span>{% translate "Objetivo" %}: ${{ row.target_price }}</span>{% endif %}
+      <span>{% if row.is_active %}{% translate "Activo" %}{% else %}{% translate "Pausado" %}{% endif %}</span>
+      <form method="post">{% csrf_token %}<input type="hidden" name="subscription_id" value="{{ row.pk }}"><input type="hidden" name="product_id" value="{{ row.product_id }}"><input type="hidden" name="action" value="edit">
+        <label>{% translate "Precio objetivo" %} {{ row.edit_form.target_price }}</label>
+        <label><input type="checkbox" name="promo_alert" {% if row.promo_alert %}checked{% endif %}> {% translate "Promociones" %}</label>
+        <label>{% translate "Supermercados" %} {{ row.edit_form.stores }}</label>
+        <p>{% translate "Sin seleccionar ninguno equivale a todas las cadenas activas." %}</p>
+        <button type="submit">{% translate "Guardar alerta" %}</button>
+      </form>
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="subscription_id" value="{{ row.pk }}"><input type="hidden" name="action" value="pause"><button type="submit">{% if row.is_active %}{% translate "Pausar" %}{% else %}{% translate "Reanudar" %}{% endif %}</button></form>
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="subscription_id" value="{{ row.pk }}"><input type="hidden" name="action" value="delete"><button type="submit">{% translate "Eliminar" %}</button></form>
+    </li>
+  {% empty %}<li>{% translate "Todavía no seguís productos." %}</li>{% endfor %}</ul>
+</section>
+{% endblock %}

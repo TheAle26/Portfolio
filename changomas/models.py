@@ -8,7 +8,7 @@ from django.db import models
 GTIN_RE = re.compile(r'^(\d{8}|\d{12}|\d{13}|\d{14})$')
 
 # Segmentos de URL que no pueden usarse como slug de tienda.
-RESERVED_SLUGS = {'comparador', 'carrito'}
+RESERVED_SLUGS = {'comparador', 'carrito', 'ofertas', 'cuenta', 'seguimientos', 'api', 'producto', 'escanear'}
 
 
 class Supermarket(models.Model):
@@ -39,6 +39,25 @@ class Supermarket(models.Model):
             )
 
 
+class CatalogItem(models.Model):
+    gtin = models.CharField(max_length=14, unique=True)
+    name = models.CharField(max_length=300)
+    brand = models.CharField(max_length=150, blank=True)
+
+
+class SourceRun(models.Model):
+    supermarket = models.ForeignKey(Supermarket, on_delete=models.CASCADE, related_name='runs')
+    kind = models.CharField(max_length=16, default='catalog')
+    status = models.CharField(max_length=16, default='running')
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True)
+    product_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-started_at']
+
+
 class Product(models.Model):
     """
     Una publicación de producto dentro de un supermercado.
@@ -64,6 +83,7 @@ class Product(models.Model):
     measurement_unit = models.CharField(max_length=16, blank=True, default='')
     unit_multiplier = models.DecimalField(max_digits=12, decimal_places=4, default=1)
     name = models.CharField(max_length=300, db_index=True)
+    search_text = models.TextField(blank=True, default='')
     brand = models.CharField(max_length=150, blank=True, default='')
     category = models.CharField(max_length=300, blank=True, default='', db_index=True)
     image_url = models.URLField(max_length=500, blank=True, default='')
@@ -72,6 +92,8 @@ class Product(models.Model):
     # Precalculado al scrapear (EAN con largo GTIN válido): el comparador
     # filtra por este flag indexado en vez de evaluar un regex por request.
     is_comparable = models.BooleanField(default=False, db_index=True)
+    catalog_item = models.ForeignKey(CatalogItem, null=True, blank=True, on_delete=models.SET_NULL, related_name='listings')
+    last_price_checked_at = models.DateTimeField(null=True, blank=True, db_index=True)
     first_seen = models.DateTimeField(auto_now_add=True)
     last_seen = models.DateTimeField(auto_now=True)
 
@@ -98,6 +120,20 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.supermarket.name}: {self.name} ({self.reference_code})"
 
+    def save(self, *args, **kwargs):
+        from .search import normalize
+        self.search_text = normalize(self.name + ' ' + self.brand)
+        from .pricing import normalize_gtin
+        gtin = normalize_gtin(self.ean)
+        if gtin:
+            if not self.catalog_item_id or self.catalog_item.gtin != gtin:
+                self.catalog_item, _ = CatalogItem.objects.get_or_create(gtin=gtin, defaults={'name': self.name, 'brand': self.brand})
+        else:
+            self.catalog_item = None
+        if kwargs.get('update_fields') is not None:
+            kwargs['update_fields'] = set(kwargs['update_fields']) | {'search_text', 'catalog_item'}
+        return super().save(*args, **kwargs)
+
     @property
     def latest_price(self):
         return self.prices.order_by('-date').first()
@@ -110,6 +146,8 @@ class PriceRecord(models.Model):
     """
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='prices')
     date = models.DateField(db_index=True)
+    observed_at = models.DateTimeField(null=True, blank=True)
+    promotion = models.JSONField(default=dict, blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     list_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     promo_price = models.DecimalField(
@@ -129,6 +167,11 @@ class PriceRecord(models.Model):
         return f"{self.product.name} - {self.date}: ${self.price}"
 
     @property
+    def promotion_label(self):
+        from .pricing import promotion_label
+        return promotion_label(self)
+
+    @property
     def effective_price(self):
         """El mejor precio unitario del día (promo si existe, si no el precio común)."""
         if self.promo_price is not None and self.promo_price < self.price:
@@ -141,3 +184,23 @@ class PriceRecord(models.Model):
         if self.list_price and self.list_price > self.price:
             return round((1 - self.price / self.list_price) * 100)
         return 0
+
+
+class PriceObservation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='observations')
+    source_run = models.ForeignKey(SourceRun, on_delete=models.SET_NULL, null=True, blank=True)
+    observed_at = models.DateTimeField(db_index=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    list_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    promo_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    promo_text = models.CharField(max_length=200, blank=True)
+    promotion = models.JSONField(default=dict, blank=True)
+    fingerprint = models.CharField(max_length=64)
+
+    class Meta:
+        ordering = ['-observed_at', '-pk']
+        indexes = [models.Index(fields=['product', '-observed_at'])]
+
+
+from .personal_models import ShoppingCart, CartItem, Subscription, NotificationPreference, RateWindow  # noqa: E402,F401
+from .alert_models import PriceAlertEvent, EmailDelivery, JobLease  # noqa: E402,F401

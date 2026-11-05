@@ -13,12 +13,12 @@
 (function () {
     'use strict';
 
-    var KEY = 'changomas:cart:v1';
+    var KEY = document.body.dataset.cartUser ? 'supermarket:cart:user:' + document.body.dataset.cartUser : 'changomas:cart:v1';
     var MAX_ITEMS = {{ limits.items }};
     var MAX_QTY = {{ limits.quantity }};
     // Mismos largos GTIN que acepta el servidor (GTIN_RE en models.py):
     // lo que no matchea acá tampoco se podría cotizar.
-    var GTIN = /^(\d{8}|\d{12}|\d{13}|\d{14})$/;
+    var GTIN = /^(\d{8}|\d{12}|\d{13}|\d{14}|listing-\d+)$/;
 
     /* El storage puede fallar (modo privado, cuota llena, cookies de sitio
        bloqueadas). En ese caso el carrito funciona igual dentro de la
@@ -61,7 +61,8 @@
     }
 
     var Cart = {
-        items: function () { return read().slice(); },
+        items: function () { return read().map(function (item) { return { ean: item.ean, qty: item.qty }; }); },
+        replace: function (items) { write(sanitize(items)); },
         isFull: function () { return read().length >= MAX_ITEMS; },
         units: function () {
             return read().reduce(function (sum, item) { return sum + item.qty; }, 0);

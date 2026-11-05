@@ -1,7 +1,9 @@
 import json
 from decimal import Decimal
+from pathlib import Path
 from unittest import mock
 
+from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -21,6 +23,13 @@ from .scraper import (
     parse_products,
     parse_promo,
 )
+
+
+def _tracker_asset(relative_path):
+    path = finders.find(f'changomas/{relative_path}')
+    if path is None:
+        raise AssertionError(f'No se encontró el asset changomas/{relative_path}')
+    return Path(path).read_text(encoding='utf-8')
 
 
 class PromoParserTests(SimpleTestCase):
@@ -273,7 +282,7 @@ class ViewTests(TestCase):
             promo_price=Decimal('846.75'),
             promo_text='2da unidad al 50%',
         )
-        response = self.client.get(reverse('changomas:product_list'))
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Puré De Tomate Arcor')
         self.assertContains(response, '7790580146115')
@@ -282,7 +291,7 @@ class ViewTests(TestCase):
     def test_busqueda(self):
         Product.objects.create(reference_code='a', vtex_product_id='1', name='Leche Entera')
         Product.objects.create(reference_code='b', vtex_product_id='2', name='Pan Lactal')
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'leche'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'leche'})
         self.assertContains(response, 'Leche Entera')
         self.assertNotContains(response, 'Pan Lactal')
 
@@ -297,32 +306,32 @@ class ViewTests(TestCase):
             reference_code='e', vtex_product_id='5', name='Pan Lactal')
 
         # Palabras en cualquier orden y sin la preposición
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'tomate pure'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'tomate pure'})
         self.assertContains(response, 'Puré De Tomate')
         self.assertNotContains(response, 'Pan Lactal')
 
         # Sin acento encuentra el acentuado (y viceversa)
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'cafe'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'cafe'})
         self.assertContains(response, 'Café Torrado')
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'café'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'café'})
         self.assertContains(response, 'Café Torrado')
 
         # Busca también por marca
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'virginia'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'virginia'})
         self.assertContains(response, 'Café Torrado')
 
         # Mezcla nombre + marca en el mismo query
-        response = self.client.get(reverse('changomas:product_list'), {'q': 'arcor tomate'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': 'arcor tomate'})
         self.assertContains(response, 'Puré De Tomate')
         self.assertNotContains(response, 'Café Torrado')
 
     def test_busqueda_con_metacaracteres_no_rompe(self):
         Product.objects.create(reference_code='f', vtex_product_id='6', name='Gaseosa 2.25 L')
         response = self.client.get(
-            reverse('changomas:product_list'), {'q': 'c++ (test) [x]'})
+            reverse('changomas:store_product_list', args=['changomas']), {'q': 'c++ (test) [x]'})
         self.assertEqual(response.status_code, 200)
         # El punto se trata como literal, no como comodín
-        response = self.client.get(reverse('changomas:product_list'), {'q': '2.25'})
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']), {'q': '2.25'})
         self.assertContains(response, 'Gaseosa 2.25 L')
 
     def test_catalogos_estan_aislados_por_supermercado(self):
@@ -331,7 +340,7 @@ class ViewTests(TestCase):
             supermarket=carrefour, reference_code='carrefour-1',
             vtex_product_id='1', name='Solo Carrefour',
         )
-        changomas = self.client.get(reverse('changomas:product_list'))
+        changomas = self.client.get(reverse('changomas:store_product_list', args=['changomas']))
         carrefour_response = self.client.get(
             reverse('changomas:store_product_list', args=['carrefour'])
         )
@@ -375,7 +384,7 @@ class ProductDetailViewTests(TestCase):
     def test_detalle_por_ean_muestra_max_min(self):
         self._make_product_with_history()
         response = self.client.get(
-            reverse('changomas:product_detail', args=['7790580146115']))
+            reverse('changomas:store_product_detail', args=['changomas', '7790580146115']))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Puré De Tomate Arcor')
         self.assertContains(response, '1.000,00')   # mínimo 30 días
@@ -393,7 +402,7 @@ class ProductDetailViewTests(TestCase):
         self._make_product_with_history()
         for code in ('103705567', '220932'):
             response = self.client.get(
-                reverse('changomas:product_detail', args=[code]))
+                reverse('changomas:store_product_detail', args=['changomas', code]))
             self.assertEqual(response.status_code, 200, f'Falló con código {code}')
             self.assertContains(response, 'Puré De Tomate Arcor')
 
@@ -407,24 +416,24 @@ class ProductDetailViewTests(TestCase):
             promo_text='2da al 50%')
         PriceRecord.objects.create(
             product=product, date=today, price=Decimal('900.00'))
-        response = self.client.get(reverse('changomas:product_detail', args=['779']))
+        response = self.client.get(reverse('changomas:store_product_detail', args=['changomas', '779']))
         # el mínimo debe ser el precio efectivo de la promo (750), no 900
         self.assertContains(response, '750,00')
 
     def test_codigo_inexistente_devuelve_404(self):
         response = self.client.get(
-            reverse('changomas:product_detail', args=['0000000000000']))
+            reverse('changomas:store_product_detail', args=['changomas', '0000000000000']))
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, 'no encontrado', status_code=404)
 
     def test_codigo_con_caracteres_invalidos_devuelve_404(self):
-        response = self.client.get('/changomas/producto/%3Cscript%3Ealert(1)%3C%2Fscript%3E/')
+        response = self.client.get('/supermarket-tracker/changomas/producto/%3Cscript%3Ealert(1)%3C%2Fscript%3E/')
         self.assertEqual(response.status_code, 404)
         # el input queda escapado por el autoescape del template
         self.assertNotContains(response, '<script>alert', status_code=404)
 
     def test_404_se_cachea_y_no_vuelve_a_consultar_la_db(self):
-        url = reverse('changomas:product_detail', args=['9999999999999'])
+        url = reverse('changomas:store_product_detail', args=['changomas', '9999999999999'])
         self.assertEqual(self.client.get(url).status_code, 404)
         with self.assertNumQueries(1):  # valida el supermercado; no consulta Product
             response = self.client.get(url)
@@ -432,7 +441,7 @@ class ProductDetailViewTests(TestCase):
 
     def test_producto_sin_historial(self):
         Product.objects.create(reference_code='sin-datos', vtex_product_id='9', name='Nuevo')
-        response = self.client.get(reverse('changomas:product_detail', args=['sin-datos']))
+        response = self.client.get(reverse('changomas:store_product_detail', args=['changomas', 'sin-datos']))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'no hay precios registrados')
 
@@ -446,7 +455,7 @@ class ProductDetailViewTests(TestCase):
             reference_code='7790000000001', vtex_product_id='1',
             ean='7790000000001', name='ZZZ Dueño')
         response = self.client.get(
-            reverse('changomas:product_detail', args=['7790000000001']))
+            reverse('changomas:store_product_detail', args=['changomas', '7790000000001']))
         self.assertContains(response, 'ZZZ Dueño')
         self.assertNotContains(response, 'AAA Impostor')
 
@@ -458,7 +467,7 @@ class ProductDetailViewTests(TestCase):
             product=product, date=today - timezone.timedelta(days=45),
             price=Decimal('1.00'))  # este mínimo NO debe aparecer
         PriceRecord.objects.create(product=product, date=today, price=Decimal('500.00'))
-        response = self.client.get(reverse('changomas:product_detail', args=['r']))
+        response = self.client.get(reverse('changomas:store_product_detail', args=['changomas', 'r']))
         self.assertNotContains(response, '$ 1,00')
         self.assertContains(response, '500,00')
 
@@ -505,7 +514,7 @@ class ScanViewTests(TestCase):
             response, reverse('changomas:store_product_list', args=['changomas']))
 
     def test_catalogo_linkea_al_escaner(self):
-        response = self.client.get(reverse('changomas:product_list'))
+        response = self.client.get(reverse('changomas:store_product_list', args=['changomas']))
         self.assertContains(response, reverse('changomas:store_scan', args=['changomas']))
 
 
@@ -712,7 +721,7 @@ class SupermarketApiTests(TestCase):
         response = self.client.get(reverse('supermarkets_api:store-list'))
         self.assertEqual(response.status_code, 200)
         slugs = {item['slug'] for item in response.json()}
-        self.assertEqual(slugs, {'changomas', 'carrefour', 'disco'})
+        self.assertEqual(slugs, {'changomas', 'carrefour', 'disco', 'dia', 'jumbo', 'vea'})
 
     def test_productos_se_pueden_filtrar_por_ean_y_supermercado(self):
         url = reverse('supermarkets_api:product-list')
@@ -750,15 +759,15 @@ class SupermarketApiTests(TestCase):
         self.assertEqual(detail.status_code, 404)
 
 
-class ScrapeAllCommandTests(SimpleTestCase):
+class ScrapeAllCommandTests(TestCase):
 
     def test_una_tienda_fallida_no_impide_intentar_las_restantes(self):
         target = 'changomas.management.commands.scrape_supermarkets.call_command'
         with mock.patch(target) as nested_call:
-            nested_call.side_effect = [CommandError('Carrefour caído'), None, None]
+            nested_call.side_effect = [CommandError('Carrefour caído'), None, None, None, None, None]
             with self.assertRaises(CommandError):
                 call_command('scrape_supermarkets', verbosity=0)
-        self.assertEqual(nested_call.call_count, 3)
+        self.assertEqual(nested_call.call_count, 6)
 
 
 class ComparadorTests(TestCase):
@@ -810,12 +819,13 @@ class ComparadorTests(TestCase):
         self._make(self.carrefour, '7790000000029', 'Galletitas', '1100',
                    promo_price='800', promo_text='2da al 50%')
         response = self.client.get(reverse('changomas:comparador_list'))
-        self.assertContains(response, '800,00')
-        # El mejor precio es el efectivo de la promo de Carrefour
+        self.assertContains(response, '1.000,00')
+        # El comparador usa precio de unidad para una promoción que requiere
+        # comprar dos productos.
         content = response.content.decode()
         best_pos = content.find('class="store-name')
         self.assertNotEqual(best_pos, -1, 'no se encontró la etiqueta de tienda')
-        self.assertIn('Carrefour', content[best_pos:best_pos + 200])
+        self.assertIn('ChangoMás', content[best_pos:best_pos + 200])
 
     def test_producto_de_una_sola_tienda_aparece(self):
         self._make(self.disco, '7790000000036', 'Yerba Especial', '5000')
@@ -902,7 +912,7 @@ class ComparadorTests(TestCase):
         response = self.client.get(reverse('changomas:comparador_scan'))
         self.assertEqual(response.status_code, 200)
         # El escáner apunta al detalle del comparador, no al de una tienda
-        self.assertContains(response, '/changomas/comparador/producto/')
+        self.assertContains(response, '/supermarket-tracker/comparador/producto/')
         self.assertContains(response, reverse('changomas:comparador_list'))
 
     def test_listado_linkea_al_comparador_y_viceversa(self):
@@ -961,7 +971,7 @@ class ComparadorTests(TestCase):
     def test_la_ruta_comparador_no_la_captura_el_slug_de_tienda(self):
         # 'comparador' también matchea <slug:store>; el orden de URLs debe
         # ganarle y responder con la vista del comparador, no un 404 de tienda.
-        response = self.client.get('/changomas/comparador/')
+        response = self.client.get('/supermarket-tracker/comparador/')
         self.assertEqual(response.status_code, 200)
 
 
@@ -1115,14 +1125,20 @@ class CartQuoteTests(TestCase):
         self.assertEqual(cart['best_single']['supermarket'], self.changomas)
 
     def test_la_promo_define_donde_conviene(self):
-        # Carrefour es más caro de lista pero su promo lo deja abajo.
+        # La reducción de segunda unidad depende de la cantidad efectiva.
         self._make(self.changomas, self.LECHE, 'Leche', '1000')
-        self._make(self.carrefour, self.LECHE, 'Leche', '1100',
-                   promo_price='750', promo_text='2da al 50%')
+        promo_product = self._make(self.carrefour, self.LECHE, 'Leche', '1100',
+                                   promo_price='750', promo_text='2da al 50%')
+        PriceRecord.objects.filter(product=promo_product).update(
+            promotion={'kind': 'second_unit', 'percent': 50})
 
-        cart = quote([(self.LECHE, 2)])
-        self.assertEqual(cart['optimal']['total'], Decimal('1500'))
-        self.assertEqual(cart['best_single']['supermarket'], self.carrefour)
+        one_unit = quote([(self.LECHE, 1)])
+        self.assertEqual(one_unit['optimal']['total'], Decimal('1000.00'))
+        self.assertEqual(one_unit['lines'][0]['best']['effective'], Decimal('1000'))
+
+        two_units = quote([(self.LECHE, 2)])
+        self.assertEqual(two_units['optimal']['total'], Decimal('1650.00'))
+        self.assertEqual(two_units['best_single']['supermarket'], self.carrefour)
 
     def test_producto_sin_precio_vigente_va_a_faltantes(self):
         self._make(self.changomas, self.LECHE, 'Leche', '1000')
@@ -1232,25 +1248,34 @@ class CartViewTests(TestCase):
     def test_pagina_del_carrito_abre_vacia(self):
         response = self.client.get(reverse('changomas:cart'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Agregá productos')
-        self.assertContains(response, reverse('changomas:cart_quote'))
+        self.assertContains(response, 'Mi carrito')
+        self.assertContains(response, 'data-quote-url="%s"' % reverse('changomas:tracker_quote'))
+        self.assertContains(response, 'Preparando tu lista')
 
     def test_la_ruta_carrito_no_la_captura_el_slug_de_tienda(self):
-        response = self.client.get('/changomas/carrito/')
+        response = self.client.get('/supermarket-tracker/carrito/')
         self.assertEqual(response.status_code, 200)
 
-    def test_buscador_ofrece_agregar_solo_comparables(self):
+    def test_buscador_ofrece_publicaciones_con_codigo_o_id_de_ficha(self):
         self._make(self.changomas, self.LECHE, 'Leche Entera', '1000')
-        Product.objects.create(
+        listing = Product.objects.create(
             supermarket=self.changomas, reference_code='vtex-77',
             ean='', vtex_product_id='77', name='Leche Suelta',
+            is_comparable=False)
+        PriceRecord.objects.create(
+            product=listing, date=timezone.localdate(), price=Decimal('1000'))
+        Product.objects.create(
+            supermarket=self.changomas, reference_code='vtex-78',
+            ean='', vtex_product_id='78', name='Leche Sin Precio',
             is_comparable=False)
 
         response = self.client.get(reverse('changomas:cart'), {'q': 'leche'})
         self.assertContains(response, 'Leche Entera')
-        self.assertNotContains(response, 'Leche Suelta')
-        self.assertContains(response, f'data-ean="{self.LECHE}"')
+        self.assertContains(response, f'data-ean="listing-{Product.objects.get(name="Leche Entera").pk}"')
         self.assertContains(response, 'data-cart-add')
+        self.assertContains(response, f'data-ean="listing-{Product.objects.get(name="Leche Suelta").pk}"')
+        self.assertContains(response, 'Leche Suelta')
+        self.assertNotContains(response, 'Leche Sin Precio')
 
     def test_cotizacion_devuelve_los_totales_renderizados(self):
         self._make(self.changomas, self.LECHE, 'Leche', '1000')
@@ -1472,11 +1497,13 @@ class CartRegressionTests(TestCase):
         self.assertContains(response, 'data-cart-remove')   # igual se puede sacar
         self.assertContains(response, 'Pan Lactal')
 
-    def test_la_barra_de_celular_se_apaga_sin_cotizacion(self):
-        """La barra sólo se enciende si hay un total confirmado por el
-        servidor; el contador crudo del navegador no alcanza."""
+    def test_carrito_vacio_no_muestra_total_hasta_recibir_cotizacion(self):
+        """La UI nueva muestra la cotización en el panel del carrito y no
+        debe presentar un total antes de que responda el servidor."""
         response = self.client.get(reverse('changomas:cart'))
-        self.assertContains(response, 'units > 0 && total !== null')
+        self.assertContains(response, 'data-quote-content')
+        self.assertContains(response, 'data-quote-url=')
+        self.assertNotContains(response, 'data-cart-total')
 
     def test_la_barra_cuenta_las_unidades_que_cubre_su_total(self):
         """El total sólo cubre lo cotizable. Si las unidades salieran del
@@ -1509,23 +1536,21 @@ class CartRegressionTests(TestCase):
         fila = response.content.decode().split('cartrow__qty', 1)[1][:400]
         self.assertNotIn('disabled', fila)
 
-    def test_la_cotizacion_inyectada_se_vuelve_a_pintar(self):
-        """Inyectar la cotización reemplaza el DOM y se lleva puestos los
-        estados que había puesto el cliente (el '+' apagado en el tope, por
-        ejemplo). Hay que repintar después de cada inyección."""
+    def test_la_cotizacion_cliente_usa_script_estatico_y_repinta_controles(self):
+        """El script estático actualiza el panel con la respuesta y repinta
+        los controles de cantidad después del reemplazo del DOM."""
         response = self.client.get(reverse('changomas:cart'))
-        self.assertContains(response, 'ChangoCart.repaint()')
-        # Repintar NO puede disparar 'changocart:change': encadenaría otra
-        # cotización y no pararía más.
-        script = response.content.decode().split('repaint: function', 1)[1][:200]
-        self.assertNotIn('dispatchEvent', script)
+        self.assertContains(response, 'src="/static/changomas/tracker.js"')
+        script = _tracker_asset('tracker.js')
+        self.assertIn('slot.innerHTML = html', script)
+        self.assertIn('window.ChangoCart.repaint()', script)
 
-    def test_la_barra_de_celular_reserva_su_espacio(self):
-        """La barra fija está DESPUÉS de <main> en el DOM, así que ningún
-        selector de hermanos puede reservarle lugar: ``.cartbar.is-on ~ main``
-        no matcheaba nunca y la barra tapaba el final del contenido. El
-        espacio lo reserva una clase que el JS pone en <body>."""
+    def test_carrito_responde_en_paneles_adaptables_a_movil(self):
+        """El carrito nuevo distribuye búsqueda y cotización en paneles; su
+        tabla apila celdas con el nombre de cada cadena en pantallas angostas."""
         response = self.client.get(reverse('changomas:cart'))
-        self.assertNotContains(response, '~ main')
-        self.assertContains(response, 'body.has-cartbar .wrap')
-        self.assertContains(response, "classList.toggle('has-cartbar'")
+        self.assertContains(response, 'class="quote-panel"')
+        self.assertContains(response, 'class="cart-search-section"')
+        self.assertNotContains(response, 'class="cartbar"')
+        css = _tracker_asset('tracker.css')
+        self.assertIn('content:attr(data-store)', css)

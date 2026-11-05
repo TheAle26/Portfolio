@@ -1,0 +1,47 @@
+{
+  "name": "Supermarket Tracker",
+  "mode": "operate",
+  "source": "changomas/static/changomas/tracker.css",
+  "colors": {
+    "paper": "#f6f3e9",
+    "surface": "#fffefa",
+    "ink": "#20211d",
+    "muted": "#5d6058",
+    "faint": "#787a71",
+    "line": "#dcd9ce",
+    "yellow": "#f1cd42",
+    "yellowSoft": "#fff2b9",
+    "green": "#17643e",
+    "red": "#9a302b",
+    "semantic": {
+      "focus": "#866400",
+      "savingText": "#155b38",
+      "savingSurface": "#e4f0e7",
+      "bestOfferSurface": "#fff9dc",
+      "bestPriceSurface": "#fff1ae",
+      "noticeSurface": "#fff4d4",
+      "noticeBorder": "#b6941b",
+      "errorSurface": "#74251f",
+      "dangerText": "#7b2722"
+    }
+  },
+  "typography": {
+    "display": {"family": "Oswald", "fallbacks": ["Impact", "sans-serif"], "weight": 600, "lineHeight": 1.12},
+    "body": {"family": "Instrument Sans", "fallbacks": ["Arial", "sans-serif"], "fontSize": "16px", "mobileFontSize": "15px", "lineHeight": 1.5},
+    "numerals": "tabular-nums"
+  },
+  "shadow": "0 2px 3px rgba(40,38,28,.05),0 9px 22px -14px rgba(40,38,28,.22)",
+  "breakpoints": {"navigation": "max-width: 850px", "mobile": "max-width: 600px"},
+  "states": {
+    "focusVisible": {"outline": "3px solid {colors.semantic.focus}", "offset": "3px"},
+    "disabled": {"opacity": 0.55, "cursor": "not-allowed"},
+    "saving": {"color": "{colors.semantic.savingText}", "background": "{colors.semantic.savingSurface}"},
+    "bestOffer": {"background": "{colors.semantic.bestOfferSurface}"},
+    "bestPriceCell": {"background": "{colors.semantic.bestPriceSurface}"},
+    "notice": {"background": "{colors.semantic.noticeSurface}", "border": "1px solid {colors.semantic.noticeBorder}"},
+    "toastError": {"background": "{colors.semantic.errorSurface}"},
+    "reducedMotion": {"transitions": "0.01ms", "animations": "0.01ms", "scrollBehavior": "auto"},
+    "hidden": {"display": "none !important"}
+  },
+  "surfaces": ["catalog", "detail", "cart", "account", "watchlist"]
+}

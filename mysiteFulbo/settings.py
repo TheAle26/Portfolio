@@ -106,6 +106,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'rest_framework',
     # Tus Apps
     'AppFulbo',
@@ -205,3 +206,13 @@ REST_FRAMEWORK = {
         'user': '120/minute',
     },
 }
+
+
+# Supermarket Tracker: enable sending only after validating the deployment.
+SUPERMARKET_PUBLIC_URL = os.environ.get('SUPERMARKET_PUBLIC_URL', 'https://vincentalejo.myddns.me/supermarket-tracker/')
+SUPERMARKET_EMAILS_ENABLED = os.environ.get('SUPERMARKET_EMAILS_ENABLED', 'false').lower() == 'true'
+
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or EMAIL_HOST_USER or 'webmaster@localhost'
+
+SUPERMARKET_MAX_REFRESH_PRODUCTS = int(os.environ.get('SUPERMARKET_MAX_REFRESH_PRODUCTS', '3000'))

@@ -1,0 +1,14 @@
+{% extends 'changomas/app_base.html' %}{% load i18n %}
+{% block title %}{% translate "Preferencias" %} · Supermarket Tracker{% endblock %}
+{% block content %}
+<section class="personal"><h1>{% translate "Notificaciones" %}</h1>
+  {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
+  <p>{% translate "Email" %}: {{ request.user.email }} · {% if email_is_verified %}{% translate "Verificado" %}{% else %}{% translate "Sin verificar" %}{% endif %}</p>
+  <form method="post">{% csrf_token %}
+    <label><input type="checkbox" name="email_enabled" {% if preference.email_enabled %}checked{% endif %}> {% translate "Acepto recibir alertas por email" %}</label>
+    {% if not email_is_verified %}<label><input type="checkbox" name="send_verification"> {% translate "Enviarme el enlace de verificación" %}</label>{% endif %}
+    <button type="submit">{% translate "Guardar preferencias" %}</button>
+  </form>
+  <a href="{% url 'changomas:personal_subscriptions' %}">{% translate "Volver a seguimientos" %}</a>
+</section>
+{% endblock %}

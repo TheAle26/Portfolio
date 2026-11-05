@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.views.decorators.cache import cache_page
 
 from .models import PriceRecord, Product, Supermarket
+from .pricing import is_fresh, line_total
 from .views import (
     MAX_CODE_LENGTH,
     MAX_QUERY_LENGTH,
@@ -87,12 +88,12 @@ def _build_group(members):
     best_by_store = {}
     for member in members:
         latest = _latest_record(member)
-        if latest is None:
+        if latest is None or not is_fresh(member, latest):
             continue
         offer = {
             'product': member,
             'record': latest,
-            'effective': latest.effective_price,
+            'effective': line_total(latest, 1),
         }
         current = best_by_store.get(member.supermarket_id)
         if current is None or offer['effective'] < current['effective']:

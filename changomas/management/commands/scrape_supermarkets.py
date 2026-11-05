@@ -24,7 +24,15 @@ class Command(BaseCommand):
         stores = options['store'] or list(STORE_CONFIGS)
         failures = []
 
+        from datetime import timedelta
+        from changomas.jobs import _acquire_lease
+        from changomas.alert_models import JobLease
         for store_slug in stores:
+            lease_name = 'store:' + store_slug
+            lease_token = _acquire_lease(lease_name, timedelta(hours=6))
+            if lease_token is None:
+                self.stderr.write(f'{store_slug}: relevamiento en curso; se omite.')
+                continue
             self.stdout.write(self.style.MIGRATE_HEADING(
                 f'=== {STORE_CONFIGS[store_slug].name} ==='
             ))
@@ -43,6 +51,9 @@ class Command(BaseCommand):
                 self.stderr.write(self.style.ERROR(
                     f'{STORE_CONFIGS[store_slug].name} falló: {exc}'
                 ))
+
+            finally:
+                JobLease.objects.filter(name=lease_name, token=lease_token).delete()
 
         if failures:
             failed_names = ', '.join(STORE_CONFIGS[slug].name for slug, _ in failures)

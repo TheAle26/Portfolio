@@ -2262,3 +2262,15 @@ msgstr "Online only"
 #, python-format
 msgid "Hasta %(date)s"
 msgstr "Until %(date)s"
+
+msgid "Compará precios entre supermercados"
+msgstr "Compare supermarket prices"
+
+msgid "Comparación entre supermercados"
+msgstr "Store price comparison"
+
+#, python-format
+msgid "Precios en %(counter)s supermercado"
+msgid_plural "Precios en %(counter)s supermercados"
+msgstr[0] "Prices at %(counter)s store"
+msgstr[1] "Prices at %(counter)s stores"

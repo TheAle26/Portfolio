@@ -79,6 +79,8 @@ class TrackerFoundationTests(TestCase):
         response = self.client.get(reverse('changomas:product_list'), {'q': 'serenisima leche'})
         self.assertEqual(response.context['total'], 1)
         self.assertEqual(response.context['groups'][0]['store_count'], 2)
+        self.assertContains(response, 'data-comparison-store="changomas"')
+        self.assertContains(response, 'data-comparison-store="disco"')
         detail = self.client.get(reverse('changomas:product_detail', args=[self.product.ean]))
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(detail.context['group']['store_count'], 2)
@@ -131,3 +133,18 @@ class TrackerFoundationTests(TestCase):
             indexes = {row[0] for row in cursor.fetchall()}
         self.assertIn('tracker_search_words', indexes)
         self.assertIn('tracker_search_typos', indexes)
+
+
+class PayloadBoundsTests(TestCase):
+    def test_json_depth_is_bounded_independently_of_python_version(self):
+        from .payloads import loads_bounded
+        for endpoint in ['/supermarket-tracker/carrito/cotizar/', '/supermarket-tracker/api/quote-html/', '/api/v2/supermarkets/quote/']:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(endpoint, '[' * 5000 + ']' * 5000, content_type='application/json')
+                self.assertEqual(response.status_code, 400)
+
+    def test_brackets_inside_json_strings_do_not_count_as_nesting(self):
+        import json
+        from .payloads import loads_bounded
+        payload = {'value': '[{' * 1000 + '"escaped"'}
+        self.assertEqual(loads_bounded(json.dumps(payload)), payload)

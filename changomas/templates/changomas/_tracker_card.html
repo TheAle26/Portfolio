@@ -5,6 +5,10 @@
     <p class="product-card__brand">{% if group.product.brand %}{{ group.product.brand }}{% else %}{% translate "Producto" %}{% endif %}</p>
     <h2>{{ group.product.name }}</h2>
     <div class="price-line"><span class="currency">$</span><strong>{{ group.best.effective|precio }}</strong><span>{% translate "por unidad" %} · {{ group.best.product.supermarket.name }}</span></div>
+    <p class="comparison-count">{% blocktranslate count counter=group.store_count %}Precios en {{ counter }} supermercado{% plural %}Precios en {{ counter }} supermercados{% endblocktranslate %}</p>
+    {% if group.store_count > 1 %}<ul class="product-comparison" aria-label="{% translate 'Comparación entre supermercados' %}">
+      {% for offer in group.offers %}<li data-comparison-store="{{ offer.product.supermarket.slug }}"{% if forloop.first %} class="comparison-best"{% endif %}><span>{{ offer.product.supermarket.name }}</span><strong>$ {{ offer.effective|precio }}</strong></li>{% endfor %}
+    </ul>{% endif %}
     {% if group.best.record.promo_text %}<p class="saving-note">{{ group.best.record.promotion_label }}</p>{% endif %}
   </a>
   <div class="product-card__actions">

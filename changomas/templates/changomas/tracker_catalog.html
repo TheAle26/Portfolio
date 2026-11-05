@@ -2,7 +2,7 @@
 {% block title %}{% if is_offers %}{% translate "Ofertas" %}{% else %}{% translate "Buscar productos" %}{% endif %} · Supermarket Tracker{% endblock %}
 {% block content %}
 <section class="catalog-head">
-  <div><h1>{% if is_offers %}{% translate "Ofertas" %}{% else %}{% translate "Buscá en el catálogo" %}{% endif %}</h1><p>{% translate "Precios por unidad relevados en supermercados argentinos." %}</p></div>
+  <div><h1>{% if is_offers %}{% translate "Ofertas" %}{% else %}{% translate "Compará precios entre supermercados" %}{% endif %}</h1><p>{% translate "Precios por unidad relevados en supermercados argentinos." %}</p></div>
   <form class="search-form" method="get" role="search"><label class="sr-only" for="product-query">{% translate "Producto o marca" %}</label><input id="product-query" type="search" name="q" value="{{ query }}" placeholder="{% translate 'Ej. yerba, arroz, detergente' %}"><button class="button button--primary" type="submit">{% translate "Buscar" %}</button></form>
 </section>
 <div class="catalog-layout">

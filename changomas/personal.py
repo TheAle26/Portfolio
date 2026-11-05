@@ -20,6 +20,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 from .models import Product, Supermarket
+from .payloads import loads_bounded
 from .personal_forms import EmailLoginForm, RegistrationForm, SubscriptionForm
 from .throttling import allow_auth, allow_attempt
 from .personal_models import CartItem, NotificationPreference, ShoppingCart, Subscription
@@ -40,7 +41,7 @@ def private_no_store(response):
 
 def _json_body(request):
     try:
-        data = json.loads(request.body or b'{}')
+        data = loads_bounded(request.body or b'{}')
     except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
         raise ValueError('JSON inválido.')
     if not isinstance(data, dict):

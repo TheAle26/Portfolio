@@ -14,6 +14,7 @@ from . import cart, comparador
 from .models import PriceRecord, Product, Supermarket
 from .pricing import is_fresh, line_total, promotion_details, normalize_gtin, legacy_cutoff_date
 from .search import normalize, search_products
+from .payloads import loads_bounded
 
 
 def legacy_redirect(request, suffix=''):
@@ -167,9 +168,8 @@ def cart_page(request):
 
 @require_POST
 def cart_quote(request):
-    import json
     try:
-        payload = json.loads(request.body)
+        payload = loads_bounded(request.body)
         items = cart.parse_items(payload.get('items', []) if isinstance(payload, dict) else payload)
     except (ValueError, UnicodeDecodeError, RecursionError):
         return JsonResponse({'error': 'Datos de carrito inválidos.'}, status=400)
@@ -196,9 +196,8 @@ def catalog_api(request):
 
 @require_POST
 def quote_api(request):
-    import json
     try:
-        payload = json.loads(request.body)
+        payload = loads_bounded(request.body)
         items = cart.parse_items(payload.get('items', []) if isinstance(payload, dict) else payload)
     except (ValueError, UnicodeDecodeError, RecursionError):
         return JsonResponse({'error': 'Invalid cart'}, status=400)

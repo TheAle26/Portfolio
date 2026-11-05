@@ -1,5 +1,5 @@
 """Quantity-aware shopping estimates; guest and account carts share this service."""
-import json
+from .payloads import loads_bounded
 
 from django.http import HttpResponseBadRequest
 from django.shortcuts import render
@@ -265,7 +265,7 @@ def cart_quote(request):
     el JS del cliente se limita a guardar la lista e inyectar la respuesta.
     """
     try:
-        payload = json.loads(request.body.decode('utf-8'))
+        payload = loads_bounded(request.body)
     except (UnicodeDecodeError, ValueError, RecursionError):
         # RecursionError no es un ValueError: un JSON muy anidado
         # ('[[[[...]]]]' entra de sobra en el límite de body de Django)

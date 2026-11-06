@@ -37,6 +37,12 @@ Las cotizaciones aplican grupos completos de promociones por cantidad; las unida
 
 El código está preparado para el despliegue; ejecutar tareas contra producción y habilitar correos son pasos operativos separados. Para frenar envíos basta desactivar `SUPERMARKET_EMAILS_ENABLED`. Para detener toda recolección, desactivar los procesos de fondo. Las migraciones son aditivas: conservar las tablas permite volver a la imagen anterior sin una migración destructiva.
 
+### Actualización con un catálogo existente
+
+La migración `0004_tracker_foundation` procesa búsqueda e identidades juntas en lotes de 500, informa productos procesados y luego crea los índices PostgreSQL. La migración sigue siendo atómica: los mensajes indican trabajo realizado dentro de la transacción, no progreso ya confirmado. Detener el contenedor revierte esa migración pendiente y el siguiente arranque vuelve a ejecutarla. Esta optimización conserva el esquema y no vuelve a ejecutar migraciones ya aplicadas.
+
+El entrypoint ejecuta `migrate` antes de iniciar Gunicorn. No lanzar otra ejecución manual en paralelo: puede esperar los bloqueos de la primera. Para diagnosticar una demora, consultar `pg_stat_activity` y `pg_blocking_pids(pid)`; usar `clock_timestamp()` al medir la antigüedad de las consultas. Una captura `idle in transaction` entre actualizaciones no demuestra por sí sola una ejecución detenida. La prueba de actualización poblada cubre el paso real de `0003` a las migraciones actuales, preservación de precios y creación de índices; el tiempo observado en CI no estima el tiempo de una Raspberry ni la capacidad de su almacenamiento.
+
 ## Pruebas y operación
 
 `python manage.py test --settings=mysiteFulbo.test_settings` usa SQLite temporal y mocks; no contacta fuentes ni SMTP. `mysiteFulbo.postgres_test_settings` usa PostgreSQL y el backend de correo en memoria; el workflow Application checks lo ejecuta contra un servicio temporal. Las pruebas PostgreSQL cubren búsqueda aproximada e índices.
